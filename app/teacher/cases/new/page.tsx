@@ -1,0 +1,292 @@
+'use client'
+
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { addDoc, collection } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import { useAuth } from '@/contexts/AuthContext'
+import { Case, CrimeType, CooperationLevel, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS } from '@/lib/types'
+import { Shield, Sparkles, ArrowLeft, Save, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+
+const CRIME_TYPES: { value: CrimeType; label: string; article: string }[] = [
+  { value: 'vernieling', label: 'Vernieling', article: 'Art. 350 Sr' },
+  { value: 'heling', label: 'Heling', article: 'Art. 416 Sr' },
+  { value: 'diefstal', label: 'Diefstal', article: 'Art. 310 Sr' },
+  { value: 'mishandeling', label: 'Mishandeling', article: 'Art. 300 Sr' },
+  { value: 'inbraak', label: 'Inbraak', article: 'Art. 311 Sr' },
+  { value: 'overig', label: 'Overig', article: '' },
+]
+
+const empty: Partial<Omit<Case, 'id' | 'createdAt' | 'updatedAt'>> = {
+  title: '',
+  crimeType: 'vernieling',
+  legalArticle: 'Art. 350 Sr',
+  description: '',
+  backgroundStory: '',
+  witnessName: '',
+  witnessAge: 30,
+  witnessProfile: '',
+  witnessKnows: ['', '', '', '', '', '', '', ''],
+  cooperationLevel: 2,
+  isTemplate: false,
+  status: 'draft',
+}
+
+function NewCaseInner() {
+  const { profile } = useAuth()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const isGenerate = searchParams.get('mode') === 'generate'
+
+  const [form, setForm] = useState(empty)
+  const [generating, setGenerating] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [genCrimeType, setGenCrimeType] = useState<CrimeType>('vernieling')
+  const [genCoop, setGenCoop] = useState<CooperationLevel>(2)
+  const [mode, setMode] = useState<'manual' | 'generate'>(isGenerate ? 'generate' : 'manual')
+
+  const setField = (key: string, value: unknown) => {
+    setForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  const setKnows = (i: number, val: string) => {
+    const arr = [...(form.witnessKnows || [])]
+    arr[i] = val
+    setField('witnessKnows', arr)
+  }
+
+  const handleGenerate = async () => {
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/generate-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ crimeType: genCrimeType, cooperationLevel: genCoop }),
+      })
+      const data = await res.json()
+      const c = data.case
+      setForm({
+        ...empty,
+        ...c,
+        witnessKnows: c.witnessKnows || ['', '', '', '', '', '', '', ''],
+      })
+      setMode('manual')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleSave = async (status: 'draft' | 'published') => {
+    if (!profile) return
+    setSaving(true)
+    try {
+      const now = new Date().toISOString()
+      await addDoc(collection(db, 'cases'), {
+        ...form,
+        status,
+        createdBy: profile.uid,
+        isTemplate: false,
+        createdAt: now,
+        updatedAt: now,
+        witnessKnows: (form.witnessKnows || []).filter(k => k.trim()),
+      })
+      router.push('/teacher/cases')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/teacher/cases" className="text-gray-400 hover:text-gray-600">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="font-semibold text-gray-900">Nieuwe case</h1>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => handleSave('draft')} disabled={saving} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              Opslaan als concept
+            </button>
+            <button onClick={() => handleSave('published')} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+              <Save className="w-4 h-4" />
+              {saving ? 'Opslaan...' : 'Publiceren'}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+        {/* Mode selector */}
+        <div className="flex rounded-xl overflow-hidden border border-gray-200">
+          <button
+            onClick={() => setMode('manual')}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${mode === 'manual' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+          >
+            Handmatig invullen
+          </button>
+          <button
+            onClick={() => setMode('generate')}
+            className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${mode === 'generate' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+          >
+            <Sparkles className="w-4 h-4" />
+            AI genereren
+          </button>
+        </div>
+
+        {mode === 'generate' && (
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 space-y-4">
+            <h3 className="font-semibold text-purple-900">AI case genereren</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-purple-800 mb-1">Delictstype</label>
+                <select
+                  value={genCrimeType}
+                  onChange={e => setGenCrimeType(e.target.value as CrimeType)}
+                  className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  {CRIME_TYPES.map(ct => (
+                    <option key={ct.value} value={ct.value}>{ct.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-purple-800 mb-1">Meewerkingsniveau</label>
+                <select
+                  value={genCoop}
+                  onChange={e => setGenCoop(parseInt(e.target.value) as CooperationLevel)}
+                  className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  {([1,2,3,4,5] as CooperationLevel[]).map(l => (
+                    <option key={l} value={l}>{l} — {COOPERATION_LABELS[l]}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
+            >
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {generating ? 'Genereren...' : 'Genereer case'}
+            </button>
+          </div>
+        )}
+
+        {/* Form */}
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+            <h3 className="font-semibold text-gray-900">Basisinformatie</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Titel</label>
+              <input type="text" value={form.title || ''} onChange={e => setField('title', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Bijv. Vernieling parkeerplaats supermarkt" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delictstype</label>
+                <select value={form.crimeType || 'vernieling'} onChange={e => {
+                  const ct = CRIME_TYPES.find(c => c.value === e.target.value)
+                  setField('crimeType', e.target.value)
+                  if (ct?.article) setField('legalArticle', ct.article)
+                }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  {CRIME_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Wetsartikel</label>
+                <input type="text" value={form.legalArticle || ''} onChange={e => setField('legalArticle', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Art. 350 Sr" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Korte omschrijving</label>
+              <input type="text" value={form.description || ''} onChange={e => setField('description', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Één zin samenvatting" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Achtergrondinformatie</label>
+              <textarea value={form.backgroundStory || ''} onChange={e => setField('backgroundStory', e.target.value)} rows={5}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="Volledige zaakachtergrond: datum, tijd, locatie, wat er is gebeurd..." />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+            <h3 className="font-semibold text-gray-900">Getuige</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Naam getuige</label>
+                <input type="text" value={form.witnessName || ''} onChange={e => setField('witnessName', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Maria Janssen" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Leeftijd</label>
+                <input type="number" value={form.witnessAge || 30} onChange={e => setField('witnessAge', parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Profiel van de getuige</label>
+              <textarea value={form.witnessProfile || ''} onChange={e => setField('witnessProfile', e.target.value)} rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="Wie is de getuige, relatie tot de zaak..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Meewerkingsniveau
+              </label>
+              <div className="space-y-2">
+                {([1,2,3,4,5] as CooperationLevel[]).map(l => (
+                  <label key={l} className="flex items-start gap-3 cursor-pointer">
+                    <input type="radio" name="coop" value={l}
+                      checked={form.cooperationLevel === l}
+                      onChange={() => setField('cooperationLevel', l)}
+                      className="mt-0.5" />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">{l} — {COOPERATION_LABELS[l]}</span>
+                      <p className="text-xs text-gray-500">{COOPERATION_DESCRIPTIONS[l]}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
+            <h3 className="font-semibold text-gray-900">Wat weet de getuige?</h3>
+            <p className="text-sm text-gray-500">Voer minimaal 5 feiten in die de getuige weet. De AI gebruikt dit om in karakter te antwoorden.</p>
+            {(form.witnessKnows || []).map((k, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-sm text-gray-400 w-5">{i+1}.</span>
+                <input type="text" value={k} onChange={e => setKnows(i, e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={`Feit ${i+1}...`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function NewCasePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-400">Laden...</div>}>
+      <NewCaseInner />
+    </Suspense>
+  )
+}
