@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import { CrimeType, CooperationLevel } from '@/lib/types'
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+// MOCK MODE: Anthropic API key niet ingesteld
+// Verwijder deze mock en uncomment de echte implementatie zodra je een API key hebt
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,61 +11,29 @@ export async function POST(req: NextRequest) {
       cooperationLevel?: CooperationLevel
     } = await req.json()
 
-    const crimeHint = crimeType && crimeType !== 'overig'
-      ? `Het delict is: ${crimeType}.`
-      : 'Kies zelf een realistisch Nederlands delict (vernieling, heling, diefstal, mishandeling, inbraak, of iets anders).'
+    const mockCase = {
+      title: "Diefstal fietsen Centraal Station Amsterdam",
+      crimeType: crimeType || "diefstal",
+      legalArticle: "Art. 310 Sr",
+      description: "Een verdachte werd betrapt bij het stelen van fietsen bij Amsterdam Centraal.",
+      backgroundStory: `Op dinsdag 14 oktober 2025 om circa 14:30 uur werd door omstanders een man aangehouden op het fietsenstalling aan de noordzijde van Amsterdam Centraal Station. De man, later geïdentificeerd als Mohammad El-Amin (32), had een kniptang bij zich waarmee hij het slot van een fiets had doorgeknipt.\n\nEen passant, mevrouw Fatima Boukhari, had de man al een kwartier in de gaten gehouden omdat zijn gedrag haar verdacht voorkwam. Ze zag hoe hij verschillende fietsen bekeek, de omgeving afzocht en vervolgens een rode stadfiets van het merk Batavus te lijf ging met een kniptang.\n\nNa de aanhouding door twee agenten van de politie Amsterdam bleek de verdachte geen vaste woon- of verblijfplaats te hebben. In zijn rugzak werden nog twee andere fietssloten aangetroffen die vermoedelijk van eerder gestolen fietsen afkomstig zijn.`,
+      witnessName: "Fatima Boukhari",
+      witnessAge: 34,
+      witnessProfile: "Mevrouw Boukhari is woonachtig in Amsterdam-Noord en werkt als verpleegkundige in het AMC. Ze stalt haar fiets dagelijks bij Amsterdam Centraal. Ze is een betrouwbare getuige die het voorval nauwkeurig heeft geobserveerd.",
+      witnessKnows: [
+        "Ze heeft de verdachte circa 15 minuten lang geobserveerd voordat hij de fiets stal",
+        "De verdachte droeg een donkerblauwe jas en een zwarte rugzak",
+        "Ze zag duidelijk een kniptang in de hand van de verdachte",
+        "De gestolen fiets was een rode Batavus stadsfiets",
+        "De diefstal vond plaats om precies 14:27 uur (ze keek op haar telefoon)",
+        "Er waren op dat moment circa 10 andere mensen aanwezig in de stalling",
+        "De verdachte keek eerst 3 andere fietsen na voordat hij de rode Batavus uitkoos",
+        "Ze heeft zelf de politie gebeld via 0900-8844 en de verdachte in de gaten gehouden tot de politie arriveerde"
+      ],
+      cooperationLevel: cooperationLevel || 2,
+    }
 
-    const coopHint = cooperationLevel
-      ? `Het meewerkingsniveau van de getuige is ${cooperationLevel}/5.`
-      : 'Kies zelf een realistisch meewerkingsniveau tussen 1 en 5.'
-
-    const prompt = `Maak een realistische oefencase voor de Nederlandse politieopleiding voor het schrijven van een proces-verbaal.
-
-${crimeHint}
-${coopHint}
-
-Geef je antwoord UITSLUITEND als valide JSON in exact dit formaat (geen extra tekst):
-
-{
-  "title": "<korte pakkende titel>",
-  "crimeType": "<vernieling|heling|diefstal|mishandeling|inbraak|overig>",
-  "legalArticle": "<bijv. Art. 350 Sr>",
-  "description": "<één zin samenvatting van de zaak>",
-  "backgroundStory": "<2-3 alinea's met volledige zaakachtergrond: datum, tijd, locatie, wat er gebeurde, betrokkenen>",
-  "witnessName": "<Nederlandse naam>",
-  "witnessAge": <leeftijd als getal>,
-  "witnessProfile": "<2-3 zinnen over wie de getuige is, relatie tot de zaak>",
-  "witnessKnows": [
-    "<feit 1 dat de getuige weet>",
-    "<feit 2>",
-    "<feit 3>",
-    "<feit 4>",
-    "<feit 5>",
-    "<feit 6>",
-    "<feit 7>",
-    "<feit 8>"
-  ],
-  "cooperationLevel": <1-5>
-}
-
-Richtlijnen:
-- Gebruik realistische Nederlandse plaatsnamen, straatnamen en namen
-- Gebruik een recente datum (in 2025)
-- Zorg dat de zaak voldoende detail bevat voor een volledig PV
-- De getuige moet minimaal 8 relevante feiten weten
-- Zorg voor een interessante en gevarieerde case`
-
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }],
-    })
-
-    const text = response.content[0].type === 'text' ? response.content[0].text : ''
-    const jsonText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const caseData = JSON.parse(jsonText)
-
-    return NextResponse.json({ case: caseData })
+    return NextResponse.json({ case: mockCase })
   } catch (error) {
     console.error('Generate case error:', error)
     return NextResponse.json({ error: 'Genereren mislukt' }, { status: 500 })
