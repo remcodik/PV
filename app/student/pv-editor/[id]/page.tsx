@@ -188,7 +188,7 @@ export default function PVEditorPage() {
             {showGuide && (
               <div className="border-t border-gray-100 p-4 space-y-3 text-xs text-gray-600">
                 <div>
-                  <p className="font-semibold text-gray-700 mb-1">Formalia (20 pt)</p>
+                  <p className="font-semibold text-gray-700 mb-1">Formalia (15 pt)</p>
                   <ul className="space-y-0.5 list-disc pl-4">
                     <li>Naam en rang verbalisant</li>
                     <li>Datum + tijdstip incident</li>
@@ -198,7 +198,7 @@ export default function PVEditorPage() {
                   </ul>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-700 mb-1">Zeven W-vragen (30 pt)</p>
+                  <p className="font-semibold text-gray-700 mb-1">Zeven W-vragen (25 pt)</p>
                   <ul className="space-y-0.5 list-disc pl-4">
                     <li>Wie (verdachte/slachtoffer)</li>
                     <li>Wat (wat is er gebeurd)</li>
@@ -210,7 +210,7 @@ export default function PVEditorPage() {
                   </ul>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-700 mb-1">Getuigenverklaring (25 pt)</p>
+                  <p className="font-semibold text-gray-700 mb-1">Getuigenverklaring (20 pt)</p>
                   <ul className="space-y-0.5 list-disc pl-4">
                     <li>Naam + persoonsgegevens getuige</li>
                     <li>Verbatim weergave</li>
@@ -229,6 +229,13 @@ export default function PVEditorPage() {
                   <ul className="space-y-0.5 list-disc pl-4">
                     <li>Geen subjectief taalgebruik</li>
                     <li>Geen conclusies trekken</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-700 mb-1">Doorvragen (15 pt)</p>
+                  <ul className="space-y-0.5 list-disc pl-4">
+                    <li>Sleutelpunten achterhaald via doorvragen</li>
+                    <li>Details verwerkt in PV</li>
                   </ul>
                 </div>
               </div>

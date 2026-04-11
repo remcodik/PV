@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, PVReport } from '@/lib/types'
@@ -20,20 +20,21 @@ export default function StudentDashboard() {
   useEffect(() => {
     if (!profile) return
     const fetchData = async () => {
-      const [sessSnap, repSnap] = await Promise.all([
-        getDocs(query(
-          collection(db, 'sessions'),
-          where('studentId', '==', profile.uid),
-          orderBy('createdAt', 'desc')
-        )),
-        getDocs(query(
-          collection(db, 'pvreports'),
-          where('studentId', '==', profile.uid)
-        )),
-      ])
-      setSessions(sessSnap.docs.map(d => ({ id: d.id, ...d.data() }) as Session))
-      setReports(repSnap.docs.map(d => ({ id: d.id, ...d.data() }) as PVReport))
-      setLoading(false)
+      try {
+        const [sessSnap, repSnap] = await Promise.all([
+          getDocs(query(collection(db, 'sessions'), where('studentId', '==', profile.uid))),
+          getDocs(query(collection(db, 'pvreports'), where('studentId', '==', profile.uid))),
+        ])
+        const sorted = sessSnap.docs
+          .map(d => ({ id: d.id, ...d.data() }) as Session)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        setSessions(sorted)
+        setReports(repSnap.docs.map(d => ({ id: d.id, ...d.data() }) as PVReport))
+      } catch (err) {
+        console.error('Dashboard fetch error:', err)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchData()
   }, [profile])

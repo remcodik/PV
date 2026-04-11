@@ -1,16 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, deleteDoc, doc, updateDoc } from 'firebase/firestore'
+import { collection, getDocs, query, deleteDoc, doc, updateDoc, addDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Case } from '@/lib/types'
+import { BUILTIN_CASES } from '@/lib/cases'
 import { crimeTypeLabel, formatDate } from '@/lib/utils'
 import { Shield, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
 const COOP_LABELS: Record<number, string> = {
-  1: 'Zeer coöp.', 2: 'Coöp.', 3: 'Neutraal', 4: 'Teruhoudend', 5: 'Niet coöp.',
+  1: 'Zeer coöp.', 2: 'Coöp.', 3: 'Neutraal', 4: 'Terughoudend', 5: 'Niet coöp.',
 }
 
 export default function TeacherCasesPage() {
@@ -26,7 +27,19 @@ export default function TeacherCasesPage() {
 
   const fetchCases = async () => {
     const snap = await getDocs(query(collection(db, 'cases')))
-    setCases(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
+    const existing = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case)
+
+    // Auto-seed built-in template cases if none exist in Firestore yet
+    if (!existing.some(c => c.isTemplate)) {
+      const now = new Date().toISOString()
+      await Promise.all(
+        BUILTIN_CASES.map(c => addDoc(collection(db, 'cases'), { ...c, createdAt: now, updatedAt: now }))
+      )
+      const newSnap = await getDocs(query(collection(db, 'cases')))
+      setCases(newSnap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
+    } else {
+      setCases(existing)
+    }
     setLoading(false)
   }
 
