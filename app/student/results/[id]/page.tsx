@@ -44,11 +44,12 @@ export default function ResultsPage() {
   }
 
   const scoreCategories = [
-    { key: 'formalia', label: 'Formalia', max: 20 },
-    { key: 'zeven_w', label: 'Zeven W-vragen', max: 30 },
-    { key: 'getuigenverklaring', label: 'Getuigenverklaring', max: 25 },
-    { key: 'delictsomschrijving', label: 'Delictsomschrijving', max: 15 },
+    { key: 'formalia', label: 'Formalia', max: 15 },
+    { key: 'zeven_w', label: 'Zeven W', max: 25 },
+    { key: 'getuigenverklaring', label: 'Getuigen-verklaring', max: 20 },
+    { key: 'delictsomschrijving', label: 'Delicts-omschrijving', max: 15 },
     { key: 'objectiviteit', label: 'Objectiviteit', max: 10 },
+    { key: 'doorvragen', label: 'Doorvragen', max: 15 },
   ]
 
   return (
@@ -99,7 +100,7 @@ export default function ResultsPage() {
           <h3 className="font-semibold text-gray-900 mb-3">Scores per categorie</h3>
 
           {/* Grid overview */}
-          <div className="grid grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
             {scoreCategories.map(cat => {
               const score = report.scoresBreakdown[cat.key as keyof typeof report.scoresBreakdown]
               const pct = (score / cat.max) * 100

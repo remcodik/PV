@@ -1,5 +1,11 @@
 export type UserRole = 'student' | 'teacher'
 
+// A specific fact the student must uncover during the interview
+export interface KeyDiscovery {
+  description: string   // What the student must discover (shown to teacher only)
+  witnessHint: string   // How the witness should hint at this (used in AI prompt only)
+}
+
 export interface UserProfile {
   uid: string
   email: string
@@ -39,6 +45,7 @@ export interface Case {
   witnessAge: number
   witnessProfile: string
   witnessKnows: string[]
+  keyDiscoveries: KeyDiscovery[]  // Points the student must uncover via follow-up questions
   cooperationLevel: CooperationLevel
   isTemplate: boolean
   status: 'draft' | 'published'
@@ -70,11 +77,12 @@ export interface Session {
 }
 
 export interface ScoreBreakdown {
-  formalia: number        // 0-20
-  zeven_w: number         // 0-30
-  getuigenverklaring: number  // 0-25
+  formalia: number            // 0-15
+  zeven_w: number             // 0-25
+  getuigenverklaring: number  // 0-20
   delictsomschrijving: number // 0-15
-  objectiviteit: number   // 0-10
+  objectiviteit: number       // 0-10
+  doorvragen: number          // 0-15 — did student uncover key discovery points?
 }
 
 export interface FeedbackItem {

@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { Case, CrimeType, CooperationLevel, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS } from '@/lib/types'
-import { Shield, ArrowLeft, Save } from 'lucide-react'
+import { Case, CrimeType, CooperationLevel, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS, KeyDiscovery } from '@/lib/types'
+import { Shield, ArrowLeft, Save, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 const CRIME_TYPES: { value: CrimeType; label: string; article: string }[] = [
@@ -40,6 +40,25 @@ export default function EditCasePage() {
     setField('witnessKnows', arr)
   }
 
+  const setDiscovery = (i: number, field: keyof KeyDiscovery, val: string) => {
+    if (!caseData) return
+    const arr = [...(caseData.keyDiscoveries || [])]
+    arr[i] = { ...arr[i], [field]: val }
+    setField('keyDiscoveries', arr)
+  }
+
+  const addDiscovery = () => {
+    if (!caseData) return
+    setField('keyDiscoveries', [...(caseData.keyDiscoveries || []), { description: '', witnessHint: '' }])
+  }
+
+  const removeDiscovery = (i: number) => {
+    if (!caseData) return
+    const arr = [...(caseData.keyDiscoveries || [])]
+    arr.splice(i, 1)
+    setField('keyDiscoveries', arr)
+  }
+
   const handleSave = async () => {
     if (!caseData) return
     setSaving(true)
@@ -48,6 +67,7 @@ export default function EditCasePage() {
         ...caseData,
         updatedAt: new Date().toISOString(),
         witnessKnows: caseData.witnessKnows.filter(k => k.trim()),
+        keyDiscoveries: (caseData.keyDiscoveries || []).filter(kd => kd.description.trim()),
       })
       router.push('/teacher/cases')
     } finally {
@@ -162,6 +182,52 @@ export default function EditCasePage() {
                 placeholder={`Feit ${i+1}...`} />
             </div>
           ))}
+        </div>
+
+        <div className="bg-white rounded-xl border border-amber-200 p-6 space-y-4">
+          <div>
+            <h3 className="font-semibold text-gray-900">Sleutelpunten voor de student</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Definieer wat de student moet achterhalen via doorvragen. De getuige geeft hints; de student wordt beoordeeld op of hij deze punten heeft opgespoord en verwerkt in het PV.
+            </p>
+          </div>
+          {(caseData.keyDiscoveries || []).map((kd, i) => (
+            <div key={i} className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Sleutelpunt {i + 1}</span>
+                <button onClick={() => removeDiscovery(i)} className="text-amber-400 hover:text-red-500">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Wat moet de student achterhalen?</label>
+                <input
+                  type="text"
+                  value={kd.description}
+                  onChange={e => setDiscovery(i, 'description', e.target.value)}
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  placeholder="Bijv. De verdachte had een tatoeage op zijn linkerarm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Hoe hint de getuige hier naar? (alleen zichtbaar voor de AI)</label>
+                <input
+                  type="text"
+                  value={kd.witnessHint}
+                  onChange={e => setDiscovery(i, 'witnessHint', e.target.value)}
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  placeholder="Bijv. Noem terloops iets over een opvallend kenmerk als uiterlijk ter sprake komt"
+                />
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={addDiscovery}
+            className="flex items-center gap-2 text-sm font-medium text-amber-700 hover:text-amber-900 px-3 py-2 border border-dashed border-amber-300 rounded-lg w-full justify-center hover:bg-amber-50"
+          >
+            <Plus className="w-4 h-4" />
+            Sleutelpunt toevoegen
+          </button>
         </div>
       </div>
     </div>

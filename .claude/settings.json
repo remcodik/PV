@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/PV && npm install 2>&1 | tail -3 && echo '✓ Dependencies ready' && ([ -f .env.local ] && echo '✓ .env.local found' || echo '⚠ Missing .env.local — copy .env.local.example and add your ANTHROPIC_API_KEY')"
+          }
+        ]
+      }
+    ]
+  }
+}
