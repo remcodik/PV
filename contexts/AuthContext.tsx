@@ -72,30 +72,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (email: string, password: string, name: string, role: UserRole) => {
-    let uid: string
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, password)
-      uid = cred.user.uid
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : ''
-      if (msg.includes('email-already-in-use')) {
-        // Account bestaat al — inloggen en profiel aanmaken
-        const cred = await signInWithEmailAndPassword(auth, email, password)
-        uid = cred.user.uid
-      } else {
-        throw err
-      }
-    }
+    const cred = await createUserWithEmailAndPassword(auth, email, password)
     const newProfile: UserProfile = {
-      uid,
+      uid: cred.user.uid,
       email,
       name,
       role,
       createdAt: new Date().toISOString(),
     }
-    localStorage.setItem(`profile_${uid}`, JSON.stringify(newProfile))
+    localStorage.setItem(`profile_${cred.user.uid}`, JSON.stringify(newProfile))
     try {
-      await setDoc(doc(db, 'profiles', uid), newProfile)
+      await setDoc(doc(db, 'profiles', cred.user.uid), newProfile)
     } catch {
       // Firestore mislukt — gebruik localStorage fallback
     }
