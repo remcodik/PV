@@ -29,22 +29,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 5000)
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      clearTimeout(timeout)
-      setUser(firebaseUser)
-      if (firebaseUser) {
-        const docRef = doc(db, 'profiles', firebaseUser.uid)
-        const snap = await getDoc(docRef)
-        if (snap.exists()) {
-          setProfile(snap.data() as UserProfile)
+    const timeout = setTimeout(() => setLoading(false), 2000)
+    let unsub: (() => void) | undefined
+    try {
+      unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+        clearTimeout(timeout)
+        setUser(firebaseUser)
+        if (firebaseUser) {
+          try {
+            const docRef = doc(db, 'profiles', firebaseUser.uid)
+            const snap = await getDoc(docRef)
+            if (snap.exists()) setProfile(snap.data() as UserProfile)
+          } catch {
+            // Firestore fout — ga door zonder profiel
+          }
+        } else {
+          setProfile(null)
         }
-      } else {
-        setProfile(null)
-      }
+        setLoading(false)
+      }, () => {
+        // Firebase auth fout — stop met laden
+        clearTimeout(timeout)
+        setLoading(false)
+      })
+    } catch {
+      clearTimeout(timeout)
       setLoading(false)
-    })
-    return () => { clearTimeout(timeout); unsub() }
+    }
+    return () => { clearTimeout(timeout); unsub?.() }
   }, [])
 
   const login = async (email: string, password: string) => {
