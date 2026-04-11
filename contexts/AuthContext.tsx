@@ -29,7 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const timeout = setTimeout(() => setLoading(false), 5000)
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      clearTimeout(timeout)
       setUser(firebaseUser)
       if (firebaseUser) {
         const docRef = doc(db, 'profiles', firebaseUser.uid)
@@ -42,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setLoading(false)
     })
-    return unsub
+    return () => { clearTimeout(timeout); unsub() }
   }, [])
 
   const login = async (email: string, password: string) => {
