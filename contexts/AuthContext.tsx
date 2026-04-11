@@ -39,9 +39,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const docRef = doc(db, 'profiles', firebaseUser.uid)
             const snap = await getDoc(docRef)
-            if (snap.exists()) setProfile(snap.data() as UserProfile)
+            if (snap.exists()) {
+              setProfile(snap.data() as UserProfile)
+            } else {
+              // Probeer localStorage fallback
+              const local = localStorage.getItem(`profile_${firebaseUser.uid}`)
+              if (local) setProfile(JSON.parse(local) as UserProfile)
+            }
           } catch {
-            // Firestore fout — ga door zonder profiel
+            // Firestore fout — probeer localStorage fallback
+            const local = localStorage.getItem(`profile_${firebaseUser.uid}`)
+            if (local) setProfile(JSON.parse(local) as UserProfile)
           }
         } else {
           setProfile(null)
@@ -65,15 +73,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string, name: string, role: UserRole) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password)
-    const profile: UserProfile = {
+    const newProfile: UserProfile = {
       uid: cred.user.uid,
       email,
       name,
       role,
       createdAt: new Date().toISOString(),
     }
-    await setDoc(doc(db, 'profiles', cred.user.uid), profile)
-    setProfile(profile)
+    // Sla op in localStorage als fallback
+    localStorage.setItem(`profile_${cred.user.uid}`, JSON.stringify(newProfile))
+    try {
+      await setDoc(doc(db, 'profiles', cred.user.uid), newProfile)
+    } catch {
+      // Firestore mislukt — gebruik localStorage fallback
+    }
+    setProfile(newProfile)
   }
 
   const logout = async () => {
