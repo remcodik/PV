@@ -29,11 +29,11 @@ export default function RegisterPage() {
       await register(email, password, name, role)
       router.replace('/')
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : ''
+      const msg = err instanceof Error ? err.message : String(err)
       if (msg.includes('email-already-in-use')) {
         setError('Dit e-mailadres is al in gebruik.')
       } else {
-        setError('Registratie mislukt. Probeer opnieuw.')
+        setError(`Fout: ${msg}`)
       }
     } finally {
       setLoading(false)
