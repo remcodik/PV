@@ -26,21 +26,29 @@ export default function TeacherCasesPage() {
   }, [])
 
   const fetchCases = async () => {
-    const snap = await getDocs(query(collection(db, 'cases')))
-    const existing = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case)
+    try {
+      const snap = await getDocs(query(collection(db, 'cases')))
+      const existing = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case)
 
-    // Auto-seed built-in template cases if none exist in Firestore yet
-    if (!existing.some(c => c.isTemplate)) {
+      // Auto-seed built-in template cases if none exist in Firestore yet
+      if (!existing.some(c => c.isTemplate)) {
+        const now = new Date().toISOString()
+        await Promise.all(
+          BUILTIN_CASES.map(c => addDoc(collection(db, 'cases'), { ...c, createdAt: now, updatedAt: now }))
+        )
+        const newSnap = await getDocs(query(collection(db, 'cases')))
+        setCases(newSnap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
+      } else {
+        setCases(existing)
+      }
+    } catch (err) {
+      console.error('fetchCases error:', err)
+      // Firestore unavailable — show built-in cases in memory so teacher can still see them
       const now = new Date().toISOString()
-      await Promise.all(
-        BUILTIN_CASES.map(c => addDoc(collection(db, 'cases'), { ...c, createdAt: now, updatedAt: now }))
-      )
-      const newSnap = await getDocs(query(collection(db, 'cases')))
-      setCases(newSnap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
-    } else {
-      setCases(existing)
+      setCases(BUILTIN_CASES.map((c, i) => ({ ...c, id: `builtin_${i}`, createdAt: now, updatedAt: now })))
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const toggleStatus = async (c: Case) => {

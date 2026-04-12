@@ -49,6 +49,9 @@ export default function StudentCasesPage() {
         setCases(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
       } catch (err) {
         console.error('fetchCases error:', err)
+        // Firestore unavailable — show built-in cases from memory so student isn't left empty
+        const now = new Date().toISOString()
+        setCases(BUILTIN_CASES.map((c, i) => ({ ...c, id: `builtin_${i}`, createdAt: now, updatedAt: now })))
       } finally {
         setLoading(false)
       }
@@ -60,8 +63,15 @@ export default function StudentCasesPage() {
     if (!profile) return
     setStarting(c.id)
     try {
+      let caseId = c.id
+      // If loaded from memory fallback (Firestore was down at page load), persist the case now
+      if (c.id.startsWith('builtin_')) {
+        const { id, ...caseData } = c
+        const caseRef = await addDoc(collection(db, 'cases'), caseData)
+        caseId = caseRef.id
+      }
       const sessionRef = await addDoc(collection(db, 'sessions'), {
-        caseId: c.id,
+        caseId,
         caseTitle: c.title,
         studentId: profile.uid,
         studentName: profile.name,
