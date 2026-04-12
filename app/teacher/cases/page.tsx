@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { crimeTypeLabel, formatDate } from '@/lib/utils'
+import { crimeTypeLabel } from '@/lib/utils'
 import { Shield, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
@@ -14,10 +14,19 @@ const COOP_LABELS: Record<number, string> = {
   1: 'Zeer coöp.', 2: 'Coöp.', 3: 'Neutraal', 4: 'Terughoudend', 5: 'Niet coöp.',
 }
 
+// Show BUILTIN_CASES from memory immediately — Firestore is synced in background
+const seedTime = new Date().toISOString()
+const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
+  ...c,
+  id: `builtin_${i}`,
+  createdAt: seedTime,
+  updatedAt: seedTime,
+}))
+
 export default function TeacherCasesPage() {
   const { profile } = useAuth()
-  const [cases, setCases] = useState<Case[]>([])
-  const [loading, setLoading] = useState(true)
+  const [cases, setCases] = useState<Case[]>(MEMORY_CASES)
+  const [syncing, setSyncing] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [toggling, setToggling] = useState<string | null>(null)
 
@@ -26,32 +35,30 @@ export default function TeacherCasesPage() {
   }, [])
 
   const fetchCases = async () => {
+    setSyncing(true)
     try {
       const snap = await getDocs(query(collection(db, 'cases')))
       const existing = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case)
 
-      // Auto-seed built-in template cases if none exist in Firestore yet
       if (!existing.some(c => c.isTemplate)) {
-        const now = new Date().toISOString()
+        // First run: seed BUILTIN_CASES to Firestore
         await Promise.all(
-          BUILTIN_CASES.map(c => addDoc(collection(db, 'cases'), { ...c, createdAt: now, updatedAt: now }))
+          BUILTIN_CASES.map(c => addDoc(collection(db, 'cases'), { ...c, createdAt: seedTime, updatedAt: seedTime }))
         )
         const newSnap = await getDocs(query(collection(db, 'cases')))
         setCases(newSnap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
       } else {
         setCases(existing)
       }
-    } catch (err) {
-      console.error('fetchCases error:', err)
-      // Firestore unavailable — show built-in cases in memory so teacher can still see them
-      const now = new Date().toISOString()
-      setCases(BUILTIN_CASES.map((c, i) => ({ ...c, id: `builtin_${i}`, createdAt: now, updatedAt: now })))
+    } catch {
+      // Firestore unavailable — MEMORY_CASES already showing, nothing to do
     } finally {
-      setLoading(false)
+      setSyncing(false)
     }
   }
 
   const toggleStatus = async (c: Case) => {
+    if (c.id.startsWith('builtin_')) return
     setToggling(c.id)
     const newStatus = c.status === 'published' ? 'draft' : 'published'
     await updateDoc(doc(db, 'cases', c.id), { status: newStatus })
@@ -60,6 +67,7 @@ export default function TeacherCasesPage() {
   }
 
   const deleteCase = async (id: string) => {
+    if (id.startsWith('builtin_')) return
     if (!confirm('Weet je zeker dat je deze case wilt verwijderen?')) return
     setDeleting(id)
     await deleteDoc(doc(db, 'cases', id))
@@ -82,7 +90,10 @@ export default function TeacherCasesPage() {
             <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
-            <h1 className="font-semibold text-gray-900">Cases beheren</h1>
+            <div>
+              <h1 className="font-semibold text-gray-900">Cases beheren</h1>
+              {syncing && <p className="text-xs text-gray-400">Synchroniseren...</p>}
+            </div>
           </div>
           <div className="flex gap-2">
             <Link
@@ -104,46 +115,44 @@ export default function TeacherCasesPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
-        {loading ? (
-          <div className="text-center py-12 text-gray-400">Laden...</div>
-        ) : (
-          <>
-            {[
-              { title: 'Gepubliceerd', items: published, color: 'green' },
-              { title: 'Concept', items: drafts, color: 'gray' },
-            ].map(section => (
-              <div key={section.title} className="mb-8">
-                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                  {section.title} ({section.items.length})
-                </h2>
-                {section.items.length === 0 ? (
-                  <p className="text-gray-400 text-sm">Geen cases in deze categorie.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {section.items.map(c => (
-                      <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
-                                {crimeTypeLabel(c.crimeType)}
-                              </span>
-                              <span className="text-xs text-gray-400">{c.legalArticle}</span>
-                              {c.isTemplate && (
-                                <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-                                  Sjabloon
-                                </span>
-                              )}
-                            </div>
-                            <h3 className="font-semibold text-gray-900">{c.title}</h3>
-                            <p className="text-sm text-gray-500 mt-0.5">{c.description}</p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-                              <span>Getuige: {c.witnessName}</span>
-                              <span>•</span>
-                              <span>Meew.: {COOP_LABELS[c.cooperationLevel]}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
+        {[
+          { title: 'Gepubliceerd', items: published },
+          { title: 'Concept', items: drafts },
+        ].map(section => (
+          <div key={section.title} className="mb-8">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              {section.title} ({section.items.length})
+            </h2>
+            {section.items.length === 0 ? (
+              <p className="text-gray-400 text-sm">Geen cases in deze categorie.</p>
+            ) : (
+              <div className="space-y-3">
+                {section.items.map(c => (
+                  <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+                            {crimeTypeLabel(c.crimeType)}
+                          </span>
+                          <span className="text-xs text-gray-400">{c.legalArticle}</span>
+                          {c.isTemplate && (
+                            <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                              Sjabloon
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-semibold text-gray-900">{c.title}</h3>
+                        <p className="text-sm text-gray-500 mt-0.5">{c.description}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                          <span>Getuige: {c.witnessName}</span>
+                          <span>•</span>
+                          <span>Meew.: {COOP_LABELS[c.cooperationLevel]}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!c.id.startsWith('builtin_') ? (
+                          <>
                             <button
                               onClick={() => toggleStatus(c)}
                               disabled={toggling === c.id}
@@ -171,16 +180,18 @@ export default function TeacherCasesPage() {
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             )}
-                          </div>
-                        </div>
+                          </>
+                        ) : (
+                          <span className="text-xs text-amber-500 px-2">Sync...</span>
+                        )}
                       </div>
-                    ))}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </>
-        )}
+            )}
+          </div>
+        ))}
       </div>
     </div>
   )

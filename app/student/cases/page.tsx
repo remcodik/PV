@@ -7,8 +7,8 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { crimeTypeLabel, formatDate } from '@/lib/utils'
-import { Shield, ArrowLeft, Users, FileText } from 'lucide-react'
+import { crimeTypeLabel } from '@/lib/utils'
+import { Shield, ArrowLeft, Users } from 'lucide-react'
 import Link from 'next/link'
 
 const COOP_COLORS: Record<number, string> = {
@@ -27,36 +27,41 @@ const COOP_LABELS: Record<number, string> = {
   5: 'Niet coöperatief',
 }
 
+// Show BUILTIN_CASES from memory immediately — Firestore is synced in background
+const now = new Date().toISOString()
+const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
+  ...c,
+  id: `builtin_${i}`,
+  createdAt: now,
+  updatedAt: now,
+}))
+
 export default function StudentCasesPage() {
   const { profile } = useAuth()
   const router = useRouter()
-  const [cases, setCases] = useState<Case[]>([])
-  const [loading, setLoading] = useState(true)
+  const [cases, setCases] = useState<Case[]>(MEMORY_CASES)
   const [starting, setStarting] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchCases = async () => {
+    // Sync with Firestore in background — cases already visible from memory
+    const sync = async () => {
       try {
-        // Seed built-in cases if none exist yet
         const allSnap = await getDocs(collection(db, 'cases'))
         if (allSnap.empty) {
-          const now = new Date().toISOString()
+          // First time: seed all built-in cases to Firestore
           await Promise.all(
             BUILTIN_CASES.map(c => addDoc(collection(db, 'cases'), { ...c, createdAt: now, updatedAt: now }))
           )
         }
         const snap = await getDocs(query(collection(db, 'cases'), where('status', '==', 'published')))
-        setCases(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
-      } catch (err) {
-        console.error('fetchCases error:', err)
-        // Firestore unavailable — show built-in cases from memory so student isn't left empty
-        const now = new Date().toISOString()
-        setCases(BUILTIN_CASES.map((c, i) => ({ ...c, id: `builtin_${i}`, createdAt: now, updatedAt: now })))
-      } finally {
-        setLoading(false)
+        if (!snap.empty) {
+          setCases(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
+        }
+      } catch {
+        // Firestore unavailable — keep showing memory BUILTIN_CASES (already in state)
       }
     }
-    fetchCases()
+    sync()
   }, [])
 
   const startSession = async (c: Case) => {
@@ -64,7 +69,7 @@ export default function StudentCasesPage() {
     setStarting(c.id)
     try {
       let caseId = c.id
-      // If loaded from memory fallback (Firestore was down at page load), persist the case now
+      // If this case came from the memory fallback, persist it to Firestore first
       if (c.id.startsWith('builtin_')) {
         const { id, ...caseData } = c
         const caseRef = await addDoc(collection(db, 'cases'), caseData)
@@ -104,52 +109,40 @@ export default function StudentCasesPage() {
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Beschikbare cases</h2>
-
-        {loading ? (
-          <div className="text-center py-12 text-gray-400">Laden...</div>
-        ) : cases.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Geen cases beschikbaar. Vraag je docent om cases te publiceren.</p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {cases.map(c => (
-              <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                        {crimeTypeLabel(c.crimeType)}
-                      </span>
-                      <span className="text-xs font-medium text-gray-500">{c.legalArticle}</span>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 text-lg">{c.title}</h3>
-                    <p className="text-gray-500 text-sm mt-1">{c.description}</p>
-
-                    <div className="flex items-center gap-3 mt-4">
-                      <div className="flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">Getuige: {c.witnessName}</span>
-                      </div>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${COOP_COLORS[c.cooperationLevel]}`}>
-                        {COOP_LABELS[c.cooperationLevel]}
-                      </span>
-                    </div>
+        <div className="grid gap-4">
+          {cases.map(c => (
+            <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                      {crimeTypeLabel(c.crimeType)}
+                    </span>
+                    <span className="text-xs font-medium text-gray-500">{c.legalArticle}</span>
                   </div>
-
-                  <button
-                    onClick={() => startSession(c)}
-                    disabled={starting === c.id}
-                    className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap"
-                  >
-                    {starting === c.id ? 'Starten...' : 'Start oefening'}
-                  </button>
+                  <h3 className="font-semibold text-gray-900 text-lg">{c.title}</h3>
+                  <p className="text-gray-500 text-sm mt-1">{c.description}</p>
+                  <div className="flex items-center gap-3 mt-4">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">Getuige: {c.witnessName}</span>
+                    </div>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${COOP_COLORS[c.cooperationLevel]}`}>
+                      {COOP_LABELS[c.cooperationLevel]}
+                    </span>
+                  </div>
                 </div>
+                <button
+                  onClick={() => startSession(c)}
+                  disabled={starting === c.id}
+                  className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                >
+                  {starting === c.id ? 'Starten...' : 'Start oefening'}
+                </button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
