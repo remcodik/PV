@@ -42,14 +42,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (snap.exists()) {
               setProfile(snap.data() as UserProfile)
             } else {
-              // Probeer localStorage fallback
               const local = localStorage.getItem(`profile_${firebaseUser.uid}`)
-              if (local) setProfile(JSON.parse(local) as UserProfile)
+              if (local) {
+                setProfile(JSON.parse(local) as UserProfile)
+              } else {
+                // No profile anywhere — create a minimal one from auth data
+                const fallback: UserProfile = {
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email || '',
+                  name: firebaseUser.email?.split('@')[0] || 'Student',
+                  role: 'student',
+                  createdAt: new Date().toISOString(),
+                }
+                setProfile(fallback)
+              }
             }
           } catch {
-            // Firestore fout — probeer localStorage fallback
+            // Firestore failed — try localStorage
             const local = localStorage.getItem(`profile_${firebaseUser.uid}`)
-            if (local) setProfile(JSON.parse(local) as UserProfile)
+            if (local) {
+              setProfile(JSON.parse(local) as UserProfile)
+            } else {
+              // Last resort: minimal profile from auth data
+              const fallback: UserProfile = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || '',
+                name: firebaseUser.email?.split('@')[0] || 'Student',
+                role: 'student',
+                createdAt: new Date().toISOString(),
+              }
+              setProfile(fallback)
+            }
           }
         } else {
           setProfile(null)

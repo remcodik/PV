@@ -37,7 +37,7 @@ const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
 }))
 
 export default function StudentCasesPage() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
   const router = useRouter()
   const [cases, setCases] = useState<Case[]>(MEMORY_CASES)
   const [starting, setStarting] = useState<string | null>(null)
@@ -65,7 +65,9 @@ export default function StudentCasesPage() {
   }, [])
 
   const startSession = async (c: Case) => {
-    if (!profile) return
+    if (!user) return
+    const uid = profile?.uid || user.uid
+    const name = profile?.name || user.email?.split('@')[0] || 'Student'
     setStarting(c.id)
     try {
       let caseId = c.id
@@ -78,8 +80,8 @@ export default function StudentCasesPage() {
       const sessionRef = await addDoc(collection(db, 'sessions'), {
         caseId,
         caseTitle: c.title,
-        studentId: profile.uid,
-        studentName: profile.name,
+        studentId: uid,
+        studentName: name,
         status: 'interviewing',
         transcript: [],
         createdAt: new Date().toISOString(),
