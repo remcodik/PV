@@ -128,13 +128,14 @@ export default function StudentDetailPage() {
                 {isExpanded && report && (
                   <div className="border-t border-gray-100 bg-gray-50">
                     {/* Scores */}
-                    <div className="p-5 grid grid-cols-5 gap-3">
+                    <div className="p-5 grid grid-cols-3 sm:grid-cols-6 gap-3">
                       {[
-                        { key: 'formalia', label: 'Formalia', max: 20 },
-                        { key: 'zeven_w', label: '7 W\'s', max: 30 },
-                        { key: 'getuigenverklaring', label: 'Getuige', max: 25 },
+                        { key: 'formalia', label: 'Formalia', max: 15 },
+                        { key: 'zeven_w', label: '7 W\'s', max: 25 },
+                        { key: 'getuigenverklaring', label: 'Getuige', max: 20 },
                         { key: 'delictsomschrijving', label: 'Delict', max: 15 },
                         { key: 'objectiviteit', label: 'Object.', max: 10 },
+                        { key: 'doorvragen', label: 'Doorvr.', max: 15 },
                       ].map(cat => {
                         const score = report.scoresBreakdown[cat.key as keyof typeof report.scoresBreakdown]
                         const pct = (score / cat.max) * 100

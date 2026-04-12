@@ -19,18 +19,20 @@ export default function ResultsPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const sessDoc = await getDoc(doc(db, 'sessions', id))
-      if (!sessDoc.exists()) return
-      const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
-      setSession(sessData)
-
-      const [caseDoc, repSnap] = await Promise.all([
-        getDoc(doc(db, 'cases', sessData.caseId)),
-        getDocs(query(collection(db, 'pvreports'), where('sessionId', '==', id))),
-      ])
-
-      if (caseDoc.exists()) setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
-      if (!repSnap.empty) setReport({ id: repSnap.docs[0].id, ...repSnap.docs[0].data() } as PVReport)
+      try {
+        const sessDoc = await getDoc(doc(db, 'sessions', id))
+        if (!sessDoc.exists()) return
+        const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
+        setSession(sessData)
+        const [caseDoc, repSnap] = await Promise.all([
+          getDoc(doc(db, 'cases', sessData.caseId)),
+          getDocs(query(collection(db, 'pvreports'), where('sessionId', '==', id))),
+        ])
+        if (caseDoc.exists()) setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
+        if (!repSnap.empty) setReport({ id: repSnap.docs[0].id, ...repSnap.docs[0].data() } as PVReport)
+      } catch (err) {
+        console.error('fetchData error:', err)
+      }
     }
     fetchData()
   }, [id])

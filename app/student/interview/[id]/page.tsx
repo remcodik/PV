@@ -40,15 +40,18 @@ export default function InterviewPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const sessDoc = await getDoc(doc(db, 'sessions', id))
-      if (!sessDoc.exists()) return
-      const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
-      setSession(sessData)
-      setTranscript(sessData.transcript || [])
-
-      const caseDoc = await getDoc(doc(db, 'cases', sessData.caseId))
-      if (caseDoc.exists()) {
-        setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
+      try {
+        const sessDoc = await getDoc(doc(db, 'sessions', id))
+        if (!sessDoc.exists()) return
+        const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
+        setSession(sessData)
+        setTranscript(sessData.transcript || [])
+        const caseDoc = await getDoc(doc(db, 'cases', sessData.caseId))
+        if (caseDoc.exists()) {
+          setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
+        }
+      } catch (err) {
+        console.error('fetchData error:', err)
       }
     }
     fetchData()
@@ -94,6 +97,7 @@ export default function InterviewPage() {
         }),
       })
       const data = await res.json()
+      if (!res.ok || !data.reply) throw new Error(data.error || 'Chat mislukt')
       const witnessMsg: TranscriptMessage = {
         role: 'witness',
         content: data.reply,

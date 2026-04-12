@@ -60,14 +60,17 @@ export default function PVEditorPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const sessDoc = await getDoc(doc(db, 'sessions', id))
-      if (!sessDoc.exists()) return
-      const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
-      setSession(sessData)
-
-      const caseDoc = await getDoc(doc(db, 'cases', sessData.caseId))
-      if (caseDoc.exists()) {
-        setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
+      try {
+        const sessDoc = await getDoc(doc(db, 'sessions', id))
+        if (!sessDoc.exists()) return
+        const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
+        setSession(sessData)
+        const caseDoc = await getDoc(doc(db, 'cases', sessData.caseId))
+        if (caseDoc.exists()) {
+          setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
+        }
+      } catch (err) {
+        console.error('fetchData error:', err)
       }
     }
     fetchData()
@@ -87,6 +90,7 @@ export default function PVEditorPage() {
         }),
       })
       const evaluation = await res.json()
+      if (!res.ok || !evaluation.scores) throw new Error(evaluation.error || 'Evaluatie mislukt')
 
       const reportRef = await addDoc(collection(db, 'pvreports'), {
         sessionId: id,
@@ -144,7 +148,7 @@ export default function PVEditorPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex gap-0 overflow-hidden max-w-6xl mx-auto w-full px-4 py-6 gap-6">
+      <div className="flex-1 flex overflow-hidden max-w-6xl mx-auto w-full px-4 py-6 gap-6">
         {/* Left: Transcript */}
         <div className="w-80 flex-shrink-0 flex flex-col gap-4">
           {/* Transcript */}
