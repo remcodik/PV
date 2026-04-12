@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, addDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Case } from '@/lib/types'
+import { BUILTIN_CASES } from '@/lib/cases'
 import { crimeTypeLabel, formatDate } from '@/lib/utils'
 import { Shield, ArrowLeft, Users, FileText } from 'lucide-react'
 import Link from 'next/link'
@@ -35,12 +36,22 @@ export default function StudentCasesPage() {
 
   useEffect(() => {
     const fetchCases = async () => {
-      const snap = await getDocs(query(
-        collection(db, 'cases'),
-        where('status', '==', 'published')
-      ))
-      setCases(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
-      setLoading(false)
+      try {
+        // Seed built-in cases if none exist yet
+        const allSnap = await getDocs(collection(db, 'cases'))
+        if (allSnap.empty) {
+          const now = new Date().toISOString()
+          await Promise.all(
+            BUILTIN_CASES.map(c => addDoc(collection(db, 'cases'), { ...c, createdAt: now, updatedAt: now }))
+          )
+        }
+        const snap = await getDocs(query(collection(db, 'cases'), where('status', '==', 'published')))
+        setCases(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case))
+      } catch (err) {
+        console.error('fetchCases error:', err)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchCases()
   }, [])
