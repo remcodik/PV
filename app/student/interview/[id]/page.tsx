@@ -53,6 +53,8 @@ export default function InterviewPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isEnding, setIsEnding] = useState(false)
   const [speechSupported, setSpeechSupported] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState(false)
   const isLocal = id.startsWith('local_')
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -88,7 +90,7 @@ export default function InterviewPage() {
 
         // Firestore session
         const sessDoc = await getDoc(doc(db, 'sessions', id))
-        if (!sessDoc.exists()) return
+        if (!sessDoc.exists()) { setLoadError(true); return }
         const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
         setSession(sessData)
         setTranscript(sessData.transcript || [])
@@ -104,6 +106,7 @@ export default function InterviewPage() {
         }
       } catch (err) {
         console.error('fetchData error:', err)
+        setLoadError(true)
       }
     }
     fetchData()
@@ -150,6 +153,7 @@ export default function InterviewPage() {
       })
       const data = await res.json()
       if (!res.ok || !data.reply) throw new Error(data.error || 'Chat mislukt')
+      setApiError(null)
       const witnessMsg: TranscriptMessage = {
         role: 'witness',
         content: data.reply,
@@ -175,6 +179,7 @@ export default function InterviewPage() {
       speak(data.reply)
     } catch (err) {
       console.error('sendMessage error:', err)
+      setApiError('Geen antwoord ontvangen — probeer opnieuw.')
     } finally {
       setIsLoading(false)
     }
@@ -253,6 +258,20 @@ export default function InterviewPage() {
       } catch {}
     }
     router.push(`/student/pv-editor/${id}`)
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="text-center max-w-sm">
+          <p className="text-gray-700 font-medium mb-2">Interview kon niet worden geladen</p>
+          <p className="text-gray-500 text-sm mb-4">Controleer je internetverbinding en probeer opnieuw.</p>
+          <button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            Opnieuw proberen
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (!session || !caseData) {
@@ -403,6 +422,9 @@ export default function InterviewPage() {
             <p className="text-center text-xs text-red-500 mt-2 animate-pulse">
               Luisteren... Klik op Stop om te stoppen
             </p>
+          )}
+          {apiError && (
+            <p className="text-center text-xs text-red-500 mt-2">{apiError}</p>
           )}
         </div>
       </div>
