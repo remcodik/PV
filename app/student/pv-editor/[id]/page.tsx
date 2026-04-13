@@ -6,7 +6,16 @@ import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
+import { BUILTIN_CASES } from '@/lib/cases'
 import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff } from 'lucide-react'
+
+const now = new Date().toISOString()
+const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
+  ...c,
+  id: `builtin_${i}`,
+  createdAt: now,
+  updatedAt: now,
+}))
 
 const PV_TEMPLATE = `PROCES-VERBAAL
 
@@ -46,10 +55,20 @@ Opgemaakt te [plaats], op [datum].
 [Rang / Registratienummer]
 [Dienst/Eenheid]`
 
+function loadLocalSession(id: string): Session | null {
+  try {
+    const raw = localStorage.getItem(`session_${id}`)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
 export default function PVEditorPage() {
   const { id } = useParams<{ id: string }>()
   const { profile } = useAuth()
   const router = useRouter()
+  const isLocal = id.startsWith('local_')
 
   const [session, setSession] = useState<Session | null>(null)
   const [caseData, setCaseData] = useState<Case | null>(null)
@@ -61,10 +80,31 @@ export default function PVEditorPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        if (isLocal) {
+          const localSess = loadLocalSession(id)
+          if (!localSess) return
+          setSession(localSess)
+          const memCase = MEMORY_CASES.find(c => c.id === localSess.caseId)
+          if (memCase) {
+            setCaseData(memCase)
+          } else {
+            try {
+              const caseDoc = await getDoc(doc(db, 'cases', localSess.caseId))
+              if (caseDoc.exists()) setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
+            } catch {}
+          }
+          return
+        }
+
         const sessDoc = await getDoc(doc(db, 'sessions', id))
         if (!sessDoc.exists()) return
         const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
         setSession(sessData)
+
+        if (sessData.caseId.startsWith('builtin_')) {
+          const memCase = MEMORY_CASES.find(c => c.id === sessData.caseId)
+          if (memCase) { setCaseData(memCase); return }
+        }
         const caseDoc = await getDoc(doc(db, 'cases', sessData.caseId))
         if (caseDoc.exists()) {
           setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
@@ -74,7 +114,7 @@ export default function PVEditorPage() {
       }
     }
     fetchData()
-  }, [id])
+  }, [id, isLocal])
 
   const handleSubmit = async () => {
     if (!session || !caseData || !profile) return
@@ -92,7 +132,7 @@ export default function PVEditorPage() {
       const evaluation = await res.json()
       if (!res.ok || !evaluation.scores) throw new Error(evaluation.error || 'Evaluatie mislukt')
 
-      const reportRef = await addDoc(collection(db, 'pvreports'), {
+      const reportData = {
         sessionId: id,
         caseId: session.caseId,
         studentId: profile.uid,
@@ -104,13 +144,28 @@ export default function PVEditorPage() {
         generalFeedback: evaluation.generalFeedback,
         submittedAt: new Date().toISOString(),
         evaluatedAt: new Date().toISOString(),
-      })
+      }
 
-      await updateDoc(doc(db, 'sessions', id), {
-        status: 'evaluated',
-      })
+      if (isLocal) {
+        // Save report and updated session to localStorage
+        const reportId = `report_${id}`
+        localStorage.setItem(`pvreport_${reportId}`, JSON.stringify({ id: reportId, ...reportData }))
+        const updated = { ...session, status: 'evaluated' as const }
+        localStorage.setItem(`session_${id}`, JSON.stringify(updated))
+      } else {
+        try {
+          await addDoc(collection(db, 'pvreports'), reportData)
+          await updateDoc(doc(db, 'sessions', id), { status: 'evaluated' })
+        } catch {
+          // Firestore failed — save to localStorage as fallback
+          const reportId = `report_${id}`
+          localStorage.setItem(`pvreport_${reportId}`, JSON.stringify({ id: reportId, ...reportData }))
+        }
+      }
 
       router.push(`/student/results/${id}`)
+    } catch (err) {
+      console.error('handleSubmit error:', err)
     } finally {
       setSubmitting(false)
     }

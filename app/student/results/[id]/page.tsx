@@ -5,9 +5,36 @@ import { useParams, useRouter } from 'next/navigation'
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Session, Case, PVReport } from '@/lib/types'
+import { BUILTIN_CASES } from '@/lib/cases'
 import { gradeColor, formatDate } from '@/lib/utils'
 import { Shield, CheckCircle, AlertCircle, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
+
+const now = new Date().toISOString()
+const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
+  ...c,
+  id: `builtin_${i}`,
+  createdAt: now,
+  updatedAt: now,
+}))
+
+function loadLocalReport(sessionId: string): PVReport | null {
+  try {
+    const raw = localStorage.getItem(`pvreport_report_${sessionId}`)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function loadLocalSession(id: string): Session | null {
+  try {
+    const raw = localStorage.getItem(`session_${id}`)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
 
 export default function ResultsPage() {
   const { id } = useParams<{ id: string }>()
@@ -16,26 +43,67 @@ export default function ResultsPage() {
   const [caseData, setCaseData] = useState<Case | null>(null)
   const [report, setReport] = useState<PVReport | null>(null)
   const [expanded, setExpanded] = useState<number | null>(0)
+  const isLocal = id.startsWith('local_')
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        if (isLocal) {
+          // Load session from localStorage
+          const localSess = loadLocalSession(id)
+          if (!localSess) return
+          setSession(localSess)
+
+          // Load case from memory
+          const memCase = MEMORY_CASES.find(c => c.id === localSess.caseId)
+          if (memCase) setCaseData(memCase)
+          else {
+            try {
+              const caseDoc = await getDoc(doc(db, 'cases', localSess.caseId))
+              if (caseDoc.exists()) setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
+            } catch {}
+          }
+
+          // Load report from localStorage
+          const localReport = loadLocalReport(id)
+          if (localReport) setReport(localReport)
+          return
+        }
+
+        // Firestore flow
         const sessDoc = await getDoc(doc(db, 'sessions', id))
         if (!sessDoc.exists()) return
         const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
         setSession(sessData)
-        const [caseDoc, repSnap] = await Promise.all([
-          getDoc(doc(db, 'cases', sessData.caseId)),
-          getDocs(query(collection(db, 'pvreports'), where('sessionId', '==', id))),
-        ])
-        if (caseDoc.exists()) setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
-        if (!repSnap.empty) setReport({ id: repSnap.docs[0].id, ...repSnap.docs[0].data() } as PVReport)
+
+        // Load case
+        if (sessData.caseId.startsWith('builtin_')) {
+          const memCase = MEMORY_CASES.find(c => c.id === sessData.caseId)
+          if (memCase) setCaseData(memCase)
+        } else {
+          const caseDoc = await getDoc(doc(db, 'cases', sessData.caseId))
+          if (caseDoc.exists()) setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
+        }
+
+        // Load report from Firestore, fall back to localStorage
+        try {
+          const repSnap = await getDocs(query(collection(db, 'pvreports'), where('sessionId', '==', id)))
+          if (!repSnap.empty) {
+            setReport({ id: repSnap.docs[0].id, ...repSnap.docs[0].data() } as PVReport)
+          } else {
+            const localReport = loadLocalReport(id)
+            if (localReport) setReport(localReport)
+          }
+        } catch {
+          const localReport = loadLocalReport(id)
+          if (localReport) setReport(localReport)
+        }
       } catch (err) {
         console.error('fetchData error:', err)
       }
     }
     fetchData()
-  }, [id])
+  }, [id, isLocal])
 
   if (!session || !caseData || !report) {
     return (

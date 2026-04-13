@@ -6,6 +6,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
+import { BUILTIN_CASES } from '@/lib/cases'
 import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight } from 'lucide-react'
 
 // Web Speech API - webkit prefix fallback
@@ -13,6 +14,29 @@ declare global {
   interface Window {
     webkitSpeechRecognition: typeof SpeechRecognition
   }
+}
+
+const now = new Date().toISOString()
+const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
+  ...c,
+  id: `builtin_${i}`,
+  createdAt: now,
+  updatedAt: now,
+}))
+
+function loadLocalSession(id: string): Session | null {
+  try {
+    const raw = localStorage.getItem(`session_${id}`)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveLocalSession(session: Session) {
+  try {
+    localStorage.setItem(`session_${session.id}`, JSON.stringify(session))
+  } catch {}
 }
 
 export default function InterviewPage() {
@@ -29,6 +53,7 @@ export default function InterviewPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isEnding, setIsEnding] = useState(false)
   const [speechSupported, setSpeechSupported] = useState(false)
+  const isLocal = id.startsWith('local_')
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -41,11 +66,38 @@ export default function InterviewPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Local session — load from localStorage
+        if (isLocal) {
+          const localSess = loadLocalSession(id)
+          if (!localSess) return
+          setSession(localSess)
+          setTranscript(localSess.transcript || [])
+          // Find case from memory
+          const memCase = MEMORY_CASES.find(c => c.id === localSess.caseId)
+          if (memCase) {
+            setCaseData(memCase)
+          } else {
+            // Try Firestore as fallback
+            try {
+              const caseDoc = await getDoc(doc(db, 'cases', localSess.caseId))
+              if (caseDoc.exists()) setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
+            } catch {}
+          }
+          return
+        }
+
+        // Firestore session
         const sessDoc = await getDoc(doc(db, 'sessions', id))
         if (!sessDoc.exists()) return
         const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
         setSession(sessData)
         setTranscript(sessData.transcript || [])
+
+        // Load case — check memory first if builtin_ id
+        if (sessData.caseId.startsWith('builtin_')) {
+          const memCase = MEMORY_CASES.find(c => c.id === sessData.caseId)
+          if (memCase) { setCaseData(memCase); return }
+        }
         const caseDoc = await getDoc(doc(db, 'cases', sessData.caseId))
         if (caseDoc.exists()) {
           setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
@@ -55,7 +107,7 @@ export default function InterviewPage() {
       }
     }
     fetchData()
-  }, [id])
+  }, [id, isLocal])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -106,24 +158,42 @@ export default function InterviewPage() {
       const updatedTranscript = [...newTranscript, witnessMsg]
       setTranscript(updatedTranscript)
 
-      // Save to Firestore
-      await updateDoc(doc(db, 'sessions', id), {
-        transcript: updatedTranscript,
-        status: 'interviewing',
-      })
+      // Save transcript — Firestore or localStorage
+      if (isLocal && session) {
+        const updated = { ...session, transcript: updatedTranscript }
+        saveLocalSession(updated)
+        setSession(updated)
+      } else {
+        try {
+          await updateDoc(doc(db, 'sessions', id), {
+            transcript: updatedTranscript,
+            status: 'interviewing',
+          })
+        } catch {}
+      }
 
-      // Speak witness reply
       speak(data.reply)
+    } catch (err) {
+      console.error('sendMessage error:', err)
     } finally {
       setIsLoading(false)
     }
-  }, [transcript, caseData, isLoading, id, speak])
+  }, [transcript, caseData, isLoading, id, isLocal, session, speak])
 
-  const startListening = () => {
+  const startListening = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) return
 
+    // Stop any ongoing speech synthesis
     window.speechSynthesis?.cancel()
+    setIsSpeaking(false)
+
+    // Stop any existing recognition session first
+    if (recognitionRef.current) {
+      recognitionRef.current.abort()
+      recognitionRef.current = null
+    }
+
     const recognition = new SR()
     recognition.lang = 'nl-NL'
     recognition.continuous = false
@@ -132,35 +202,63 @@ export default function InterviewPage() {
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const text = event.results[0][0].transcript
       setInputText(text)
-      sendMessage(text)
+      setIsListening(false)
+      recognitionRef.current = null
+      // Use setTimeout so state has time to update before sending
+      setTimeout(() => sendMessage(text), 100)
     }
-    recognition.onend = () => setIsListening(false)
-    recognition.onerror = () => setIsListening(false)
 
-    recognitionRef.current = recognition
-    recognition.start()
-    setIsListening(true)
-  }
+    recognition.onend = () => {
+      setIsListening(false)
+      recognitionRef.current = null
+    }
 
-  const stopListening = () => {
-    recognitionRef.current?.stop()
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('Speech recognition error:', event.error)
+      setIsListening(false)
+      recognitionRef.current = null
+    }
+
+    try {
+      recognitionRef.current = recognition
+      recognition.start()
+      setIsListening(true)
+    } catch (err) {
+      console.error('Failed to start recognition:', err)
+      recognitionRef.current = null
+      setIsListening(false)
+    }
+  }, [sendMessage])
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+      recognitionRef.current = null
+    }
     setIsListening(false)
-  }
+  }, [])
 
   const endInterview = async () => {
     setIsEnding(true)
-    await updateDoc(doc(db, 'sessions', id), {
-      status: 'writing_pv',
-      completedAt: new Date().toISOString(),
-      transcript,
-    })
+    if (isLocal && session) {
+      const updated = { ...session, status: 'writing_pv' as const, completedAt: new Date().toISOString(), transcript }
+      saveLocalSession(updated)
+    } else {
+      try {
+        await updateDoc(doc(db, 'sessions', id), {
+          status: 'writing_pv',
+          completedAt: new Date().toISOString(),
+          transcript,
+        })
+      } catch {}
+    }
     router.push(`/student/pv-editor/${id}`)
   }
 
   if (!session || !caseData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }

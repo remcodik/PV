@@ -71,22 +71,47 @@ export default function StudentCasesPage() {
     setStarting(c.id)
     try {
       let caseId = c.id
-      // If this case came from the memory fallback, persist it to Firestore first
+      // If this case came from the memory fallback, try to persist to Firestore
       if (c.id.startsWith('builtin_')) {
-        const { id, ...caseData } = c
-        const caseRef = await addDoc(collection(db, 'cases'), caseData)
-        caseId = caseRef.id
+        try {
+          const { id, ...caseData } = c
+          const caseRef = await addDoc(collection(db, 'cases'), caseData)
+          caseId = caseRef.id
+        } catch {
+          // Firestore down — keep builtin_ id, will use BUILTIN_CASES in interview
+          caseId = c.id
+        }
       }
-      const sessionRef = await addDoc(collection(db, 'sessions'), {
-        caseId,
-        caseTitle: c.title,
-        studentId: uid,
-        studentName: name,
-        status: 'interviewing',
-        transcript: [],
-        createdAt: new Date().toISOString(),
-      })
-      router.push(`/student/interview/${sessionRef.id}`)
+
+      let sessionId: string
+      try {
+        const sessionRef = await addDoc(collection(db, 'sessions'), {
+          caseId,
+          caseTitle: c.title,
+          studentId: uid,
+          studentName: name,
+          status: 'interviewing',
+          transcript: [],
+          createdAt: new Date().toISOString(),
+        })
+        sessionId = sessionRef.id
+      } catch {
+        // Firestore down — save session to localStorage and use local_ id
+        sessionId = `local_${Date.now()}`
+        const sessionData = {
+          id: sessionId,
+          caseId,
+          caseTitle: c.title,
+          studentId: uid,
+          studentName: name,
+          status: 'interviewing',
+          transcript: [],
+          createdAt: new Date().toISOString(),
+        }
+        localStorage.setItem(`session_${sessionId}`, JSON.stringify(sessionData))
+      }
+
+      router.push(`/student/interview/${sessionId}`)
     } catch {
       setStarting(null)
     }
