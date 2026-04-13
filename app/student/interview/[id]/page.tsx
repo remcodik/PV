@@ -173,7 +173,14 @@ export default function InterviewPage() {
             transcript: updatedTranscript,
             status: 'interviewing',
           })
-        } catch {}
+        } catch {
+          // Firestore sync failed — save to localStorage so transcript isn't lost
+          if (session) {
+            const updated = { ...session, transcript: updatedTranscript }
+            saveLocalSession(updated)
+            setSession(updated)
+          }
+        }
       }
 
       speak(data.reply)

@@ -172,7 +172,7 @@ export default function ResultsPage() {
           {/* Grid overview */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
             {scoreCategories.map(cat => {
-              const score = report.scoresBreakdown[cat.key as keyof typeof report.scoresBreakdown]
+              const score = report.scoresBreakdown[cat.key as keyof typeof report.scoresBreakdown] ?? 0
               const pct = (score / cat.max) * 100
               return (
                 <div key={cat.key} className="bg-white rounded-xl border border-gray-200 p-3 text-center">

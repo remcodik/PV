@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { collection, getDocs, query, orderBy } from 'firebase/firestore'
+import { collection, getDocs, query } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, PVReport, UserProfile } from '@/lib/types'
@@ -20,17 +20,25 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [sessSnap, repSnap, profSnap] = await Promise.all([
-        getDocs(query(collection(db, 'sessions'), orderBy('createdAt', 'desc'))),
-        getDocs(collection(db, 'pvreports')),
-        getDocs(collection(db, 'profiles')),
-      ])
-      setSessions(sessSnap.docs.map(d => ({ id: d.id, ...d.data() }) as Session))
-      setReports(repSnap.docs.map(d => ({ id: d.id, ...d.data() }) as PVReport))
-      setStudents(
-        (profSnap.docs.map(d => d.data() as UserProfile)).filter(p => p.role === 'student')
-      )
-      setLoading(false)
+      try {
+        const [sessSnap, repSnap, profSnap] = await Promise.all([
+          getDocs(collection(db, 'sessions')),
+          getDocs(collection(db, 'pvreports')),
+          getDocs(collection(db, 'profiles')),
+        ])
+        const sortedSessions = sessSnap.docs
+          .map(d => ({ id: d.id, ...d.data() }) as Session)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        setSessions(sortedSessions)
+        setReports(repSnap.docs.map(d => ({ id: d.id, ...d.data() }) as PVReport))
+        setStudents(
+          (profSnap.docs.map(d => d.data() as UserProfile)).filter(p => p.role === 'student')
+        )
+      } catch (err) {
+        console.error('Teacher dashboard fetch error:', err)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchData()
   }, [])
