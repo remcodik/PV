@@ -70,10 +70,14 @@ export default function ResultsPage() {
           return
         }
 
-        // Firestore flow
-        const sessDoc = await getDoc(doc(db, 'sessions', id))
-        if (!sessDoc.exists()) return
-        const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
+        // Firestore flow — fall back to localStorage if Firestore fails
+        let sessData: Session | null = null
+        try {
+          const sessDoc = await getDoc(doc(db, 'sessions', id))
+          if (sessDoc.exists()) sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
+        } catch {}
+        if (!sessData) sessData = loadLocalSession(id)
+        if (!sessData) return
         setSession(sessData)
 
         // Load case

@@ -76,6 +76,7 @@ export default function PVEditorPage() {
   const [showTranscript, setShowTranscript] = useState(true)
   const [showGuide, setShowGuide] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sessionRef = useRef<Session | null>(null)
 
@@ -192,6 +193,7 @@ export default function PVEditorPage() {
       router.push(`/student/results/${id}`)
     } catch (err) {
       console.error('handleSubmit error:', err)
+      setSubmitError('Beoordelen mislukt — probeer opnieuw.')
     } finally {
       setSubmitting(false)
     }
@@ -224,14 +226,17 @@ export default function PVEditorPage() {
               <p className="text-xs text-gray-500">PV schrijven</p>
             </div>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex items-center gap-2 bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            <Send className="w-4 h-4" />
-            {submitting ? 'Beoordelen...' : 'PV indienen en beoordelen'}
-          </button>
+          <div className="flex items-center gap-3">
+            {submitError && <p className="text-xs text-red-500">{submitError}</p>}
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex items-center gap-2 bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              <Send className="w-4 h-4" />
+              {submitting ? 'Beoordelen...' : 'PV indienen en beoordelen'}
+            </button>
+          </div>
         </div>
       </header>
 
