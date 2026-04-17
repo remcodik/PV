@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff } from 'lucide-react'
+import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 
 const now = new Date().toISOString()
 const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
@@ -184,6 +184,12 @@ export default function PVEditorPage() {
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/student/dashboard')}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
