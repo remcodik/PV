@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight, ArrowLeft, Cpu } from 'lucide-react'
 
 // Web Speech API - webkit prefix fallback
 declare global {
@@ -56,6 +56,13 @@ export default function InterviewPage() {
   const [apiError, setApiError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [ttsMode, setTtsMode] = useState<'browser' | 'ai'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('tts_mode') as 'browser' | 'ai') ?? 'browser'
+    }
+    return 'browser'
+  })
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const isLocal = id.startsWith('local_')
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -138,7 +145,7 @@ export default function InterviewPage() {
     return nlVoices[0]
   }, [voices])
 
-  const speak = useCallback((text: string) => {
+  const speakBrowser = useCallback((text: string) => {
     if (!window.speechSynthesis) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(text)
@@ -152,6 +159,43 @@ export default function InterviewPage() {
     utt.onend = () => setIsSpeaking(false)
     window.speechSynthesis.speak(utt)
   }, [caseData, getBestVoice])
+
+  const speakAI = useCallback(async (text: string) => {
+    if (!caseData) return
+    setIsSpeaking(true)
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, gender: caseData.witnessGender }),
+      })
+      if (!res.ok) throw new Error('TTS mislukt')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      if (audioRef.current) { audioRef.current.pause(); URL.revokeObjectURL(audioRef.current.src) }
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url) }
+      audio.onerror = () => setIsSpeaking(false)
+      await audio.play()
+    } catch {
+      setIsSpeaking(false)
+      speakBrowser(text)
+    }
+  }, [caseData, speakBrowser])
+
+  const speak = useCallback((text: string) => {
+    if (ttsMode === 'ai') speakAI(text)
+    else speakBrowser(text)
+  }, [ttsMode, speakAI, speakBrowser])
+
+  const toggleTtsMode = useCallback(() => {
+    setTtsMode(prev => {
+      const next = prev === 'browser' ? 'ai' : 'browser'
+      localStorage.setItem('tts_mode', next)
+      return next
+    })
+  }, [])
 
   const sendMessage = useCallback(async (message: string) => {
     if (!message.trim() || !caseData || isLoading) return
@@ -335,14 +379,29 @@ export default function InterviewPage() {
               <p className="text-xs text-gray-500">{caseData.intervieweeType === 'verdachte' ? 'Verdachtenverhoor' : 'Getuigenverhoor'} — {caseData.witnessName}</p>
             </div>
           </div>
-          <button
-            onClick={endInterview}
-            disabled={isEnding || transcript.length === 0}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            <ArrowRight className="w-4 h-4" />
-            {isEnding ? 'Bezig...' : 'PV schrijven'}
-          </button>
+          <div className="flex items-center gap-3">
+            {/* TTS toggle */}
+            <button
+              onClick={toggleTtsMode}
+              title={ttsMode === 'ai' ? 'AI-stem actief — klik voor browserstem' : 'Browserstem actief — klik voor AI-stem'}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                ttsMode === 'ai'
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              {ttsMode === 'ai' ? 'AI-stem' : 'Browserstem'}
+            </button>
+            <button
+              onClick={endInterview}
+              disabled={isEnding || transcript.length === 0}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              <ArrowRight className="w-4 h-4" />
+              {isEnding ? 'Bezig...' : 'PV schrijven'}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -359,7 +418,7 @@ export default function InterviewPage() {
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex-shrink-0">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <div className="relative flex-shrink-0">
-            {caseData.witnessPhoto ? (
+            {ttsMode === 'ai' && caseData.witnessPhoto ? (
               <img
                 src={caseData.witnessPhoto}
                 alt={caseData.witnessName}
