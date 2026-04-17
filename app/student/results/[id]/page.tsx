@@ -42,7 +42,7 @@ export default function ResultsPage() {
   const [session, setSession] = useState<Session | null>(null)
   const [caseData, setCaseData] = useState<Case | null>(null)
   const [report, setReport] = useState<PVReport | null>(null)
-  const [expanded, setExpanded] = useState<number | null>(0)
+  const [expanded, setExpanded] = useState<Set<number>>(new Set([0, 1, 2, 3, 4, 5]))
   const isLocal = id.startsWith('local_')
 
   useEffect(() => {
@@ -195,7 +195,7 @@ export default function ResultsPage() {
             {report.feedback.map((item, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <button
-                  onClick={() => setExpanded(expanded === i ? null : i)}
+                  onClick={() => setExpanded(prev => { const s = new Set(prev); s.has(i) ? s.delete(i) : s.add(i); return s })}
                   className="w-full flex items-center justify-between px-5 py-4"
                 >
                   <div className="flex items-center gap-3">
@@ -222,10 +222,10 @@ export default function ResultsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-gray-700">{item.score}/{item.maxScore}</span>
-                    {expanded === i ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                    {expanded.has(i) ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                   </div>
                 </button>
-                {expanded === i && (
+                {expanded.has(i) && (
                   <div className="border-t border-gray-100 px-5 py-4 bg-gray-50">
                     <p className="text-sm text-gray-700 mb-3">{item.feedback}</p>
                     {item.suggestions.length > 0 && (
