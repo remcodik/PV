@@ -34,6 +34,24 @@ export const COOPERATION_DESCRIPTIONS: Record<CooperationLevel, string> = {
 
 export type CrimeType = 'vernieling' | 'heling' | 'diefstal' | 'mishandeling' | 'inbraak' | 'overig'
 
+export type IntervieweeType = 'getuige' | 'verdachte'
+
+export const SUSPECT_COOPERATION_LABELS: Record<CooperationLevel, string> = {
+  1: 'Bekent volledig',
+  2: 'Gedeeltelijk coöperatief',
+  3: 'Ontkent gedeeltelijk',
+  4: 'Ontkent merendeels',
+  5: 'Zwijgt / ontkent alles',
+}
+
+export const SUSPECT_COOPERATION_DESCRIPTIONS: Record<CooperationLevel, string> = {
+  1: 'Verdachte bekent het delict en werkt volledig mee.',
+  2: 'Verdachte geeft toe aan delen, maar minimaliseert of verdraait andere feiten.',
+  3: 'Verdachte geeft toe aanwezig te zijn geweest maar ontkent het delict.',
+  4: 'Verdachte ontkent bijna alles, geeft alleen toe wat bewijsbaar is.',
+  5: 'Verdachte zwijgt volledig of ontkent alles categorisch.',
+}
+
 export interface Case {
   id: string
   title: string
@@ -41,11 +59,18 @@ export interface Case {
   legalArticle: string
   description: string
   backgroundStory: string
+  // Interviewee (witness or suspect)
+  intervieweeType: IntervieweeType
   witnessName: string
   witnessAge: number
+  witnessGender: 'man' | 'vrouw'
+  witnessPhoto?: string
   witnessProfile: string
   witnessKnows: string[]
-  keyDiscoveries: KeyDiscovery[]  // Points the student must uncover via follow-up questions
+  // Suspect-specific fields
+  isGuilty?: boolean
+  suspectBackground?: string  // What the suspect actually did (for AI consistency)
+  keyDiscoveries: KeyDiscovery[]
   cooperationLevel: CooperationLevel
   isTemplate: boolean
   status: 'draft' | 'published'
@@ -71,6 +96,7 @@ export interface Session {
   assignedBy?: string
   status: SessionStatus
   transcript: TranscriptMessage[]
+  pvContent?: string
   startedAt?: string
   completedAt?: string
   createdAt: string

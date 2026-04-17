@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight } from 'lucide-react'
+import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight, ArrowLeft, Cpu } from 'lucide-react'
 
 // Web Speech API - webkit prefix fallback
 declare global {
@@ -55,6 +55,14 @@ export default function InterviewPage() {
   const [speechSupported, setSpeechSupported] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [ttsMode, setTtsMode] = useState<'browser' | 'ai'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('tts_mode') as 'browser' | 'ai') ?? 'browser'
+    }
+    return 'browser'
+  })
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const isLocal = id.startsWith('local_')
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -63,6 +71,22 @@ export default function InterviewPage() {
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     setSpeechSupported(!!SR)
+    const loadVoices = () => {
+      const v = window.speechSynthesis.getVoices()
+      if (v.length > 0) setVoices(v)
+    }
+    loadVoices()
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
+    // Safari fallback: poll for voices if voiceschanged never fires
+    const poll = setInterval(() => {
+      const v = window.speechSynthesis.getVoices()
+      if (v.length > 0) { setVoices(v); clearInterval(poll) }
+    }, 200)
+    setTimeout(() => clearInterval(poll), 3000)
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+      clearInterval(poll)
+    }
   }, [])
 
   useEffect(() => {
@@ -116,15 +140,84 @@ export default function InterviewPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [transcript])
 
-  const speak = useCallback((text: string) => {
+  const getBestVoice = useCallback((gender: 'man' | 'vrouw'): SpeechSynthesisVoice | null => {
+    const nlVoices = voices.filter(v => v.lang.startsWith('nl'))
+    if (!nlVoices.length) return null
+    // Priority order: Safari (claire/xander) → Edge Neural (roos/fenna/frank/maarten) → iOS enhanced → any nl
+    const femalePriority = ['claire', 'roos', 'fenna', 'colette', 'lotte', 'anna', 'female']
+    const malePriority = ['xander', 'frank', 'maarten', 'ruben', 'wim', 'willem', 'male']
+    const keywords = gender === 'vrouw' ? femalePriority : malePriority
+    // Find by keyword priority — check each keyword in order so best match wins
+    let named: SpeechSynthesisVoice | undefined
+    for (const k of keywords) {
+      named = nlVoices.find(v => v.name.toLowerCase().includes(k))
+      if (named) break
+    }
+    if (named) return named
+    const neural = nlVoices.find(v => v.name.toLowerCase().includes('online') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('neural') || v.name.toLowerCase().includes('enhanced'))
+    if (neural) return neural
+    return nlVoices[0]
+  }, [voices])
+
+  const speakBrowser = useCallback((text: string) => {
     if (!window.speechSynthesis) return
+    // Strip *action* parts — only speak the actual dialogue
+    const spokenText = text.replace(/\*[^*]+\*/g, '').trim()
+    if (!spokenText) return
     window.speechSynthesis.cancel()
-    const utt = new SpeechSynthesisUtterance(text)
-    utt.lang = 'nl-NL'
-    utt.rate = 0.95
-    utt.onstart = () => setIsSpeaking(true)
-    utt.onend = () => setIsSpeaking(false)
-    window.speechSynthesis.speak(utt)
+    const gender = caseData?.witnessGender ?? 'vrouw'
+    const voice = getBestVoice(gender)
+    // Safari needs a small delay after cancel() before speaking
+    setTimeout(() => {
+      const utt = new SpeechSynthesisUtterance(spokenText)
+      if (voice) utt.voice = voice
+      utt.lang = 'nl-NL'
+      utt.rate = 0.92
+      utt.pitch = gender === 'vrouw' ? 1.1 : 0.9
+      utt.onstart = () => setIsSpeaking(true)
+      utt.onend = () => setIsSpeaking(false)
+      utt.onerror = () => setIsSpeaking(false)
+      window.speechSynthesis.speak(utt)
+    }, 100)
+  }, [caseData, getBestVoice])
+
+  const speakAI = useCallback(async (text: string) => {
+    if (!caseData) return
+    const spokenText = text.replace(/\*[^*]+\*/g, '').trim()
+    if (!spokenText) return
+    setIsSpeaking(true)
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: spokenText, gender: caseData.witnessGender }),
+      })
+      if (!res.ok) throw new Error('TTS mislukt')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      if (audioRef.current) { audioRef.current.pause(); URL.revokeObjectURL(audioRef.current.src) }
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url) }
+      audio.onerror = () => setIsSpeaking(false)
+      await audio.play()
+    } catch {
+      setIsSpeaking(false)
+      speakBrowser(text)
+    }
+  }, [caseData, speakBrowser])
+
+  const speak = useCallback((text: string) => {
+    if (ttsMode === 'ai') speakAI(text)
+    else speakBrowser(text)
+  }, [ttsMode, speakAI, speakBrowser])
+
+  const toggleTtsMode = useCallback(() => {
+    setTtsMode(prev => {
+      const next = prev === 'browser' ? 'ai' : 'browser'
+      localStorage.setItem('tts_mode', next)
+      return next
+    })
   }, [])
 
   const sendMessage = useCallback(async (message: string) => {
@@ -292,25 +385,46 @@ export default function InterviewPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+      <header className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={() => router.push('/student/dashboard')}
+              className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 p-1"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <h1 className="font-semibold text-gray-900 text-sm">{caseData.title}</h1>
-              <p className="text-xs text-gray-500">Interview met {caseData.witnessName}</p>
+            <div className="min-w-0">
+              <h1 className="font-semibold text-gray-900 text-sm truncate">{caseData.title}</h1>
+              <p className="text-xs text-gray-500 truncate">{caseData.intervieweeType === 'verdachte' ? 'Verdachtenverhoor' : 'Getuigenverhoor'} — {caseData.witnessName}</p>
             </div>
           </div>
-          <button
-            onClick={endInterview}
-            disabled={isEnding || transcript.length === 0}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            <ArrowRight className="w-4 h-4" />
-            {isEnding ? 'Bezig...' : 'PV schrijven'}
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* TTS toggle — icon only on mobile, icon+label on larger screens */}
+            <button
+              onClick={toggleTtsMode}
+              title={ttsMode === 'ai' ? 'AI-stem actief — klik voor browserstem' : 'Browserstem actief — klik voor AI-stem'}
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition-colors ${
+                ttsMode === 'ai'
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-white text-gray-600 border-gray-300'
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{ttsMode === 'ai' ? 'AI-stem' : 'Browserstem'}</span>
+            </button>
+            <button
+              onClick={endInterview}
+              disabled={isEnding || transcript.length === 0}
+              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              <ArrowRight className="w-4 h-4" />
+              <span className="hidden sm:inline">{isEnding ? 'Bezig...' : 'PV schrijven'}</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -323,14 +437,50 @@ export default function InterviewPage() {
         </div>
       </div>
 
+      {/* Witness avatar */}
+      <div className="bg-white border-b border-gray-100 px-6 py-4 flex-shrink-0">
+        <div className="max-w-3xl mx-auto flex items-center gap-4">
+          <div className="relative flex-shrink-0">
+            {ttsMode === 'ai' && caseData.witnessPhoto ? (
+              <img
+                src={caseData.witnessPhoto}
+                alt={caseData.witnessName}
+                className="w-16 h-16 rounded-full object-cover"
+              />
+            ) : (
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold ${
+                caseData.witnessGender === 'man' ? 'bg-blue-500' : 'bg-rose-400'
+              }`}>
+                {caseData.witnessName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            {isSpeaking && (
+              <>
+                <span className="absolute inset-0 rounded-full animate-ping opacity-40" style={{backgroundColor: caseData.witnessGender === 'man' ? '#3b82f6' : '#fb7185'}} />
+                <span className="absolute -inset-1 rounded-full border-2 animate-pulse" style={{borderColor: caseData.witnessGender === 'man' ? '#3b82f6' : '#fb7185'}} />
+              </>
+            )}
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900">{caseData.witnessName}</p>
+            <p className="text-sm text-gray-500">{caseData.witnessAge} jaar · {caseData.intervieweeType === 'verdachte' ? '🔴 Verdachte' : 'Getuige'} · {caseData.witnessProfile.split('.')[0]}</p>
+            {isSpeaking && (
+              <div className="flex items-center gap-1 mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-bounce" style={{animationDelay:'0ms'}} />
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-bounce" style={{animationDelay:'150ms'}} />
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-bounce" style={{animationDelay:'300ms'}} />
+                <span className="text-xs text-green-600 ml-1">spreekt...</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Transcript */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="max-w-3xl mx-auto space-y-4">
           {transcript.length === 0 && (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="w-8 h-8 text-gray-400" />
-              </div>
               <p className="text-gray-500 text-sm">
                 Stel je voor als agent en begin het interview met {caseData.witnessName}.<br />
                 Gebruik de microfoon of typ je vraag hieronder.
@@ -338,30 +488,60 @@ export default function InterviewPage() {
             </div>
           )}
 
-          {transcript.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex gap-3 ${msg.role === 'student' ? 'flex-row-reverse' : ''}`}
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                msg.role === 'student' ? 'bg-blue-600' : 'bg-gray-200'
-              }`}>
-                {msg.role === 'student'
-                  ? <Shield className="w-4 h-4 text-white" />
-                  : <User className="w-4 h-4 text-gray-600" />}
+          {transcript.map((msg, i) => {
+            // Split witness messages into spoken text and *action* parts
+            const parts = msg.role === 'witness'
+              ? (() => {
+                  const result: {type: 'text'|'action', content: string}[] = []
+                  const regex = /\*([^*]+)\*/g
+                  let last = 0, m: RegExpExecArray | null
+                  while ((m = regex.exec(msg.content)) !== null) {
+                    if (m.index > last) result.push({type: 'text', content: msg.content.slice(last, m.index).trim()})
+                    result.push({type: 'action', content: m[1].trim()})
+                    last = m.index + m[0].length
+                  }
+                  const tail = msg.content.slice(last).trim()
+                  if (tail) result.push({type: 'text', content: tail})
+                  return result.filter(p => p.content)
+                })()
+              : null
+
+            return (
+              <div
+                key={i}
+                className={`flex gap-3 ${msg.role === 'student' ? 'flex-row-reverse' : ''}`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  msg.role === 'student' ? 'bg-blue-600' : 'bg-gray-200'
+                }`}>
+                  {msg.role === 'student'
+                    ? <Shield className="w-4 h-4 text-white" />
+                    : <User className="w-4 h-4 text-gray-600" />}
+                </div>
+                <div className="max-w-[75%] space-y-1">
+                  {msg.role === 'witness' && parts ? (
+                    <>
+                      {parts.map((p, j) => p.type === 'action' ? (
+                        <div key={j} className="text-xs text-gray-400 italic px-3 py-1 bg-gray-50 border border-gray-100 rounded-xl inline-block">
+                          *{p.content}*
+                        </div>
+                      ) : (
+                        <div key={j} className="bg-white border border-gray-200 text-gray-900 rounded-2xl rounded-tl-sm px-4 py-3">
+                          <p className="text-sm leading-relaxed">{p.content}</p>
+                        </div>
+                      ))}
+                      <p className="text-xs text-gray-400 px-1">{caseData.witnessName}</p>
+                    </>
+                  ) : (
+                    <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3">
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
+                      <p className="text-xs mt-1 text-blue-200">Agent</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${
-                msg.role === 'student'
-                  ? 'bg-blue-600 text-white rounded-tr-sm'
-                  : 'bg-white border border-gray-200 text-gray-900 rounded-tl-sm'
-              }`}>
-                <p className="text-sm leading-relaxed">{msg.content}</p>
-                <p className={`text-xs mt-1 ${msg.role === 'student' ? 'text-blue-200' : 'text-gray-400'}`}>
-                  {msg.role === 'student' ? 'Agent' : caseData.witnessName}
-                </p>
-              </div>
-            </div>
-          ))}
+            )
+          })}
 
           {isLoading && (
             <div className="flex gap-3">

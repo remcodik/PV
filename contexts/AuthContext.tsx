@@ -12,6 +12,16 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { UserProfile, UserRole } from '@/lib/types'
 
+const SESSION_COOKIE = 'pv_session'
+
+function setSessionCookie() {
+  document.cookie = `${SESSION_COOKIE}=1; path=/; max-age=86400; SameSite=Lax`
+}
+
+function clearSessionCookie() {
+  document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0`
+}
+
 interface AuthContextType {
   user: User | null
   profile: UserProfile | null
@@ -36,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearTimeout(timeout)
         setUser(firebaseUser)
         if (firebaseUser) {
+          setSessionCookie()
           try {
             const docRef = doc(db, 'profiles', firebaseUser.uid)
             const snap = await getDoc(docRef)
@@ -75,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         } else {
+          clearSessionCookie()
           setProfile(null)
         }
         setLoading(false)
@@ -114,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth)
+    clearSessionCookie()
     setProfile(null)
   }
 

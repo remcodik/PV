@@ -136,7 +136,7 @@ export default function EditCasePage() {
 
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           <h3 className="font-semibold text-gray-900">Getuige</h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
               <input type="text" value={caseData.witnessName} onChange={e => setField('witnessName', e.target.value)}
@@ -146,6 +146,14 @@ export default function EditCasePage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Leeftijd</label>
               <input type="number" value={caseData.witnessAge} onChange={e => setField('witnessAge', parseInt(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Geslacht</label>
+              <select value={caseData.witnessGender || 'vrouw'} onChange={e => setField('witnessGender', e.target.value as 'man' | 'vrouw')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="vrouw">Vrouw</option>
+                <option value="man">Man</option>
+              </select>
             </div>
           </div>
           <div>

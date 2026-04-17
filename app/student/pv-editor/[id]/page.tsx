@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff } from 'lucide-react'
+import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 
 const now = new Date().toISOString()
 const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
@@ -76,6 +76,11 @@ export default function PVEditorPage() {
   const [showTranscript, setShowTranscript] = useState(true)
   const [showGuide, setShowGuide] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sessionRef = useRef<Session | null>(null)
+
+  useEffect(() => { sessionRef.current = session }, [session])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,6 +89,7 @@ export default function PVEditorPage() {
           const localSess = loadLocalSession(id)
           if (!localSess) return
           setSession(localSess)
+          if (localSess.pvContent) setPvContent(localSess.pvContent)
           const memCase = MEMORY_CASES.find(c => c.id === localSess.caseId)
           if (memCase) {
             setCaseData(memCase)
@@ -100,6 +106,7 @@ export default function PVEditorPage() {
         if (!sessDoc.exists()) return
         const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
         setSession(sessData)
+        if (sessData.pvContent) setPvContent(sessData.pvContent)
 
         if (sessData.caseId.startsWith('builtin_')) {
           const memCase = MEMORY_CASES.find(c => c.id === sessData.caseId)
@@ -115,6 +122,26 @@ export default function PVEditorPage() {
     }
     fetchData()
   }, [id, isLocal])
+
+  // Auto-save pvContent 1.5s after last keystroke
+  useEffect(() => {
+    if (!session) return
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => {
+      const sess = sessionRef.current
+      if (!sess) return
+      const updated = { ...sess, pvContent }
+      if (isLocal) {
+        localStorage.setItem(`session_${id}`, JSON.stringify(updated))
+      } else {
+        localStorage.setItem(`session_${id}`, JSON.stringify(updated))
+        try {
+          updateDoc(doc(db, 'sessions', id), { pvContent })
+        } catch {}
+      }
+    }, 1500)
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current) }
+  }, [pvContent, id, isLocal, session])
 
   const handleSubmit = async () => {
     if (!session || !caseData || !profile) return
@@ -166,6 +193,7 @@ export default function PVEditorPage() {
       router.push(`/student/results/${id}`)
     } catch (err) {
       console.error('handleSubmit error:', err)
+      setSubmitError('Beoordelen mislukt — probeer opnieuw.')
     } finally {
       setSubmitting(false)
     }
@@ -181,25 +209,34 @@ export default function PVEditorPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+      <header className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={() => router.push('/student/dashboard')}
+              className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 p-1"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <h1 className="font-semibold text-gray-900 text-sm">{caseData.title}</h1>
+            <div className="min-w-0">
+              <h1 className="font-semibold text-gray-900 text-sm truncate">{caseData.title}</h1>
               <p className="text-xs text-gray-500">PV schrijven</p>
             </div>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex items-center gap-2 bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            <Send className="w-4 h-4" />
-            {submitting ? 'Beoordelen...' : 'PV indienen en beoordelen'}
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {submitError && <p className="text-xs text-red-500 hidden sm:block">{submitError}</p>}
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              <Send className="w-4 h-4" />
+              <span className="hidden sm:inline">{submitting ? 'Beoordelen...' : 'PV indienen'}</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -317,8 +354,8 @@ export default function PVEditorPage() {
             spellCheck={false}
           />
           <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-            <span>{pvContent.length} tekens</span>
-            <span>{pvContent.split('\n').length} regels</span>
+            <span>{pvContent.length} tekens · {pvContent.split('\n').length} regels</span>
+            <span className="text-green-500">✓ Automatisch opgeslagen</span>
           </div>
         </div>
       </div>
