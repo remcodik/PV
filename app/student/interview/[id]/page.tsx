@@ -134,11 +134,16 @@ export default function InterviewPage() {
   const getBestVoice = useCallback((gender: 'man' | 'vrouw'): SpeechSynthesisVoice | null => {
     const nlVoices = voices.filter(v => v.lang.startsWith('nl'))
     if (!nlVoices.length) return null
-    // iOS: Xander (male), default nl-NL (female) | Edge/Chrome: Microsoft Neural names
-    const femaleNames = ['roos', 'fenna', 'colette', 'lotte', 'anna', 'claire', 'female']
-    const maleNames = ['frank', 'maarten', 'ruben', 'wim', 'willem', 'xander', 'male']
-    const keywords = gender === 'vrouw' ? femaleNames : maleNames
-    const named = nlVoices.find(v => keywords.some(k => v.name.toLowerCase().includes(k)))
+    // Priority order: Safari (claire/xander) → Edge Neural (roos/fenna/frank/maarten) → iOS enhanced → any nl
+    const femalePriority = ['claire', 'roos', 'fenna', 'colette', 'lotte', 'anna', 'female']
+    const malePriority = ['xander', 'frank', 'maarten', 'ruben', 'wim', 'willem', 'male']
+    const keywords = gender === 'vrouw' ? femalePriority : malePriority
+    // Find by keyword priority — check each keyword in order so best match wins
+    let named: SpeechSynthesisVoice | undefined
+    for (const k of keywords) {
+      named = nlVoices.find(v => v.name.toLowerCase().includes(k))
+      if (named) break
+    }
     if (named) return named
     const neural = nlVoices.find(v => v.name.toLowerCase().includes('online') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('neural') || v.name.toLowerCase().includes('enhanced'))
     if (neural) return neural
