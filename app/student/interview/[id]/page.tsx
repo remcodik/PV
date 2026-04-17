@@ -451,7 +451,7 @@ export default function InterviewPage() {
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex-shrink-0">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <div className="relative flex-shrink-0">
-            {ttsMode === 'ai' && caseData.witnessPhoto ? (
+            {caseData.witnessPhoto ? (
               <img
                 src={caseData.witnessPhoto}
                 alt={caseData.witnessName}
