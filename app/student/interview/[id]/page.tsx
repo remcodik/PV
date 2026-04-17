@@ -55,6 +55,7 @@ export default function InterviewPage() {
   const [speechSupported, setSpeechSupported] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const isLocal = id.startsWith('local_')
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -63,6 +64,13 @@ export default function InterviewPage() {
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     setSpeechSupported(!!SR)
+    const loadVoices = () => {
+      const v = window.speechSynthesis.getVoices()
+      if (v.length > 0) setVoices(v)
+    }
+    loadVoices()
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
   }, [])
 
   useEffect(() => {
@@ -116,16 +124,33 @@ export default function InterviewPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [transcript])
 
+  const getBestVoice = useCallback((gender: 'man' | 'vrouw'): SpeechSynthesisVoice | null => {
+    const nlVoices = voices.filter(v => v.lang.startsWith('nl'))
+    if (!nlVoices.length) return null
+    const femaleNames = ['roos', 'fenna', 'colette', 'lotte', 'anna', 'female']
+    const maleNames = ['frank', 'maarten', 'ruben', 'wim', 'willem', 'male']
+    const keywords = gender === 'vrouw' ? femaleNames : maleNames
+    const named = nlVoices.find(v => keywords.some(k => v.name.toLowerCase().includes(k)))
+    if (named) return named
+    const neural = nlVoices.find(v => v.name.toLowerCase().includes('online') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('neural'))
+    if (neural) return neural
+    return nlVoices[0]
+  }, [voices])
+
   const speak = useCallback((text: string) => {
     if (!window.speechSynthesis) return
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(text)
+    const gender = caseData?.witnessGender ?? 'vrouw'
+    const voice = getBestVoice(gender)
+    if (voice) utt.voice = voice
     utt.lang = 'nl-NL'
-    utt.rate = 0.95
+    utt.rate = 0.92
+    utt.pitch = gender === 'vrouw' ? 1.1 : 0.9
     utt.onstart = () => setIsSpeaking(true)
     utt.onend = () => setIsSpeaking(false)
     window.speechSynthesis.speak(utt)
-  }, [])
+  }, [caseData, getBestVoice])
 
   const sendMessage = useCallback(async (message: string) => {
     if (!message.trim() || !caseData || isLoading) return

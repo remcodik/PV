@@ -48,6 +48,7 @@ Geef UITSLUITEND geldig JSON terug, zonder markdown-opmaak of extra tekst:
   "backgroundStory": "<gedetailleerd verhaal over het incident>",
   "witnessName": "<volledige naam van de getuige>",
   "witnessAge": <leeftijd tussen 20 en 70>,
+  "witnessGender": "<'man' of 'vrouw' passend bij de naam>",
   "witnessProfile": "<wie is deze persoon: beroep, woonplaats, relatie tot het incident>",
   "witnessKnows": [
     "<specifiek feit dat de getuige weet>",

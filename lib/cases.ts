@@ -11,6 +11,7 @@ export const BUILTIN_CASES: Omit<Case, 'id' | 'createdAt' | 'updatedAt'>[] = [
 De eigenaar van het voertuig, de heer Van Dijk, deed aangifte. Hij stond binnen in de supermarkt te winkelen. Getuige Mevr. Janssen zag de dader: een jongeman van ongeveer 20 jaar, gekleed in een rode hoodie en spijkerbroek, die bewust langs de auto liep en er iets tegen aan trok.`,
     witnessName: 'Maria Janssen',
     witnessAge: 54,
+    witnessGender: 'vrouw',
     witnessProfile: 'Mevrouw Janssen is een nette, rustige vrouw van middelbare leeftijd. Ze was net haar boodschappen aan het uitladen bij haar auto, die naast de beschadigde auto stond. Ze heeft alles goed gezien en is bereid te verklaren.',
     witnessKnows: [
       'Tijdstip: omstreeks 14:30 uur',
@@ -38,6 +39,7 @@ De eigenaar van het voertuig, de heer Van Dijk, deed aangifte. Hij stond binnen 
 Op maandag 3 februari zag zijn buurman, de heer Kowalski, een identieke fiets op Marktplaats voor €200. Hij kocht de fiets, maar zijn vrouw zei dat hij beter moest controleren of de fiets wel gestolen was. De heer Kowalski is nu bereid te verklaren over de aankoop. Hij heeft contact gehad met de verkoper via WhatsApp en heeft hem ook ontmoet.`,
     witnessName: 'Adam Kowalski',
     witnessAge: 38,
+    witnessGender: 'man',
     witnessProfile: 'De heer Kowalski is een Poolse man die al 10 jaar in Nederland woont. Hij spreekt goed Nederlands. Hij kocht de fiets in goed vertrouwen maar begrijpt nu dat hij mogelijk heling heeft gepleegd. Hij is zenuwachtig maar wil meewerken.',
     witnessKnows: [
       'Kocht de fiets op maandag 3 februari voor €200 cash',
@@ -65,6 +67,7 @@ Op maandag 3 februari zag zijn buurman, de heer Kowalski, een identieke fiets op
 Een vrouw nam drie truien (totale waarde €179) van het rek, stopte deze in een grote tas en verliet de winkel zonder te betalen. Beveiligingsmedewerker Mohammed El Bakri hield haar staande bij de uitgang. De vrouw maakte zich los en rende de straat op. Ze is ontsnapt maar wel gefilmd door de beveiligingscamera.`,
     witnessName: 'Mohammed El Bakri',
     witnessAge: 29,
+    witnessGender: 'man',
     witnessProfile: 'Mohammed is een professionele, oplettende beveiligingsmedewerker met 5 jaar ervaring. Hij is gewend om aan te geven en weet hoe een getuigenverklaring werkt. Hij is direct en zakelijk.',
     witnessKnows: [
       'Tijdstip: omstreeks 15:45 uur',
@@ -93,6 +96,7 @@ Een vrouw nam drie truien (totale waarde €179) van het rek, stopte deze in een
 Twee mannen raakten slaags. Één man viel de ander aan en sloeg hem meerdere keren in het gezicht. Het slachtoffer viel op de grond. De aanvaller liep weg voordat de politie arriveerde. Het slachtoffer heeft een gebroken neus en snijwond boven zijn oog. Getuige Lena de Vries liep toevallig langs en zag het incident.`,
     witnessName: 'Lena de Vries',
     witnessAge: 24,
+    witnessGender: 'vrouw',
     witnessProfile: 'Lena is een studente die na een avond stappen naar huis liep. Ze is aangeslagen door wat ze heeft gezien maar wil helpen. Ze heeft gedronken die avond (niet overdreven, maar relevant voor betrouwbaarheid) en is soms vaag in haar details.',
     witnessKnows: [
       'Tijdstip: rond 02:15 uur s\'nachts',
@@ -121,6 +125,7 @@ Twee mannen raakten slaags. Één man viel de ander aan en sloeg hem meerdere ke
 De bewoners waren niet thuis. Buurvrouw Riet Verhoeven zag vanuit haar keukenraam een onbekende man in de tuin. Ze dacht er niet direct bij na maar herinnerde het zich later toen ze de politieauto voor de deur zag staan.`,
     witnessName: 'Riet Verhoeven',
     witnessAge: 71,
+    witnessGender: 'vrouw',
     witnessProfile: 'Mevrouw Verhoeven is een gepensioneerde dame die de hele dag thuis is. Ze zit veel bij haar keukenraam. Ze is bezorgd en wil wel helpen maar haar geheugen is niet perfect. Ze is ook een beetje bang dat ze in de problemen komt als ze iets verkeerds zegt.',
     witnessKnows: [
       'Zag omstreeks 11:00 uur een onbekende man in de achtertuin van de buren',
