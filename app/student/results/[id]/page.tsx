@@ -192,7 +192,12 @@ export default function ResultsPage() {
 
           {/* Detailed feedback per category */}
           <div className="space-y-3">
-            {report.feedback.map((item, i) => (
+            {(!report.feedback || report.feedback.length === 0) && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm text-orange-800">
+                Gedetailleerde feedback is niet beschikbaar voor deze beoordeling. Dien het PV opnieuw in om volledige feedback te ontvangen.
+              </div>
+            )}
+            {(report.feedback ?? []).map((item, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <button
                   onClick={() => setExpanded(prev => { const s = new Set(prev); s.has(i) ? s.delete(i) : s.add(i); return s })}
