@@ -1,4 +1,5 @@
 export const maxDuration = 60
+export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
@@ -142,7 +143,7 @@ ${transcriptText}`
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
+      max_tokens: 1500,
       system: [
         {
           type: 'text',
