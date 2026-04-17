@@ -12,6 +12,7 @@ De eigenaar van het voertuig, de heer Van Dijk, deed aangifte. Hij stond binnen 
     witnessName: 'Maria Janssen',
     witnessAge: 54,
     witnessGender: 'vrouw',
+    witnessPhoto: 'https://randomuser.me/api/portraits/women/68.jpg',
     witnessProfile: 'Mevrouw Janssen is een nette, rustige vrouw van middelbare leeftijd. Ze was net haar boodschappen aan het uitladen bij haar auto, die naast de beschadigde auto stond. Ze heeft alles goed gezien en is bereid te verklaren.',
     witnessKnows: [
       'Tijdstip: omstreeks 14:30 uur',
@@ -40,6 +41,7 @@ Op maandag 3 februari zag zijn buurman, de heer Kowalski, een identieke fiets op
     witnessName: 'Adam Kowalski',
     witnessAge: 38,
     witnessGender: 'man',
+    witnessPhoto: 'https://randomuser.me/api/portraits/men/42.jpg',
     witnessProfile: 'De heer Kowalski is een Poolse man die al 10 jaar in Nederland woont. Hij spreekt goed Nederlands. Hij kocht de fiets in goed vertrouwen maar begrijpt nu dat hij mogelijk heling heeft gepleegd. Hij is zenuwachtig maar wil meewerken.',
     witnessKnows: [
       'Kocht de fiets op maandag 3 februari voor €200 cash',
@@ -68,6 +70,7 @@ Een vrouw nam drie truien (totale waarde €179) van het rek, stopte deze in een
     witnessName: 'Mohammed El Bakri',
     witnessAge: 29,
     witnessGender: 'man',
+    witnessPhoto: 'https://randomuser.me/api/portraits/men/22.jpg',
     witnessProfile: 'Mohammed is een professionele, oplettende beveiligingsmedewerker met 5 jaar ervaring. Hij is gewend om aan te geven en weet hoe een getuigenverklaring werkt. Hij is direct en zakelijk.',
     witnessKnows: [
       'Tijdstip: omstreeks 15:45 uur',
@@ -97,6 +100,7 @@ Twee mannen raakten slaags. Één man viel de ander aan en sloeg hem meerdere ke
     witnessName: 'Lena de Vries',
     witnessAge: 24,
     witnessGender: 'vrouw',
+    witnessPhoto: 'https://randomuser.me/api/portraits/women/26.jpg',
     witnessProfile: 'Lena is een studente die na een avond stappen naar huis liep. Ze is aangeslagen door wat ze heeft gezien maar wil helpen. Ze heeft gedronken die avond (niet overdreven, maar relevant voor betrouwbaarheid) en is soms vaag in haar details.',
     witnessKnows: [
       'Tijdstip: rond 02:15 uur s\'nachts',
@@ -126,6 +130,7 @@ De bewoners waren niet thuis. Buurvrouw Riet Verhoeven zag vanuit haar keukenraa
     witnessName: 'Riet Verhoeven',
     witnessAge: 71,
     witnessGender: 'vrouw',
+    witnessPhoto: 'https://randomuser.me/api/portraits/women/75.jpg',
     witnessProfile: 'Mevrouw Verhoeven is een gepensioneerde dame die de hele dag thuis is. Ze zit veel bij haar keukenraam. Ze is bezorgd en wil wel helpen maar haar geheugen is niet perfect. Ze is ook een beetje bang dat ze in de problemen komt als ze iets verkeerds zegt.',
     witnessKnows: [
       'Zag omstreeks 11:00 uur een onbekende man in de achtertuin van de buren',

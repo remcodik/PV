@@ -359,14 +359,22 @@ export default function InterviewPage() {
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex-shrink-0">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <div className="relative flex-shrink-0">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold transition-all ${
-              caseData.witnessGender === 'man' ? 'bg-blue-500' : 'bg-rose-400'
-            }`}>
-              {caseData.witnessName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-            </div>
+            {caseData.witnessPhoto ? (
+              <img
+                src={caseData.witnessPhoto}
+                alt={caseData.witnessName}
+                className="w-16 h-16 rounded-full object-cover"
+              />
+            ) : (
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold ${
+                caseData.witnessGender === 'man' ? 'bg-blue-500' : 'bg-rose-400'
+              }`}>
+                {caseData.witnessName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+            )}
             {isSpeaking && (
               <>
-                <span className="absolute inset-0 rounded-full animate-ping opacity-40 bg-current" style={{backgroundColor: caseData.witnessGender === 'man' ? '#3b82f6' : '#fb7185'}} />
+                <span className="absolute inset-0 rounded-full animate-ping opacity-40" style={{backgroundColor: caseData.witnessGender === 'man' ? '#3b82f6' : '#fb7185'}} />
                 <span className="absolute -inset-1 rounded-full border-2 animate-pulse" style={{borderColor: caseData.witnessGender === 'man' ? '#3b82f6' : '#fb7185'}} />
               </>
             )}

@@ -44,6 +44,7 @@ export interface Case {
   witnessName: string
   witnessAge: number
   witnessGender: 'man' | 'vrouw'
+  witnessPhoto?: string
   witnessProfile: string
   witnessKnows: string[]
   keyDiscoveries: KeyDiscovery[]  // Points the student must uncover via follow-up questions
