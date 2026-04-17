@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore'
+import { doc, getDoc, addDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
@@ -181,7 +181,13 @@ export default function PVEditorPage() {
         localStorage.setItem(`session_${id}`, JSON.stringify(updated))
       } else {
         try {
-          await addDoc(collection(db, 'pvreports'), reportData)
+          // Update existing report if one exists, otherwise create new
+          const existing = await getDocs(query(collection(db, 'pvreports'), where('sessionId', '==', id)))
+          if (!existing.empty) {
+            await updateDoc(doc(db, 'pvreports', existing.docs[0].id), reportData)
+          } else {
+            await addDoc(collection(db, 'pvreports'), reportData)
+          }
           await updateDoc(doc(db, 'sessions', id), { status: 'evaluated' })
         } catch {
           // Firestore failed — save to localStorage as fallback

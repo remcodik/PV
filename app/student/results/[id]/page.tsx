@@ -263,12 +263,20 @@ export default function ResultsPage() {
           </pre>
         </div>
 
-        <Link
-          href="/student/cases"
-          className="block w-full text-center bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors"
-        >
-          Nog een oefening starten
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Link
+            href={`/student/pv-editor/${id}`}
+            className="flex-1 text-center bg-white border border-blue-600 text-blue-600 py-3 rounded-xl font-medium hover:bg-blue-50 transition-colors"
+          >
+            PV aanpassen en opnieuw indienen
+          </Link>
+          <Link
+            href="/student/cases"
+            className="flex-1 text-center bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors"
+          >
+            Nieuwe oefening starten
+          </Link>
+        </div>
       </div>
     </div>
   )
