@@ -385,44 +385,44 @@ export default function InterviewPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => router.push('/student/dashboard')}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 p-1"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <h1 className="font-semibold text-gray-900 text-sm">{caseData.title}</h1>
-              <p className="text-xs text-gray-500">{caseData.intervieweeType === 'verdachte' ? 'Verdachtenverhoor' : 'Getuigenverhoor'} — {caseData.witnessName}</p>
+            <div className="min-w-0">
+              <h1 className="font-semibold text-gray-900 text-sm truncate">{caseData.title}</h1>
+              <p className="text-xs text-gray-500 truncate">{caseData.intervieweeType === 'verdachte' ? 'Verdachtenverhoor' : 'Getuigenverhoor'} — {caseData.witnessName}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* TTS toggle */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* TTS toggle — icon only on mobile, icon+label on larger screens */}
             <button
               onClick={toggleTtsMode}
               title={ttsMode === 'ai' ? 'AI-stem actief — klik voor browserstem' : 'Browserstem actief — klik voor AI-stem'}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition-colors ${
                 ttsMode === 'ai'
                   ? 'bg-purple-600 text-white border-purple-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                  : 'bg-white text-gray-600 border-gray-300'
               }`}
             >
               <Cpu className="w-3.5 h-3.5" />
-              {ttsMode === 'ai' ? 'AI-stem' : 'Browserstem'}
+              <span className="hidden sm:inline">{ttsMode === 'ai' ? 'AI-stem' : 'Browserstem'}</span>
             </button>
             <button
               onClick={endInterview}
               disabled={isEnding || transcript.length === 0}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
               <ArrowRight className="w-4 h-4" />
-              {isEnding ? 'Bezig...' : 'PV schrijven'}
+              <span className="hidden sm:inline">{isEnding ? 'Bezig...' : 'PV schrijven'}</span>
             </button>
           </div>
         </div>
