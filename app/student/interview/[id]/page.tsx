@@ -413,7 +413,7 @@ export default function InterviewPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* TTS toggle — icon only on mobile, icon+label on larger screens */}
+            {/* TTS toggle */}
             <button
               onClick={toggleTtsMode}
               title={ttsMode === 'ai' ? 'AI-stem actief — klik voor browserstem' : 'Browserstem actief — klik voor AI-stem'}
@@ -424,7 +424,7 @@ export default function InterviewPage() {
               }`}
             >
               <Cpu className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{ttsMode === 'ai' ? 'AI-stem' : 'Browserstem'}</span>
+              <span>{ttsMode === 'ai' ? 'AI' : 'Browser'}</span>
             </button>
             <button
               onClick={endInterview}
@@ -432,7 +432,7 @@ export default function InterviewPage() {
               className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
               <ArrowRight className="w-4 h-4" />
-              <span className="hidden sm:inline">{isEnding ? 'Bezig...' : 'PV schrijven'}</span>
+              <span>{isEnding ? 'Bezig...' : 'PV schrijven'}</span>
             </button>
           </div>
         </div>
