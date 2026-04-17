@@ -181,13 +181,14 @@ ${transcriptText}`
 
     if (!result?.scores) throw new Error('Ongeldige AI-respons: scores ontbreken')
 
+    const rawScores = result.scores as Record<string, number>
     const scores: ScoreBreakdown = {
-      formalia: Math.min(15, Math.max(0, result.scores.formalia ?? 0)),
-      zeven_w: Math.min(25, Math.max(0, result.scores.zeven_w ?? 0)),
-      getuigenverklaring: Math.min(20, Math.max(0, result.scores.getuigenverklaring ?? 0)),
-      delictsomschrijving: Math.min(15, Math.max(0, result.scores.delictsomschrijving ?? 0)),
-      objectiviteit: Math.min(10, Math.max(0, result.scores.objectiviteit ?? 0)),
-      doorvragen: Math.min(15, Math.max(0, result.scores.doorvragen ?? 0)),
+      formalia: Math.min(15, Math.max(0, rawScores.formalia ?? 0)),
+      zeven_w: Math.min(25, Math.max(0, rawScores.zeven_w ?? 0)),
+      getuigenverklaring: Math.min(20, Math.max(0, rawScores.getuigenverklaring ?? 0)),
+      delictsomschrijving: Math.min(15, Math.max(0, rawScores.delictsomschrijving ?? 0)),
+      objectiviteit: Math.min(10, Math.max(0, rawScores.objectiviteit ?? 0)),
+      doorvragen: Math.min(15, Math.max(0, rawScores.doorvragen ?? 0)),
     }
 
     const totalScore = Object.values(scores).reduce((a, b) => a + b, 0)
