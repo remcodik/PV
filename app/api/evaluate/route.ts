@@ -126,6 +126,12 @@ export async function POST(req: NextRequest) {
       ? `\n## Sleutelpunten die student moest achterhalen\n${caseData.keyDiscoveries.map((kd, i) => `${i + 1}. ${kd.description}`).join('\n')}`
       : '\n## Sleutelpunten\nGeen specifieke sleutelpunten gedefinieerd voor deze case.'
 
+    const isSuspect = caseData.intervieweeType === 'verdachte'
+    const intervieweeLabel = isSuspect ? 'Verdachte' : 'Getuige'
+    const cautieNote = isSuspect
+      ? '\n## Let op: verdachteninterview\nBeoordeel of de student de cautie heeft gegeven (mededeling dat verdachte niet verplicht is te antwoorden, art. 29 Sv). Vermeld dit bij Formalia.'
+      : ''
+
     const userMessage = `## Te beoordelen PV
 
 ${pvContent}
@@ -133,9 +139,10 @@ ${pvContent}
 ## Zaakgegevens
 
 Zaak: ${caseData.title}
+Type interview: ${intervieweeLabel}verhoor
 Delict: ${caseData.crimeType} (${caseData.legalArticle})
 Achtergrond: ${caseData.backgroundStory}
-${keyDiscoveriesText}
+${keyDiscoveriesText}${cautieNote}
 
 ## Interview transcript
 
@@ -143,7 +150,7 @@ ${transcriptText}`
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1500,
+      max_tokens: 3000,
       system: [
         {
           type: 'text',
@@ -155,9 +162,22 @@ ${transcriptText}`
     })
 
     const text = response.content[0].type === 'text' ? response.content[0].text : '{}'
+    // Extract JSON — try full match first, then repair truncated JSON
+    let result: Record<string, unknown> | null = null
     const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('Geen JSON in AI-respons')
-    const result = JSON.parse(jsonMatch[0])
+    if (jsonMatch) {
+      try {
+        result = JSON.parse(jsonMatch[0])
+      } catch {
+        // Response was truncated — try to extract scores at minimum
+        const scoresMatch = text.match(/"scores"\s*:\s*\{([^}]+)\}/)
+        if (scoresMatch) {
+          const scoresObj = JSON.parse(`{${scoresMatch[0]}}`)
+          result = { scores: scoresObj.scores, feedback: [], generalFeedback: 'Beoordeling gedeeltelijk beschikbaar.' }
+        }
+      }
+    }
+    if (!result?.scores) throw new Error('Geen geldige scores in AI-respons')
 
     if (!result?.scores) throw new Error('Ongeldige AI-respons: scores ontbreken')
 

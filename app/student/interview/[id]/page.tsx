@@ -332,7 +332,7 @@ export default function InterviewPage() {
             </div>
             <div>
               <h1 className="font-semibold text-gray-900 text-sm">{caseData.title}</h1>
-              <p className="text-xs text-gray-500">Interview met {caseData.witnessName}</p>
+              <p className="text-xs text-gray-500">{caseData.intervieweeType === 'verdachte' ? 'Verdachtenverhoor' : 'Getuigenverhoor'} — {caseData.witnessName}</p>
             </div>
           </div>
           <button
@@ -381,7 +381,7 @@ export default function InterviewPage() {
           </div>
           <div>
             <p className="font-semibold text-gray-900">{caseData.witnessName}</p>
-            <p className="text-sm text-gray-500">{caseData.witnessAge} jaar · {caseData.witnessProfile.split('.')[0]}</p>
+            <p className="text-sm text-gray-500">{caseData.witnessAge} jaar · {caseData.intervieweeType === 'verdachte' ? '🔴 Verdachte' : 'Getuige'} · {caseData.witnessProfile.split('.')[0]}</p>
             {isSpeaking && (
               <div className="flex items-center gap-1 mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-bounce" style={{animationDelay:'0ms'}} />

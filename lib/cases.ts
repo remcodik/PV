@@ -9,6 +9,7 @@ export const BUILTIN_CASES: Omit<Case, 'id' | 'createdAt' | 'updatedAt'>[] = [
     backgroundStory: `Op dinsdag 4 februari 2025, omstreeks 14:30 uur, werd op de parkeerplaats van de Albert Heijn aan de Hoofdstraat 45 te Utrecht, een personenauto (blauwe Volkswagen Golf, kenteken AB-12-CD) flink bekrast. De gehele linkerzijkant is met een scherp voorwerp bewerkt. Schade wordt geschat op €1.800.
 
 De eigenaar van het voertuig, de heer Van Dijk, deed aangifte. Hij stond binnen in de supermarkt te winkelen. Getuige Mevr. Janssen zag de dader: een jongeman van ongeveer 20 jaar, gekleed in een rode hoodie en spijkerbroek, die bewust langs de auto liep en er iets tegen aan trok.`,
+    intervieweeType: 'getuige',
     witnessName: 'Maria Janssen',
     witnessAge: 54,
     witnessGender: 'vrouw',
@@ -38,6 +39,7 @@ De eigenaar van het voertuig, de heer Van Dijk, deed aangifte. Hij stond binnen 
     backgroundStory: `Op donderdag 6 februari 2025 deed de heer Peters aangifte van diefstal van zijn mountainbike (merk Trek, zwart, waarde €650) op zaterdag 1 februari uit zijn achtertuin in Eindhoven.
 
 Op maandag 3 februari zag zijn buurman, de heer Kowalski, een identieke fiets op Marktplaats voor €200. Hij kocht de fiets, maar zijn vrouw zei dat hij beter moest controleren of de fiets wel gestolen was. De heer Kowalski is nu bereid te verklaren over de aankoop. Hij heeft contact gehad met de verkoper via WhatsApp en heeft hem ook ontmoet.`,
+    intervieweeType: 'getuige',
     witnessName: 'Adam Kowalski',
     witnessAge: 38,
     witnessGender: 'man',
@@ -67,6 +69,7 @@ Op maandag 3 februari zag zijn buurman, de heer Kowalski, een identieke fiets op
     backgroundStory: `Op vrijdag 7 februari 2025, omstreeks 15:45 uur, vond in modezaak "Fashion Point" aan de Kalverstraat 88 te Amsterdam een winkeldiefstal plaats.
 
 Een vrouw nam drie truien (totale waarde €179) van het rek, stopte deze in een grote tas en verliet de winkel zonder te betalen. Beveiligingsmedewerker Mohammed El Bakri hield haar staande bij de uitgang. De vrouw maakte zich los en rende de straat op. Ze is ontsnapt maar wel gefilmd door de beveiligingscamera.`,
+    intervieweeType: 'getuige',
     witnessName: 'Mohammed El Bakri',
     witnessAge: 29,
     witnessGender: 'man',
@@ -97,6 +100,7 @@ Een vrouw nam drie truien (totale waarde €179) van het rek, stopte deze in een
     backgroundStory: `Op zaterdag 8 februari 2025, omstreeks 02:15 uur, vond voor café "De Kroeg" aan de Grote Markt 12 te Groningen een vechtpartij plaats.
 
 Twee mannen raakten slaags. Één man viel de ander aan en sloeg hem meerdere keren in het gezicht. Het slachtoffer viel op de grond. De aanvaller liep weg voordat de politie arriveerde. Het slachtoffer heeft een gebroken neus en snijwond boven zijn oog. Getuige Lena de Vries liep toevallig langs en zag het incident.`,
+    intervieweeType: 'getuige',
     witnessName: 'Lena de Vries',
     witnessAge: 24,
     witnessGender: 'vrouw',
@@ -127,6 +131,7 @@ Twee mannen raakten slaags. Één man viel de ander aan en sloeg hem meerdere ke
     backgroundStory: `Op woensdag 5 februari 2025, omstreeks 11:00 uur, werd ingebroken in de tuinschuur van de woning aan de Acaciastraat 7 te Den Haag. Uit de schuur werden gestolen: een grasmaaier (waarde €350), elektrisch gereedschap (totaal ca. €600) en een fiets (€200).
 
 De bewoners waren niet thuis. Buurvrouw Riet Verhoeven zag vanuit haar keukenraam een onbekende man in de tuin. Ze dacht er niet direct bij na maar herinnerde het zich later toen ze de politieauto voor de deur zag staan.`,
+    intervieweeType: 'getuige',
     witnessName: 'Riet Verhoeven',
     witnessAge: 71,
     witnessGender: 'vrouw',
