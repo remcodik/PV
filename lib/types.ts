@@ -73,6 +73,7 @@ export interface Session {
   assignedBy?: string
   status: SessionStatus
   transcript: TranscriptMessage[]
+  pvContent?: string
   startedAt?: string
   completedAt?: string
   createdAt: string

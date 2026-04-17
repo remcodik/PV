@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { doc, getDoc, addDoc, updateDoc, collection } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -76,6 +76,10 @@ export default function PVEditorPage() {
   const [showTranscript, setShowTranscript] = useState(true)
   const [showGuide, setShowGuide] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sessionRef = useRef<Session | null>(null)
+
+  useEffect(() => { sessionRef.current = session }, [session])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,6 +88,7 @@ export default function PVEditorPage() {
           const localSess = loadLocalSession(id)
           if (!localSess) return
           setSession(localSess)
+          if (localSess.pvContent) setPvContent(localSess.pvContent)
           const memCase = MEMORY_CASES.find(c => c.id === localSess.caseId)
           if (memCase) {
             setCaseData(memCase)
@@ -100,6 +105,7 @@ export default function PVEditorPage() {
         if (!sessDoc.exists()) return
         const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
         setSession(sessData)
+        if (sessData.pvContent) setPvContent(sessData.pvContent)
 
         if (sessData.caseId.startsWith('builtin_')) {
           const memCase = MEMORY_CASES.find(c => c.id === sessData.caseId)
@@ -115,6 +121,26 @@ export default function PVEditorPage() {
     }
     fetchData()
   }, [id, isLocal])
+
+  // Auto-save pvContent 1.5s after last keystroke
+  useEffect(() => {
+    if (!session) return
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => {
+      const sess = sessionRef.current
+      if (!sess) return
+      const updated = { ...sess, pvContent }
+      if (isLocal) {
+        localStorage.setItem(`session_${id}`, JSON.stringify(updated))
+      } else {
+        localStorage.setItem(`session_${id}`, JSON.stringify(updated))
+        try {
+          updateDoc(doc(db, 'sessions', id), { pvContent })
+        } catch {}
+      }
+    }, 1500)
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current) }
+  }, [pvContent, id, isLocal, session])
 
   const handleSubmit = async () => {
     if (!session || !caseData || !profile) return
@@ -323,8 +349,8 @@ export default function PVEditorPage() {
             spellCheck={false}
           />
           <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-            <span>{pvContent.length} tekens</span>
-            <span>{pvContent.split('\n').length} regels</span>
+            <span>{pvContent.length} tekens · {pvContent.split('\n').length} regels</span>
+            <span className="text-green-500">✓ Automatisch opgeslagen</span>
           </div>
         </div>
       </div>
