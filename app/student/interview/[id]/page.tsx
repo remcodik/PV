@@ -77,7 +77,16 @@ export default function InterviewPage() {
     }
     loadVoices()
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+    // Safari fallback: poll for voices if voiceschanged never fires
+    const poll = setInterval(() => {
+      const v = window.speechSynthesis.getVoices()
+      if (v.length > 0) { setVoices(v); clearInterval(poll) }
+    }, 200)
+    setTimeout(() => clearInterval(poll), 3000)
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
+      clearInterval(poll)
+    }
   }, [])
 
   useEffect(() => {
@@ -152,27 +161,36 @@ export default function InterviewPage() {
 
   const speakBrowser = useCallback((text: string) => {
     if (!window.speechSynthesis) return
+    // Strip *action* parts — only speak the actual dialogue
+    const spokenText = text.replace(/\*[^*]+\*/g, '').trim()
+    if (!spokenText) return
     window.speechSynthesis.cancel()
-    const utt = new SpeechSynthesisUtterance(text)
     const gender = caseData?.witnessGender ?? 'vrouw'
     const voice = getBestVoice(gender)
-    if (voice) utt.voice = voice
-    utt.lang = 'nl-NL'
-    utt.rate = 0.92
-    utt.pitch = gender === 'vrouw' ? 1.1 : 0.9
-    utt.onstart = () => setIsSpeaking(true)
-    utt.onend = () => setIsSpeaking(false)
-    window.speechSynthesis.speak(utt)
+    // Safari needs a small delay after cancel() before speaking
+    setTimeout(() => {
+      const utt = new SpeechSynthesisUtterance(spokenText)
+      if (voice) utt.voice = voice
+      utt.lang = 'nl-NL'
+      utt.rate = 0.92
+      utt.pitch = gender === 'vrouw' ? 1.1 : 0.9
+      utt.onstart = () => setIsSpeaking(true)
+      utt.onend = () => setIsSpeaking(false)
+      utt.onerror = () => setIsSpeaking(false)
+      window.speechSynthesis.speak(utt)
+    }, 100)
   }, [caseData, getBestVoice])
 
   const speakAI = useCallback(async (text: string) => {
     if (!caseData) return
+    const spokenText = text.replace(/\*[^*]+\*/g, '').trim()
+    if (!spokenText) return
     setIsSpeaking(true)
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, gender: caseData.witnessGender }),
+        body: JSON.stringify({ text: spokenText, gender: caseData.witnessGender }),
       })
       if (!res.ok) throw new Error('TTS mislukt')
       const blob = await res.blob()
@@ -470,30 +488,60 @@ export default function InterviewPage() {
             </div>
           )}
 
-          {transcript.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex gap-3 ${msg.role === 'student' ? 'flex-row-reverse' : ''}`}
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                msg.role === 'student' ? 'bg-blue-600' : 'bg-gray-200'
-              }`}>
-                {msg.role === 'student'
-                  ? <Shield className="w-4 h-4 text-white" />
-                  : <User className="w-4 h-4 text-gray-600" />}
+          {transcript.map((msg, i) => {
+            // Split witness messages into spoken text and *action* parts
+            const parts = msg.role === 'witness'
+              ? (() => {
+                  const result: {type: 'text'|'action', content: string}[] = []
+                  const regex = /\*([^*]+)\*/g
+                  let last = 0, m: RegExpExecArray | null
+                  while ((m = regex.exec(msg.content)) !== null) {
+                    if (m.index > last) result.push({type: 'text', content: msg.content.slice(last, m.index).trim()})
+                    result.push({type: 'action', content: m[1].trim()})
+                    last = m.index + m[0].length
+                  }
+                  const tail = msg.content.slice(last).trim()
+                  if (tail) result.push({type: 'text', content: tail})
+                  return result.filter(p => p.content)
+                })()
+              : null
+
+            return (
+              <div
+                key={i}
+                className={`flex gap-3 ${msg.role === 'student' ? 'flex-row-reverse' : ''}`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  msg.role === 'student' ? 'bg-blue-600' : 'bg-gray-200'
+                }`}>
+                  {msg.role === 'student'
+                    ? <Shield className="w-4 h-4 text-white" />
+                    : <User className="w-4 h-4 text-gray-600" />}
+                </div>
+                <div className="max-w-[75%] space-y-1">
+                  {msg.role === 'witness' && parts ? (
+                    <>
+                      {parts.map((p, j) => p.type === 'action' ? (
+                        <div key={j} className="text-xs text-gray-400 italic px-3 py-1 bg-gray-50 border border-gray-100 rounded-xl inline-block">
+                          *{p.content}*
+                        </div>
+                      ) : (
+                        <div key={j} className="bg-white border border-gray-200 text-gray-900 rounded-2xl rounded-tl-sm px-4 py-3">
+                          <p className="text-sm leading-relaxed">{p.content}</p>
+                        </div>
+                      ))}
+                      <p className="text-xs text-gray-400 px-1">{caseData.witnessName}</p>
+                    </>
+                  ) : (
+                    <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3">
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
+                      <p className="text-xs mt-1 text-blue-200">Agent</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${
-                msg.role === 'student'
-                  ? 'bg-blue-600 text-white rounded-tr-sm'
-                  : 'bg-white border border-gray-200 text-gray-900 rounded-tl-sm'
-              }`}>
-                <p className="text-sm leading-relaxed">{msg.content}</p>
-                <p className={`text-xs mt-1 ${msg.role === 'student' ? 'text-blue-200' : 'text-gray-400'}`}>
-                  {msg.role === 'student' ? 'Agent' : caseData.witnessName}
-                </p>
-              </div>
-            </div>
-          ))}
+            )
+          })}
 
           {isLoading && (
             <div className="flex gap-3">
