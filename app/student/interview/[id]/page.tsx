@@ -127,12 +127,13 @@ export default function InterviewPage() {
   const getBestVoice = useCallback((gender: 'man' | 'vrouw'): SpeechSynthesisVoice | null => {
     const nlVoices = voices.filter(v => v.lang.startsWith('nl'))
     if (!nlVoices.length) return null
-    const femaleNames = ['roos', 'fenna', 'colette', 'lotte', 'anna', 'female']
-    const maleNames = ['frank', 'maarten', 'ruben', 'wim', 'willem', 'male']
+    // iOS: Xander (male), default nl-NL (female) | Edge/Chrome: Microsoft Neural names
+    const femaleNames = ['roos', 'fenna', 'colette', 'lotte', 'anna', 'claire', 'female']
+    const maleNames = ['frank', 'maarten', 'ruben', 'wim', 'willem', 'xander', 'male']
     const keywords = gender === 'vrouw' ? femaleNames : maleNames
     const named = nlVoices.find(v => keywords.some(k => v.name.toLowerCase().includes(k)))
     if (named) return named
-    const neural = nlVoices.find(v => v.name.toLowerCase().includes('online') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('neural'))
+    const neural = nlVoices.find(v => v.name.toLowerCase().includes('online') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('neural') || v.name.toLowerCase().includes('enhanced'))
     if (neural) return neural
     return nlVoices[0]
   }, [voices])
@@ -354,14 +355,42 @@ export default function InterviewPage() {
         </div>
       </div>
 
+      {/* Witness avatar */}
+      <div className="bg-white border-b border-gray-100 px-6 py-4 flex-shrink-0">
+        <div className="max-w-3xl mx-auto flex items-center gap-4">
+          <div className="relative flex-shrink-0">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold transition-all ${
+              caseData.witnessGender === 'man' ? 'bg-blue-500' : 'bg-rose-400'
+            }`}>
+              {caseData.witnessName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+            {isSpeaking && (
+              <>
+                <span className="absolute inset-0 rounded-full animate-ping opacity-40 bg-current" style={{backgroundColor: caseData.witnessGender === 'man' ? '#3b82f6' : '#fb7185'}} />
+                <span className="absolute -inset-1 rounded-full border-2 animate-pulse" style={{borderColor: caseData.witnessGender === 'man' ? '#3b82f6' : '#fb7185'}} />
+              </>
+            )}
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900">{caseData.witnessName}</p>
+            <p className="text-sm text-gray-500">{caseData.witnessAge} jaar · {caseData.witnessProfile.split('.')[0]}</p>
+            {isSpeaking && (
+              <div className="flex items-center gap-1 mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-bounce" style={{animationDelay:'0ms'}} />
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-bounce" style={{animationDelay:'150ms'}} />
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-bounce" style={{animationDelay:'300ms'}} />
+                <span className="text-xs text-green-600 ml-1">spreekt...</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Transcript */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="max-w-3xl mx-auto space-y-4">
           {transcript.length === 0 && (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="w-8 h-8 text-gray-400" />
-              </div>
               <p className="text-gray-500 text-sm">
                 Stel je voor als agent en begin het interview met {caseData.witnessName}.<br />
                 Gebruik de microfoon of typ je vraag hieronder.
