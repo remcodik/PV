@@ -55,6 +55,7 @@ export default function InterviewPage() {
   const [speechSupported, setSpeechSupported] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
+  const [ttsError, setTtsError] = useState<string | null>(null)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [ttsMode, setTtsMode] = useState<'browser' | 'ai'>(() => {
     if (typeof window !== 'undefined') {
@@ -185,6 +186,7 @@ export default function InterviewPage() {
     if (!caseData) return
     const spokenText = text.replace(/\*[^*]+\*/g, '').trim()
     if (!spokenText) return
+    setTtsError(null)
     setIsSpeaking(true)
     try {
       const res = await fetch('/api/tts', {
@@ -192,7 +194,14 @@ export default function InterviewPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: spokenText, gender: caseData.witnessGender }),
       })
+      if (res.status === 503) {
+        setTtsError('AI-stem niet beschikbaar (geen API key) — browserstem gebruikt')
+        setIsSpeaking(false)
+        speakBrowser(text)
+        return
+      }
       if (!res.ok) throw new Error('TTS mislukt')
+      setTtsError(null)
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       if (audioRef.current) { audioRef.current.pause(); URL.revokeObjectURL(audioRef.current.src) }
@@ -202,6 +211,7 @@ export default function InterviewPage() {
       audio.onerror = () => setIsSpeaking(false)
       await audio.play()
     } catch {
+      setTtsError('AI-stem mislukt — browserstem gebruikt')
       setIsSpeaking(false)
       speakBrowser(text)
     }
@@ -612,6 +622,9 @@ export default function InterviewPage() {
           )}
           {apiError && (
             <p className="text-center text-xs text-red-500 mt-2">{apiError}</p>
+          )}
+          {ttsError && (
+            <p className="text-center text-xs text-orange-500 mt-2">{ttsError}</p>
           )}
         </div>
       </div>
