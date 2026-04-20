@@ -162,24 +162,29 @@ export default function InterviewPage() {
 
   const speakBrowser = useCallback((text: string) => {
     if (!window.speechSynthesis) return
-    // Strip *action* parts — only speak the actual dialogue
     const spokenText = text.replace(/\*[^*]+\*/g, '').trim()
     if (!spokenText) return
     window.speechSynthesis.cancel()
     const gender = caseData?.witnessGender ?? 'vrouw'
     const voice = getBestVoice(gender)
-    // Safari needs a small delay after cancel() before speaking
+    // Warn if no Dutch voice found
+    if (!voice) setTtsError('Geen Nederlandse stem gevonden — installeer Nederlands stemmenpack via Instellingen → Toegankelijkheid → Gesproken inhoud → Stemmen')
+    else setTtsError(null)
+    // iOS needs longer delay after cancel()
     setTimeout(() => {
       const utt = new SpeechSynthesisUtterance(spokenText)
-      if (voice) utt.voice = voice
-      utt.lang = 'nl-NL'
+      if (voice) {
+        utt.voice = voice
+        utt.lang = voice.lang
+      }
+      // No lang fallback if voice missing — avoids iOS silent failure on nl-NL without Dutch voice
       utt.rate = 0.92
       utt.pitch = gender === 'vrouw' ? 1.1 : 0.9
       utt.onstart = () => setIsSpeaking(true)
       utt.onend = () => setIsSpeaking(false)
       utt.onerror = () => setIsSpeaking(false)
       window.speechSynthesis.speak(utt)
-    }, 100)
+    }, 300)
   }, [caseData, getBestVoice])
 
   const speakAI = useCallback(async (text: string) => {
