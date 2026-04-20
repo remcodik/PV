@@ -64,6 +64,7 @@ export default function InterviewPage() {
     return 'browser'
   })
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioCtxRef = useRef<AudioContext | null>(null)
   const isLocal = id.startsWith('local_')
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
@@ -207,14 +208,17 @@ export default function InterviewPage() {
       }
       if (!res.ok) throw new Error('TTS mislukt')
       setTtsError(null)
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      if (audioRef.current) { audioRef.current.pause(); URL.revokeObjectURL(audioRef.current.src) }
-      const audio = new Audio(url)
-      audioRef.current = audio
-      audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url) }
-      audio.onerror = () => setIsSpeaking(false)
-      await audio.play()
+      const arrayBuffer = await res.arrayBuffer()
+      // Use AudioContext for iOS compatibility (audio.play() blocked async on iOS)
+      const ctx = audioCtxRef.current ?? new AudioContext()
+      audioCtxRef.current = ctx
+      if (ctx.state === 'suspended') await ctx.resume()
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+      const source = ctx.createBufferSource()
+      source.buffer = audioBuffer
+      source.connect(ctx.destination)
+      source.onended = () => setIsSpeaking(false)
+      source.start(0)
     } catch {
       setTtsError('AI-stem mislukt — browserstem gebruikt')
       setIsSpeaking(false)
@@ -237,6 +241,11 @@ export default function InterviewPage() {
 
   const sendMessage = useCallback(async (message: string) => {
     if (!message.trim() || !caseData || isLoading) return
+    // Unlock AudioContext from user gesture so iOS allows async audio play
+    if (typeof window !== 'undefined' && window.AudioContext) {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
+      if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume()
+    }
 
     const userMsg: TranscriptMessage = {
       role: 'student',
