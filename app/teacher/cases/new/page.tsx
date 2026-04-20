@@ -9,13 +9,17 @@ import { Case, CrimeType, CooperationLevel, IntervieweeType, COOPERATION_LABELS,
 import { Shield, Sparkles, ArrowLeft, Save, Loader2, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
-const CRIME_TYPES: { value: CrimeType; label: string; article: string }[] = [
-  { value: 'vernieling', label: 'Vernieling', article: 'Art. 350 Sr' },
-  { value: 'heling', label: 'Heling', article: 'Art. 416 Sr' },
-  { value: 'diefstal', label: 'Diefstal', article: 'Art. 310 Sr' },
-  { value: 'mishandeling', label: 'Mishandeling', article: 'Art. 300 Sr' },
-  { value: 'inbraak', label: 'Inbraak', article: 'Art. 311 Sr' },
-  { value: 'overig', label: 'Overig', article: '' },
+const CRIME_TYPES: { value: CrimeType; label: string; article: string; notes: string }[] = [
+  { value: 'vernieling', label: 'Vernieling', article: 'Art. 350 Sr', notes: 'Opzettelijk beschadigen/vernielen van goed' },
+  { value: 'diefstal', label: 'Diefstal', article: 'Art. 310 Sr', notes: 'Wegnemen van goed toebehorend aan een ander' },
+  { value: 'inbraak', label: 'Inbraak (gekwal. diefstal)', article: 'Art. 311 Sr', notes: 'Diefstal met braak, verbreking of inklimming' },
+  { value: 'straatroof', label: 'Straatroof / Beroving', article: 'Art. 312 Sr', notes: 'Diefstal met geweld of bedreiging' },
+  { value: 'mishandeling', label: 'Mishandeling', article: 'Art. 300 Sr', notes: 'Opzettelijk toebrengen van pijn of letsel' },
+  { value: 'bedreiging', label: 'Bedreiging', article: 'Art. 285 Sr', notes: 'Bedreiging met ernstig geweld' },
+  { value: 'heling', label: 'Heling', article: 'Art. 416 Sr', notes: 'Verwerven/verkopen van gestolen goederen' },
+  { value: 'oplichting', label: 'Oplichting / Fraude', article: 'Art. 326 Sr', notes: 'Bewegen tot afgifte door listige kunstgrepen' },
+  { value: 'rijden_onder_invloed', label: 'Rijden onder invloed', article: 'Art. 8 WVW', notes: 'Besturen voertuig onder invloed alcohol/drugs' },
+  { value: 'overig', label: 'Overig', article: '', notes: 'Ander delict — vul wetsartikel handmatig in' },
 ]
 
 const empty: Partial<Omit<Case, 'id' | 'createdAt' | 'updatedAt'>> = {
@@ -241,8 +245,9 @@ function NewCaseInner() {
                   if (ct?.article) setField('legalArticle', ct.article)
                 }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  {CRIME_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label}</option>)}
+                  {CRIME_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label} — {ct.article || 'handmatig'}</option>)}
                 </select>
+                {(() => { const ct = CRIME_TYPES.find(c => c.value === form.crimeType); return ct?.notes ? <p className="text-xs text-gray-400 mt-1">{ct.notes}</p> : null })()}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Wetsartikel</label>

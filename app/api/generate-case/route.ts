@@ -10,7 +10,24 @@ const CRIME_ARTICLES: Record<string, string> = {
   diefstal: 'Art. 310 Sr',
   mishandeling: 'Art. 300 Sr',
   inbraak: 'Art. 311 Sr',
+  bedreiging: 'Art. 285 Sr',
+  straatroof: 'Art. 312 Sr',
+  oplichting: 'Art. 326 Sr',
+  rijden_onder_invloed: 'Art. 8 WVW',
   overig: 'Art. 300 Sr',
+}
+
+const CRIME_NOTES: Record<string, string> = {
+  vernieling: 'Aandachtspunten: opzet aantonen, schadeomvang, eigenaar goed.',
+  diefstal: 'Aandachtspunten: wegnemen, toebehoren ander, oogmerk wederrechtelijke toe-eigening.',
+  inbraak: 'Aandachtspunten: braak/verbreking/inklimming, sporen, toegangsmethode.',
+  straatroof: 'Aandachtspunten: geweld/bedreiging tijdens/na diefstal, letsel slachtoffer, wapens.',
+  mishandeling: 'Aandachtspunten: opzet, aard en ernst letsel, medische verklaring indien beschikbaar.',
+  bedreiging: 'Aandachtspunten: aard bedreiging, redelijke vrees, middel (mondeling/schriftelijk/wapen).',
+  heling: 'Aandachtspunten: wetenschap gestolen herkomst, aankoop/bezit/verkoop, goed beschrijven.',
+  oplichting: 'Aandachtspunten: listige kunstgrepen, bewegen tot afgifte, schade, slachtofferverklaring.',
+  rijden_onder_invloed: 'Aandachtspunten: ademanalyse/bloedonderzoek, rijgedrag, tijdstip, kenteken voertuig.',
+  overig: 'Zorg voor volledige omschrijving van alle delictsbestanddelen.',
 }
 
 export async function POST(req: NextRequest) {
@@ -22,6 +39,7 @@ export async function POST(req: NextRequest) {
     } = await req.json()
 
     const legalArticle = CRIME_ARTICLES[crimeType]
+    const crimeNotes = CRIME_NOTES[crimeType] ?? ''
     const isSuspect = intervieweeType === 'verdachte'
     const cooperationDesc = isSuspect
       ? SUSPECT_COOPERATION_DESCRIPTIONS[cooperationLevel as CooperationLevel]
@@ -33,6 +51,7 @@ export async function POST(req: NextRequest) {
 **Parameters:**
 - Misdrijftype: ${crimeType} (${legalArticle})
 - Houding verdachte: ${cooperationLevel}/5 — ${cooperationDesc}
+- Aandachtspunten voor dit delict: ${crimeNotes}
 
 **Vereisten:**
 - Gebruik een Nederlandse locatie
@@ -76,6 +95,7 @@ Geef UITSLUITEND geldig JSON terug, zonder markdown-opmaak:
 **Parameters:**
 - Misdrijftype: ${crimeType} (${legalArticle})
 - Coöperativeniveau getuige: ${cooperationLevel}/5 — ${cooperationDesc}
+- Aandachtspunten voor dit delict: ${crimeNotes}
 
 **Vereisten:**
 - Gebruik een Nederlandse locatie
