@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { addDoc, collection } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
-import { Case, CrimeType, CooperationLevel, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS, KeyDiscovery } from '@/lib/types'
+import { Case, CrimeType, CooperationLevel, IntervieweeType, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS, SUSPECT_COOPERATION_LABELS, SUSPECT_COOPERATION_DESCRIPTIONS, KeyDiscovery } from '@/lib/types'
 import { Shield, Sparkles, ArrowLeft, Save, Loader2, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -24,6 +24,7 @@ const empty: Partial<Omit<Case, 'id' | 'createdAt' | 'updatedAt'>> = {
   legalArticle: 'Art. 350 Sr',
   description: '',
   backgroundStory: '',
+  intervieweeType: 'getuige' as IntervieweeType,
   witnessName: '',
   witnessAge: 30,
   witnessGender: 'vrouw' as const,
@@ -31,6 +32,8 @@ const empty: Partial<Omit<Case, 'id' | 'createdAt' | 'updatedAt'>> = {
   witnessKnows: ['', '', '', '', '', '', '', ''],
   keyDiscoveries: [],
   cooperationLevel: 2,
+  isGuilty: true,
+  suspectBackground: '',
   isTemplate: false,
   status: 'draft',
 }
@@ -46,7 +49,9 @@ function NewCaseInner() {
   const [saving, setSaving] = useState(false)
   const [genCrimeType, setGenCrimeType] = useState<CrimeType>('vernieling')
   const [genCoop, setGenCoop] = useState<CooperationLevel>(2)
+  const [genType, setGenType] = useState<IntervieweeType>('getuige')
   const [mode, setMode] = useState<'manual' | 'generate'>(isGenerate ? 'generate' : 'manual')
+  const isSuspect = form.intervieweeType === 'verdachte'
 
   const setField = (key: string, value: unknown) => {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -80,13 +85,14 @@ function NewCaseInner() {
       const res = await fetch('/api/generate-case', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ crimeType: genCrimeType, cooperationLevel: genCoop }),
+        body: JSON.stringify({ crimeType: genCrimeType, cooperationLevel: genCoop, intervieweeType: genType }),
       })
       const data = await res.json()
       const c = data.case
       setForm({
         ...empty,
         ...c,
+        intervieweeType: c.intervieweeType || genType,
         witnessKnows: c.witnessKnows || ['', '', '', '', '', '', '', ''],
         keyDiscoveries: c.keyDiscoveries || [],
       })
@@ -165,26 +171,28 @@ function NewCaseInner() {
             <h3 className="font-semibold text-purple-900">AI case genereren</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-purple-800 mb-1">Delictstype</label>
-                <select
-                  value={genCrimeType}
-                  onChange={e => setGenCrimeType(e.target.value as CrimeType)}
-                  className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-                >
-                  {CRIME_TYPES.map(ct => (
-                    <option key={ct.value} value={ct.value}>{ct.label}</option>
-                  ))}
+                <label className="block text-sm font-medium text-purple-800 mb-1">Type interview</label>
+                <select value={genType} onChange={e => setGenType(e.target.value as IntervieweeType)}
+                  className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
+                  <option value="getuige">Getuigenverhoor</option>
+                  <option value="verdachte">Verdachtenverhoor</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-purple-800 mb-1">Meewerkingsniveau</label>
-                <select
-                  value={genCoop}
-                  onChange={e => setGenCoop(parseInt(e.target.value) as CooperationLevel)}
-                  className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-                >
+                <label className="block text-sm font-medium text-purple-800 mb-1">Delictstype</label>
+                <select value={genCrimeType} onChange={e => setGenCrimeType(e.target.value as CrimeType)}
+                  className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
+                  {CRIME_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label}</option>)}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-purple-800 mb-1">
+                  {genType === 'verdachte' ? 'Houding verdachte' : 'Meewerkingsniveau'}
+                </label>
+                <select value={genCoop} onChange={e => setGenCoop(parseInt(e.target.value) as CooperationLevel)}
+                  className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
                   {([1,2,3,4,5] as CooperationLevel[]).map(l => (
-                    <option key={l} value={l}>{l} — {COOPERATION_LABELS[l]}</option>
+                    <option key={l} value={l}>{l} — {genType === 'verdachte' ? SUSPECT_COOPERATION_LABELS[l] : COOPERATION_LABELS[l]}</option>
                   ))}
                 </select>
               </div>
@@ -202,6 +210,20 @@ function NewCaseInner() {
 
         {/* Form */}
         <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+            <h3 className="font-semibold text-gray-900">Type interview</h3>
+            <div className="flex rounded-xl overflow-hidden border border-gray-200">
+              <button onClick={() => setField('intervieweeType', 'getuige')}
+                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${!isSuspect ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                Getuigenverhoor
+              </button>
+              <button onClick={() => setField('intervieweeType', 'verdachte')}
+                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${isSuspect ? 'bg-red-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                Verdachtenverhoor
+              </button>
+            </div>
+          </div>
+
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Basisinformatie</h3>
             <div>
@@ -244,10 +266,10 @@ function NewCaseInner() {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">Getuige</h3>
+            <h3 className="font-semibold text-gray-900">{isSuspect ? 'Verdachte' : 'Getuige'}</h3>
             <div className="grid grid-cols-4 gap-4">
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Naam getuige</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Naam {isSuspect ? 'verdachte' : 'getuige'}</label>
                 <input type="text" value={form.witnessName || ''} onChange={e => setField('witnessName', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Maria Janssen" />
@@ -267,14 +289,31 @@ function NewCaseInner() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Profiel van de getuige</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Profiel van de {isSuspect ? 'verdachte' : 'getuige'}</label>
               <textarea value={form.witnessProfile || ''} onChange={e => setField('witnessProfile', e.target.value)} rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                placeholder="Wie is de getuige, relatie tot de zaak..." />
+                placeholder={isSuspect ? 'Wie is de verdachte, achtergrond, motieven...' : 'Wie is de getuige, relatie tot de zaak...'} />
             </div>
+            {isSuspect && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Wat heeft de verdachte daadwerkelijk gedaan?</label>
+                  <textarea value={form.suspectBackground || ''} onChange={e => setField('suspectBackground', e.target.value)} rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    placeholder="Beschrijf exact wat de verdachte heeft gedaan — alleen zichtbaar voor de AI om consistent in karakter te blijven..." />
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={form.isGuilty ?? true} onChange={e => setField('isGuilty', e.target.checked)} className="w-4 h-4" />
+                  <div>
+                    <span className="text-sm font-medium text-gray-900">Verdachte is schuldig</span>
+                    <p className="text-xs text-gray-500">Uitvinken als je een onschuldige verdachte wilt oefenen</p>
+                  </div>
+                </label>
+              </>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Meewerkingsniveau
+                {isSuspect ? 'Houding verdachte' : 'Meewerkingsniveau'}
               </label>
               <div className="space-y-2">
                 {([1,2,3,4,5] as CooperationLevel[]).map(l => (
@@ -284,8 +323,8 @@ function NewCaseInner() {
                       onChange={() => setField('cooperationLevel', l)}
                       className="mt-0.5" />
                     <div>
-                      <span className="text-sm font-medium text-gray-900">{l} — {COOPERATION_LABELS[l]}</span>
-                      <p className="text-xs text-gray-500">{COOPERATION_DESCRIPTIONS[l]}</p>
+                      <span className="text-sm font-medium text-gray-900">{l} — {isSuspect ? SUSPECT_COOPERATION_LABELS[l] : COOPERATION_LABELS[l]}</span>
+                      <p className="text-xs text-gray-500">{isSuspect ? SUSPECT_COOPERATION_DESCRIPTIONS[l] : COOPERATION_DESCRIPTIONS[l]}</p>
                     </div>
                   </label>
                 ))}
@@ -295,7 +334,7 @@ function NewCaseInner() {
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
             <h3 className="font-semibold text-gray-900">Wat weet de getuige?</h3>
-            <p className="text-sm text-gray-500">Voer minimaal 5 feiten in die de getuige weet. De AI gebruikt dit om in karakter te antwoorden.</p>
+            <p className="text-sm text-gray-500">Voer minimaal 5 feiten in die de {isSuspect ? 'verdachte' : 'getuige'} weet. De AI gebruikt dit om in karakter te antwoorden.</p>
             {(form.witnessKnows || []).map((k, i) => (
               <div key={i} className="flex items-center gap-2">
                 <span className="text-sm text-gray-400 w-5">{i+1}.</span>
