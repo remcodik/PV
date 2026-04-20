@@ -32,7 +32,7 @@ export const COOPERATION_DESCRIPTIONS: Record<CooperationLevel, string> = {
   5: 'Vijandig, weigert sommige vragen te beantwoorden, tegenstrijdig.',
 }
 
-export type CrimeType = 'vernieling' | 'heling' | 'diefstal' | 'mishandeling' | 'inbraak' | 'bedreiging' | 'straatroof' | 'oplichting' | 'rijden_onder_invloed' | 'overig'
+export type CrimeType = 'vernieling' | 'heling' | 'diefstal' | 'mishandeling' | 'inbraak' | 'bedreiging' | 'straatroof' | 'oplichting' | 'rijden_onder_invloed' | 'aanranding' | 'huiselijk_geweld' | 'stalking' | 'drugs' | 'overig'
 
 export type IntervieweeType = 'getuige' | 'verdachte'
 

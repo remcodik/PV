@@ -10,15 +10,19 @@ import { Shield, Sparkles, ArrowLeft, Save, Loader2, Plus, Trash2 } from 'lucide
 import Link from 'next/link'
 
 const CRIME_TYPES: { value: CrimeType; label: string; article: string; notes: string }[] = [
-  { value: 'vernieling', label: 'Vernieling', article: 'Art. 350 Sr', notes: 'Opzettelijk beschadigen/vernielen van goed' },
   { value: 'diefstal', label: 'Diefstal', article: 'Art. 310 Sr', notes: 'Wegnemen van goed toebehorend aan een ander' },
   { value: 'inbraak', label: 'Inbraak (gekwal. diefstal)', article: 'Art. 311 Sr', notes: 'Diefstal met braak, verbreking of inklimming' },
   { value: 'straatroof', label: 'Straatroof / Beroving', article: 'Art. 312 Sr', notes: 'Diefstal met geweld of bedreiging' },
   { value: 'mishandeling', label: 'Mishandeling', article: 'Art. 300 Sr', notes: 'Opzettelijk toebrengen van pijn of letsel' },
+  { value: 'huiselijk_geweld', label: 'Huiselijk geweld', article: 'Art. 304 Sr', notes: 'Mishandeling in huiselijke kring / gezinsverband' },
   { value: 'bedreiging', label: 'Bedreiging', article: 'Art. 285 Sr', notes: 'Bedreiging met ernstig geweld' },
+  { value: 'stalking', label: 'Stalking / Belaging', article: 'Art. 285b Sr', notes: 'Stelselmatig inbreuk op persoonlijke levenssfeer' },
+  { value: 'aanranding', label: 'Aanranding / Lastigvallen', article: 'Art. 246 Sr', notes: 'Feitelijke aanranding van de eerbaarheid' },
+  { value: 'vernieling', label: 'Vernieling', article: 'Art. 350 Sr', notes: 'Opzettelijk beschadigen/vernielen van goed' },
   { value: 'heling', label: 'Heling', article: 'Art. 416 Sr', notes: 'Verwerven/verkopen van gestolen goederen' },
   { value: 'oplichting', label: 'Oplichting / Fraude', article: 'Art. 326 Sr', notes: 'Bewegen tot afgifte door listige kunstgrepen' },
   { value: 'rijden_onder_invloed', label: 'Rijden onder invloed', article: 'Art. 8 WVW', notes: 'Besturen voertuig onder invloed alcohol/drugs' },
+  { value: 'drugs', label: 'Drugsdelict', article: 'Art. 2/3 Opiumwet', notes: 'Bezit, handel of productie van verdovende middelen' },
   { value: 'overig', label: 'Overig', article: '', notes: 'Ander delict — vul wetsartikel handmatig in' },
 ]
 

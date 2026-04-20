@@ -6,6 +6,22 @@ import Anthropic from '@anthropic-ai/sdk'
 import { Case, TranscriptMessage, ScoreBreakdown, FeedbackItem } from '@/lib/types'
 import { scoreToGrade } from '@/lib/utils'
 
+const CRIME_ELEMENTS: Record<string, string> = {
+  vernieling: 'Bestanddelen art. 350 Sr: opzet + beschadigen/vernielen/onbruikbaar maken + goed toebehorend aan ander.',
+  diefstal: 'Bestanddelen art. 310 Sr: wegnemen + goed toebehorend aan ander + oogmerk wederrechtelijke toe-eigening.',
+  inbraak: 'Bestanddelen art. 311 Sr: diefstal + braak/verbreking/inklimming/valse sleutel/valse order/verdichte naam.',
+  straatroof: 'Bestanddelen art. 312 Sr: diefstal + geweld/bedreiging met geweld vóór/tijdens/na het feit.',
+  mishandeling: 'Bestanddelen art. 300 Sr: opzet + toebrengen pijn/letsel/ziekelijke stoornis/zwakheid.',
+  huiselijk_geweld: 'Bestanddelen art. 304 Sr: mishandeling (art. 300 Sr) + kwalificerende omstandigheid (familielid/huisgenoot). Vermeld relatie partijen.',
+  bedreiging: 'Bestanddelen art. 285 Sr: bedreiging met misdrijf tegen leven/zwaar lichamelijk letsel + redelijke vrees inboezemen. Exacte bewoordingen opnemen.',
+  stalking: 'Bestanddelen art. 285b Sr: stelselmatig + inbreuk persoonlijke levenssfeer + opzet vrees/nadeel. Vermeld duur, frequentie en middelen.',
+  aanranding: 'Bestanddelen art. 246 Sr: feitelijke aanranding eerbaarheid + dwang/geweld/bedreiging. Exacte handeling beschrijven zonder waardeoordeel.',
+  heling: 'Bestanddelen art. 416 Sr: verwerven/voorhanden hebben/overdragen + uit misdrijf afkomstig + wetenschap of redelijk vermoeden.',
+  oplichting: 'Bestanddelen art. 326 Sr: listige kunstgrepen/samenweefsel verdichtsels + bewegen tot afgifte/dienst/aangaan schuld. Beschrijf de truc.',
+  rijden_onder_invloed: 'Bestanddelen art. 8 WVW: besturen motorrijtuig op weg + onder invloed (alcohol ≥0,5‰ of drugs). Vermeld ademanalyse/bloedafname-resultaat.',
+  drugs: 'Bestanddelen Opiumwet: middel op lijst I (harddrugs) of II (softdrugs) + handeling (bezit/verkoop/productie/aanwezig hebben). Vermeld hoeveelheid en verpakking.',
+}
+
 const client = new Anthropic()
 
 const SYSTEM_PROMPT = `Je bent een ervaren docent bij de Nederlandse politieopleiding. Je beoordeelt Processen-Verbaal (PV's) van studenten op zes criteria. Geef eerlijke, constructieve feedback in het Nederlands.
@@ -14,31 +30,34 @@ const SYSTEM_PROMPT = `Je bent een ervaren docent bij de Nederlandse politieople
 
 ### 1. Formalia (max. 15 punten)
 - Volledige kop: naam/rang verbalisant, dienstnummer, datum, tijdstip, locatie
-- Verwijzing naar art. 152/153 Sv
+- Verwijzing naar art. 152/153 Sv (of art. 163 Sv bij rijden onder invloed)
+- Bij verdachtenverhoor: vermeld of student de cautie heeft gegeven (art. 29 Sv)
 - Correcte afsluiting en ondertekening
 - Professionele opmaak en structuur
 
 ### 2. Zeven W-vragen (max. 25 punten)
 Alle zeven vragen beantwoord in de bevindingen:
-- Wie (dader/slachtoffer/getuigen)
+- Wie (dader/slachtoffer/getuigen — persoonsgegevens)
 - Wat (wat is er precies gebeurd)
 - Waar (exacte locatie)
 - Wanneer (datum, tijdstip)
-- Waarmee (gebruikte middelen/wapen)
+- Waarmee (gebruikte middelen/wapen/voertuig)
 - Waarom (motief indien bekend)
 - Hoe (modus operandi)
 
-### 3. Getuigenverklaring (max. 20 punten)
-- Persoonsgegevens getuige volledig vermeld
-- Verklaring verbatim weergegeven (letterlijke woorden getuige)
-- Volledigheid verklaring t.o.v. wat getuige heeft medegedeeld
-- Duidelijke scheiding tussen bevindingen en getuigenverklaring
+### 3. Verklaring getuige/verdachte (max. 20 punten)
+- Persoonsgegevens volledig vermeld
+- Verklaring verbatim weergegeven (letterlijke woorden)
+- Volledigheid verklaring t.o.v. wat betrokkene heeft medegedeeld
+- Duidelijke scheiding tussen bevindingen en verklaring
+- Bij verdachte: zwijgrecht/ontkenning correct genoteerd
 
 ### 4. Delictsomschrijving (max. 15 punten)
 - Correct wetsartikel vermeld
-- Alle bestanddelen van het delict beschreven
+- Alle bestanddelen van het specifieke delict beschreven (zie zaakgegevens)
 - Juridisch correcte kwalificatie
 - Koppeling van feiten aan de rechtsnorm
+- Let op delictspecifieke vereisten (bijv. braak bij inbraak, geweld bij straatroof, stelselmatigheid bij stalking)
 
 ### 5. Objectiviteit (max. 10 punten)
 - Zakelijk en feitelijk taalgebruik
@@ -47,10 +66,11 @@ Alle zeven vragen beantwoord in de bevindingen:
 - Geen onnodige waardeoordelen
 
 ### 6. Doorvragen & Sleutelpunten (max. 15 punten)
-- Heeft de student de sleutelpunten achterhaald die de getuige moest onthullen?
-- Zijn de sleutelpunten opgenomen in het PV (bevindingen of getuigenverklaring)?
-- Heeft de student doorgevraagd op hints van de getuige?
-Beoordeel zowel het transcript (werden de vragen gesteld?) als het PV (zijn de punten opgenomen?).
+- Heeft de student de sleutelpunten achterhaald?
+- Zijn de sleutelpunten opgenomen in het PV?
+- Heeft de student doorgevraagd op hints?
+- Bij verdachteninterview: heeft de student effectief doorgevraagd ondanks ontkenning/zwijgen?
+Beoordeel zowel het transcript als het PV.
 
 ## Outputformaat
 Geef je beoordeling UITSLUITEND als geldig JSON, zonder markdown-opmaak of extra tekst:
@@ -129,7 +149,10 @@ export async function POST(req: NextRequest) {
     const isSuspect = caseData.intervieweeType === 'verdachte'
     const intervieweeLabel = isSuspect ? 'Verdachte' : 'Getuige'
     const cautieNote = isSuspect
-      ? '\n## Let op: verdachteninterview\nBeoordeel of de student de cautie heeft gegeven (mededeling dat verdachte niet verplicht is te antwoorden, art. 29 Sv). Vermeld dit bij Formalia.'
+      ? '\n## Verdachtenverhoor\nBeoordeel of de student de cautie heeft gegeven (art. 29 Sv: mededeling dat verdachte niet verplicht is te antwoorden). Vermeld dit bij Formalia. Beoordeel ook of student effectief doorvroeg ondanks ontkenning/zwijgen.'
+      : ''
+    const crimeElements = CRIME_ELEMENTS[caseData.crimeType]
+      ? `\n## Delictspecifieke bestanddelen\n${CRIME_ELEMENTS[caseData.crimeType]}\nBeoordeel bij Delictsomschrijving of alle bestanddelen in het PV zijn opgenomen.`
       : ''
 
     const userMessage = `## Te beoordelen PV
@@ -142,7 +165,7 @@ Zaak: ${caseData.title}
 Type interview: ${intervieweeLabel}verhoor
 Delict: ${caseData.crimeType} (${caseData.legalArticle})
 Achtergrond: ${caseData.backgroundStory}
-${keyDiscoveriesText}${cautieNote}
+${keyDiscoveriesText}${cautieNote}${crimeElements}
 
 ## Interview transcript
 
