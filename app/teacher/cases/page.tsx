@@ -7,8 +7,10 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { crimeTypeLabel } from '@/lib/utils'
-import { Shield, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Sparkles, Users, BookOpen } from 'lucide-react'
+import { Shield, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Sparkles, Users, BookOpen, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
 const COOP_LABELS: Record<number, string> = {
   1: 'Zeer coöp.', 2: 'Coöp.', 3: 'Neutraal', 4: 'Terughoudend', 5: 'Niet coöp.',
@@ -22,12 +24,22 @@ const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
   updatedAt: seedTime,
 }))
 
-export default function TeacherCasesPage() {
+function TeacherCasesInner() {
   const { profile } = useAuth()
+  const searchParams = useSearchParams()
+  const savedParam = searchParams.get('saved')
   const [cases, setCases] = useState<Case[]>(MEMORY_CASES)
   const [syncing, setSyncing] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [savedBanner, setSavedBanner] = useState(!!savedParam)
+
+  useEffect(() => {
+    if (savedParam) {
+      const t = setTimeout(() => setSavedBanner(false), 5000)
+      return () => clearTimeout(t)
+    }
+  }, [savedParam])
 
   useEffect(() => {
     fetchCases()
@@ -73,7 +85,10 @@ export default function TeacherCasesPage() {
     setDeleting(null)
   }
 
-  const myCases = cases.filter(c => c.createdBy === profile?.uid || c.isTemplate)
+  // Show all cases once profile is loaded; while loading show only templates
+  const myCases = profile
+    ? cases.filter(c => c.createdBy === profile.uid || c.isTemplate)
+    : cases.filter(c => c.isTemplate)
   const published = myCases.filter(c => c.status === 'published')
   const drafts = myCases.filter(c => c.status === 'draft')
 
@@ -113,6 +128,12 @@ export default function TeacherCasesPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
+        {savedBanner && (
+          <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-6">
+            <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <p className="text-sm font-medium text-emerald-800">Case opgeslagen en toegevoegd aan de lijst.</p>
+          </div>
+        )}
         {[
           { title: 'Gepubliceerd', items: published, count: published.length },
           { title: 'Concept', items: drafts, count: drafts.length },
@@ -211,5 +232,13 @@ export default function TeacherCasesPage() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function TeacherCasesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-400">Laden...</div>}>
+      <TeacherCasesInner />
+    </Suspense>
   )
 }
