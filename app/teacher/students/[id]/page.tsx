@@ -6,8 +6,8 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import { db } from '@/lib/firebase'
 import { Session, PVReport, UserProfile, Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { gradeColor, formatDate, statusLabel } from '@/lib/utils'
-import { Shield, ArrowLeft, CheckCircle, Clock, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react'
+import { gradeColor, formatDate, statusLabel, crimeTypeLabel } from '@/lib/utils'
+import { Shield, ArrowLeft, CheckCircle, Clock, ChevronDown, ChevronUp, AlertCircle, BookOpen, FileText, TrendingUp, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 
 const now = new Date().toISOString()
@@ -17,6 +17,15 @@ const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
   createdAt: now,
   updatedAt: now,
 }))
+
+const SCORE_CATS = [
+  { key: 'formalia', label: 'Formalia', max: 15 },
+  { key: 'zeven_w', label: "7 W's", max: 25 },
+  { key: 'getuigenverklaring', label: 'Verklaring', max: 20 },
+  { key: 'delictsomschrijving', label: 'Delict', max: 15 },
+  { key: 'objectiviteit', label: 'Objectiviteit', max: 10 },
+  { key: 'doorvragen', label: 'Doorvragen', max: 15 },
+]
 
 export default function StudentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -45,7 +54,6 @@ export default function StudentDetailPage() {
         setSessions(sessData)
         setReports(repData)
 
-        // Load cases — handle builtin_ IDs from memory, real IDs from Firestore
         const caseIds = [...new Set(sessData.map(s => s.caseId))]
         const caseMap: Record<string, Case> = {}
         await Promise.all(caseIds.map(async cid => {
@@ -76,10 +84,15 @@ export default function StudentDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
-          <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-          <p className="text-gray-700 font-medium mb-2">Gegevens konden niet worden geladen</p>
-          <p className="text-gray-500 text-sm mb-4">Controleer je internetverbinding en probeer opnieuw.</p>
-          <button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-6 h-6 text-red-500" />
+          </div>
+          <p className="font-medium text-gray-900 mb-1">Gegevens konden niet worden geladen</p>
+          <p className="text-sm text-gray-500 mb-4">Controleer je verbinding en probeer opnieuw.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
             Opnieuw proberen
           </button>
         </div>
@@ -88,14 +101,18 @@ export default function StudentDetailPage() {
   }
 
   if (!student) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <Link href="/teacher/dashboard" className="text-gray-400 hover:text-gray-600">
+          <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -111,16 +128,31 @@ export default function StudentDetailPage() {
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">Sessies</p>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-blue-600" />
+              </div>
+              <p className="text-sm text-gray-500">Sessies</p>
+            </div>
             <p className="text-3xl font-bold text-gray-900">{sessions.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">Beoordeeld</p>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+                <FileText className="w-4 h-4 text-emerald-600" />
+              </div>
+              <p className="text-sm text-gray-500">Beoordeeld</p>
+            </div>
             <p className="text-3xl font-bold text-gray-900">{reports.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500">Gem. cijfer</p>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-amber-600" />
+              </div>
+              <p className="text-sm text-gray-500">Gem. cijfer</p>
+            </div>
             <p className={`text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
               {avgGrade ?? '—'}
             </p>
@@ -128,105 +160,132 @@ export default function StudentDetailPage() {
         </div>
 
         {/* Sessions */}
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Alle sessies</h2>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Alle sessies</p>
 
         {sessions.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
-            Nog geen sessies voor deze student.
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-6 h-6 text-gray-400" />
+            </div>
+            <p className="font-medium text-gray-700 mb-1">Nog geen sessies</p>
+            <p className="text-sm text-gray-400">Deze student heeft nog geen oefeningen gestart.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {sessions.map(session => {
               const report = reports.find(r => r.sessionId === session.id)
+              const caseInfo = cases[session.caseId]
               const isExpanded = expanded === session.id
+              const evaluated = session.status === 'evaluated'
+
               return (
-                <div key={session.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <div className="p-5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{session.caseTitle}</p>
-                        <p className="text-sm text-gray-400 mt-0.5">{formatDate(session.createdAt)}</p>
-                        <span className={`inline-flex items-center gap-1 text-xs mt-2 px-2 py-0.5 rounded-full ${
-                          session.status === 'evaluated' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {session.status === 'evaluated' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                <div key={session.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  {/* Row header */}
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        evaluated ? 'bg-emerald-500' :
+                        session.status === 'submitted' ? 'bg-amber-400' : 'bg-gray-300'
+                      }`} />
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{session.caseTitle}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-gray-400">{formatDate(session.createdAt)}</p>
+                          {caseInfo && (
+                            <>
+                              <span className="text-gray-300">·</span>
+                              <span className="text-xs text-gray-400">{crimeTypeLabel(caseInfo.crimeType)}</span>
+                              <span className="text-gray-300">·</span>
+                              <span className="text-xs text-gray-400">
+                                {caseInfo.intervieweeType === 'verdachte' ? 'Verdachte' : 'Getuige'}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                      {report && (
+                        <span className={`text-xl font-bold ${gradeColor(report.cijfer)}`}>
+                          {report.cijfer.toFixed(1)}
+                        </span>
+                      )}
+                      {!evaluated && (
+                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
                           {statusLabel(session.status)}
                         </span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        {report && (
-                          <div className="text-right">
-                            <p className={`text-2xl font-bold ${gradeColor(report.cijfer)}`}>
-                              {report.cijfer.toFixed(1)}
-                            </p>
-                            <p className="text-xs text-gray-400">cijfer</p>
-                          </div>
-                        )}
-                        {report && (
-                          <button onClick={() => setExpanded(isExpanded ? null : session.id)}
-                            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600">
-                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          </button>
-                        )}
-                      </div>
+                      )}
+                      {report && (
+                        <button
+                          onClick={() => setExpanded(isExpanded ? null : session.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                        >
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+                      )}
                     </div>
                   </div>
 
+                  {/* Expanded detail */}
                   {isExpanded && report && (
-                    <div className="border-t border-gray-100 bg-gray-50">
-                      {/* Scores */}
-                      <div className="p-5 grid grid-cols-3 sm:grid-cols-6 gap-3">
-                        {[
-                          { key: 'formalia', label: 'Formalia', max: 15 },
-                          { key: 'zeven_w', label: "7 W's", max: 25 },
-                          { key: 'getuigenverklaring', label: 'Getuige', max: 20 },
-                          { key: 'delictsomschrijving', label: 'Delict', max: 15 },
-                          { key: 'objectiviteit', label: 'Object.', max: 10 },
-                          { key: 'doorvragen', label: 'Doorvr.', max: 15 },
-                        ].map(cat => {
-                          const score = (report.scoresBreakdown[cat.key as keyof typeof report.scoresBreakdown] ?? 0)
+                    <div className="border-t border-gray-100 bg-gray-50/50">
+                      {/* Score grid */}
+                      <div className="p-4 grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {SCORE_CATS.map(cat => {
+                          const score = report.scoresBreakdown[cat.key as keyof typeof report.scoresBreakdown] ?? 0
                           const pct = (score / cat.max) * 100
+                          const color = pct >= 70 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600'
+                          const bg = pct >= 70 ? 'bg-emerald-50 border-emerald-100' : pct >= 50 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'
                           return (
-                            <div key={cat.key} className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                              <p className="text-xs text-gray-400">{cat.label}</p>
-                              <p className={`text-lg font-bold ${pct >= 70 ? 'text-green-600' : pct >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                {score}
-                              </p>
+                            <div key={cat.key} className={`rounded-lg border ${bg} p-2.5 text-center`}>
+                              <p className="text-xs text-gray-500 leading-tight mb-1">{cat.label}</p>
+                              <p className={`text-base font-bold ${color}`}>{score}</p>
                               <p className="text-xs text-gray-400">/{cat.max}</p>
                             </div>
                           )
                         })}
                       </div>
 
-                      {/* Feedback */}
-                      <div className="px-5 pb-5">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Feedback:</p>
-                        <p className="text-sm text-gray-600 bg-white rounded-lg border border-gray-200 p-3">
+                      {/* General feedback */}
+                      <div className="px-4 pb-3">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Algemene feedback</p>
+                        <p className="text-sm text-gray-700 bg-white border border-gray-100 rounded-lg px-3.5 py-3 leading-relaxed">
                           {report.generalFeedback}
                         </p>
                       </div>
 
-                      {/* Transcript preview */}
-                      <div className="px-5 pb-5">
-                        <p className="text-sm font-medium text-gray-700 mb-2">
-                          Interview ({session.transcript.length} berichten):
+                      {/* Transcript */}
+                      <div className="px-4 pb-3">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                          Interview — {session.transcript.length} berichten
                         </p>
-                        <div className="bg-white rounded-lg border border-gray-200 p-3 max-h-48 overflow-y-auto space-y-2">
-                          {session.transcript.map((msg, i) => (
-                            <div key={i}>
-                              <p className="text-xs font-semibold text-gray-500">
-                                {msg.role === 'student' ? 'Agent' : 'Getuige'}
+                        <div className="bg-white border border-gray-100 rounded-lg p-3 max-h-52 overflow-y-auto space-y-2.5">
+                          {session.transcript.length === 0 ? (
+                            <p className="text-xs text-gray-400">Geen transcript beschikbaar.</p>
+                          ) : session.transcript.map((msg, i) => (
+                            <div key={i} className={`flex gap-2 ${msg.role === 'student' ? '' : 'flex-row-reverse'}`}>
+                              <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                                msg.role === 'student' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                              }`}>
+                                {msg.role === 'student' ? 'A' : 'G'}
+                              </div>
+                              <p className={`text-xs rounded-lg px-2.5 py-1.5 max-w-xs ${
+                                msg.role === 'student'
+                                  ? 'bg-blue-50 text-blue-900'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {msg.content}
                               </p>
-                              <p className="text-xs text-gray-700">{msg.content}</p>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* PV */}
-                      <div className="px-5 pb-5">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Ingediend PV:</p>
-                        <pre className="bg-white rounded-lg border border-gray-200 p-3 text-xs text-gray-700 font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+                      {/* Submitted PV */}
+                      <div className="px-4 pb-4">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Ingediend PV</p>
+                        <pre className="bg-white border border-gray-100 rounded-lg px-3.5 py-3 text-xs text-gray-700 font-mono whitespace-pre-wrap max-h-52 overflow-y-auto leading-relaxed">
                           {report.content}
                         </pre>
                       </div>

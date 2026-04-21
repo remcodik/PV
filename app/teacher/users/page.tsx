@@ -5,7 +5,7 @@ import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, writeBatc
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserProfile } from '@/lib/types'
-import { Shield, ArrowLeft, Users, Trash2, UserCog, CheckCircle, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen } from 'lucide-react'
+import { Shield, ArrowLeft, Users, Trash2, UserCog, CheckCircle, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 interface UserRow extends UserProfile {
@@ -405,34 +405,46 @@ function UserSection({
               </div>
 
               {/* Actions */}
-              {user.uid !== myUid && (
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => onChangeRole(user)}
-                    disabled={updatingRole === user.uid}
-                    title={`Maak ${user.role === 'teacher' ? 'student' : 'docent'}`}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {/* Link to results — students only */}
+                {user.role === 'student' && user.sessionCount > 0 && (
+                  <Link
+                    href={`/teacher/students/${user.uid}`}
+                    title="Bekijk resultaten"
+                    className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
                   >
-                    {updatingRole === user.uid ? (
-                      <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <UserCog className="w-3.5 h-3.5" />
-                    )}
-                    {user.role === 'teacher' ? 'Maak student' : 'Maak docent'}
-                  </button>
-                  <button
-                    onClick={() => onDelete(user)}
-                    disabled={deleting === user.uid}
-                    title="Verwijderen"
-                    className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
-                  >
-                    {deleting === user.uid
-                      ? <div className="w-4 h-4 border border-red-400 border-t-transparent rounded-full animate-spin" />
-                      : <Trash2 className="w-4 h-4" />
-                    }
-                  </button>
-                </div>
-              )}
+                    <ExternalLink className="w-4 h-4" />
+                  </Link>
+                )}
+                {user.uid !== myUid && (
+                  <>
+                    <button
+                      onClick={() => onChangeRole(user)}
+                      disabled={updatingRole === user.uid}
+                      title={`Maak ${user.role === 'teacher' ? 'student' : 'docent'}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                    >
+                      {updatingRole === user.uid ? (
+                        <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <UserCog className="w-3.5 h-3.5" />
+                      )}
+                      {user.role === 'teacher' ? 'Maak student' : 'Maak docent'}
+                    </button>
+                    <button
+                      onClick={() => onDelete(user)}
+                      disabled={deleting === user.uid}
+                      title="Verwijderen"
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                    >
+                      {deleting === user.uid
+                        ? <div className="w-4 h-4 border border-red-400 border-t-transparent rounded-full animate-spin" />
+                        : <Trash2 className="w-4 h-4" />
+                      }
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>
