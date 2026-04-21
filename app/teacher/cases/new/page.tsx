@@ -57,7 +57,6 @@ function NewCaseInner() {
   const [saving, setSaving] = useState(false)
   const [genCrimeType, setGenCrimeType] = useState<CrimeType>('vernieling')
   const [genCoop, setGenCoop] = useState<CooperationLevel>(2)
-  const [genType, setGenType] = useState<IntervieweeType>('getuige')
   const [mode, setMode] = useState<'manual' | 'generate'>(isGenerate ? 'generate' : 'manual')
   const isSuspect = form.intervieweeType === 'verdachte'
 
@@ -93,14 +92,14 @@ function NewCaseInner() {
       const res = await fetch('/api/generate-case', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ crimeType: genCrimeType, cooperationLevel: genCoop, intervieweeType: genType }),
+        body: JSON.stringify({ crimeType: genCrimeType, cooperationLevel: genCoop, intervieweeType: form.intervieweeType }),
       })
       const data = await res.json()
       const c = data.case
       setForm({
         ...empty,
         ...c,
-        intervieweeType: c.intervieweeType || genType,
+        intervieweeType: c.intervieweeType || form.intervieweeType,
         witnessKnows: c.witnessKnows || ['', '', '', '', '', '', '', ''],
         keyDiscoveries: c.keyDiscoveries || [],
       })
@@ -157,7 +156,22 @@ function NewCaseInner() {
       </header>
 
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-        {/* Mode selector */}
+        {/* Type interview — altijd zichtbaar, geldt voor zowel handmatig als AI */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Type interview</p>
+          <div className="flex rounded-xl overflow-hidden border border-gray-200">
+            <button onClick={() => setField('intervieweeType', 'getuige')}
+              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${!isSuspect ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+              Getuigenverhoor
+            </button>
+            <button onClick={() => setField('intervieweeType', 'verdachte')}
+              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${isSuspect ? 'bg-red-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+              Verdachtenverhoor
+            </button>
+          </div>
+        </div>
+
+        {/* Invulmethode */}
         <div className="flex rounded-xl overflow-hidden border border-gray-200">
           <button
             onClick={() => setMode('manual')}
@@ -176,16 +190,8 @@ function NewCaseInner() {
 
         {mode === 'generate' && (
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 space-y-4">
-            <h3 className="font-semibold text-purple-900">AI case genereren</h3>
+            <h3 className="font-semibold text-purple-900">AI case genereren — {isSuspect ? 'Verdachtenverhoor' : 'Getuigenverhoor'}</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-purple-800 mb-1">Type interview</label>
-                <select value={genType} onChange={e => setGenType(e.target.value as IntervieweeType)}
-                  className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                  <option value="getuige">Getuigenverhoor</option>
-                  <option value="verdachte">Verdachtenverhoor</option>
-                </select>
-              </div>
               <div>
                 <label className="block text-sm font-medium text-purple-800 mb-1">Delictstype</label>
                 <select value={genCrimeType} onChange={e => setGenCrimeType(e.target.value as CrimeType)}
@@ -193,14 +199,14 @@ function NewCaseInner() {
                   {CRIME_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label}</option>)}
                 </select>
               </div>
-              <div className="col-span-2">
+              <div>
                 <label className="block text-sm font-medium text-purple-800 mb-1">
-                  {genType === 'verdachte' ? 'Houding verdachte' : 'Meewerkingsniveau'}
+                  {isSuspect ? 'Houding verdachte' : 'Meewerkingsniveau'}
                 </label>
                 <select value={genCoop} onChange={e => setGenCoop(parseInt(e.target.value) as CooperationLevel)}
                   className="w-full px-3 py-2 bg-white border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
                   {([1,2,3,4,5] as CooperationLevel[]).map(l => (
-                    <option key={l} value={l}>{l} — {genType === 'verdachte' ? SUSPECT_COOPERATION_LABELS[l] : COOPERATION_LABELS[l]}</option>
+                    <option key={l} value={l}>{l} — {isSuspect ? SUSPECT_COOPERATION_LABELS[l] : COOPERATION_LABELS[l]}</option>
                   ))}
                 </select>
               </div>
@@ -218,20 +224,6 @@ function NewCaseInner() {
 
         {/* Form */}
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">Type interview</h3>
-            <div className="flex rounded-xl overflow-hidden border border-gray-200">
-              <button onClick={() => setField('intervieweeType', 'getuige')}
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${!isSuspect ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-                Getuigenverhoor
-              </button>
-              <button onClick={() => setField('intervieweeType', 'verdachte')}
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${isSuspect ? 'bg-red-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-                Verdachtenverhoor
-              </button>
-            </div>
-          </div>
-
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Basisinformatie</h3>
             <div>

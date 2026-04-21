@@ -4,16 +4,24 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { Case, CrimeType, CooperationLevel, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS, KeyDiscovery } from '@/lib/types'
+import { Case, CrimeType, CooperationLevel, IntervieweeType, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS, SUSPECT_COOPERATION_LABELS, SUSPECT_COOPERATION_DESCRIPTIONS, KeyDiscovery } from '@/lib/types'
 import { Shield, ArrowLeft, Save, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 const CRIME_TYPES: { value: CrimeType; label: string; article: string }[] = [
+  { value: 'diefstal', label: 'Diefstal', article: 'Art. 310 Sr' },
+  { value: 'inbraak', label: 'Inbraak (gekwal. diefstal)', article: 'Art. 311 Sr' },
+  { value: 'straatroof', label: 'Straatroof / Beroving', article: 'Art. 312 Sr' },
+  { value: 'mishandeling', label: 'Mishandeling', article: 'Art. 300 Sr' },
+  { value: 'huiselijk_geweld', label: 'Huiselijk geweld', article: 'Art. 304 Sr' },
+  { value: 'bedreiging', label: 'Bedreiging', article: 'Art. 285 Sr' },
+  { value: 'stalking', label: 'Stalking / Belaging', article: 'Art. 285b Sr' },
+  { value: 'aanranding', label: 'Aanranding / Lastigvallen', article: 'Art. 246 Sr' },
   { value: 'vernieling', label: 'Vernieling', article: 'Art. 350 Sr' },
   { value: 'heling', label: 'Heling', article: 'Art. 416 Sr' },
-  { value: 'diefstal', label: 'Diefstal', article: 'Art. 310 Sr' },
-  { value: 'mishandeling', label: 'Mishandeling', article: 'Art. 300 Sr' },
-  { value: 'inbraak', label: 'Inbraak', article: 'Art. 311 Sr' },
+  { value: 'oplichting', label: 'Oplichting / Fraude', article: 'Art. 326 Sr' },
+  { value: 'rijden_onder_invloed', label: 'Rijden onder invloed', article: 'Art. 8 WVW' },
+  { value: 'drugs', label: 'Drugsdelict', article: 'Art. 2/3 Opiumwet' },
   { value: 'overig', label: 'Overig', article: '' },
 ]
 
@@ -79,6 +87,8 @@ export default function EditCasePage() {
     return <div className="min-h-screen flex items-center justify-center text-gray-400">Laden...</div>
   }
 
+  const isSuspect = caseData.intervieweeType === 'verdachte'
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -101,6 +111,22 @@ export default function EditCasePage() {
       </header>
 
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-4">
+        {/* Type interview */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Type interview</p>
+          <div className="flex rounded-xl overflow-hidden border border-gray-200">
+            <button onClick={() => setField('intervieweeType', 'getuige')}
+              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${!isSuspect ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+              Getuigenverhoor
+            </button>
+            <button onClick={() => setField('intervieweeType', 'verdachte')}
+              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${isSuspect ? 'bg-red-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+              Verdachtenverhoor
+            </button>
+          </div>
+        </div>
+
+        {/* Basisinformatie */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           <h3 className="font-semibold text-gray-900">Basisinformatie</h3>
           <div>
@@ -111,7 +137,11 @@ export default function EditCasePage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Delictstype</label>
-              <select value={caseData.crimeType} onChange={e => setField('crimeType', e.target.value)}
+              <select value={caseData.crimeType} onChange={e => {
+                const ct = CRIME_TYPES.find(c => c.value === e.target.value)
+                setField('crimeType', e.target.value)
+                if (ct?.article) setField('legalArticle', ct.article)
+              }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {CRIME_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label}</option>)}
               </select>
@@ -134,11 +164,12 @@ export default function EditCasePage() {
           </div>
         </div>
 
+        {/* Getuige / Verdachte */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <h3 className="font-semibold text-gray-900">Getuige</h3>
+          <h3 className="font-semibold text-gray-900">{isSuspect ? 'Verdachte' : 'Getuige'}</h3>
           <div className="grid grid-cols-4 gap-4">
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Naam {isSuspect ? 'verdachte' : 'getuige'}</label>
               <input type="text" value={caseData.witnessName} onChange={e => setField('witnessName', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
@@ -157,12 +188,29 @@ export default function EditCasePage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Profiel</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Profiel van de {isSuspect ? 'verdachte' : 'getuige'}</label>
             <textarea value={caseData.witnessProfile} onChange={e => setField('witnessProfile', e.target.value)} rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
           </div>
+          {isSuspect && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Wat heeft de verdachte daadwerkelijk gedaan?</label>
+                <textarea value={caseData.suspectBackground || ''} onChange={e => setField('suspectBackground', e.target.value)} rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  placeholder="Beschrijf exact wat de verdachte heeft gedaan — alleen zichtbaar voor de AI..." />
+              </div>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" checked={caseData.isGuilty ?? true} onChange={e => setField('isGuilty', e.target.checked)} className="w-4 h-4" />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Verdachte is schuldig</span>
+                  <p className="text-xs text-gray-500">Uitvinken als je een onschuldige verdachte wilt oefenen</p>
+                </div>
+              </label>
+            </>
+          )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Meewerkingsniveau</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{isSuspect ? 'Houding verdachte' : 'Meewerkingsniveau'}</label>
             <div className="space-y-2">
               {([1,2,3,4,5] as CooperationLevel[]).map(l => (
                 <label key={l} className="flex items-start gap-3 cursor-pointer">
@@ -171,8 +219,8 @@ export default function EditCasePage() {
                     onChange={() => setField('cooperationLevel', l)}
                     className="mt-0.5" />
                   <div>
-                    <span className="text-sm font-medium text-gray-900">{l} — {COOPERATION_LABELS[l]}</span>
-                    <p className="text-xs text-gray-500">{COOPERATION_DESCRIPTIONS[l]}</p>
+                    <span className="text-sm font-medium text-gray-900">{l} — {isSuspect ? SUSPECT_COOPERATION_LABELS[l] : COOPERATION_LABELS[l]}</span>
+                    <p className="text-xs text-gray-500">{isSuspect ? SUSPECT_COOPERATION_DESCRIPTIONS[l] : COOPERATION_DESCRIPTIONS[l]}</p>
                   </div>
                 </label>
               ))}
@@ -180,8 +228,9 @@ export default function EditCasePage() {
           </div>
         </div>
 
+        {/* Wat weet de getuige/verdachte */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
-          <h3 className="font-semibold text-gray-900">Wat weet de getuige?</h3>
+          <h3 className="font-semibold text-gray-900">Wat weet de {isSuspect ? 'verdachte' : 'getuige'}?</h3>
           {caseData.witnessKnows.map((k, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="text-sm text-gray-400 w-5">{i+1}.</span>
@@ -192,11 +241,12 @@ export default function EditCasePage() {
           ))}
         </div>
 
+        {/* Sleutelpunten */}
         <div className="bg-white rounded-xl border border-amber-200 p-6 space-y-4">
           <div>
             <h3 className="font-semibold text-gray-900">Sleutelpunten voor de student</h3>
             <p className="text-sm text-gray-500 mt-1">
-              Definieer wat de student moet achterhalen via doorvragen. De getuige geeft hints; de student wordt beoordeeld op of hij deze punten heeft opgespoord en verwerkt in het PV.
+              Wat moet de student achterhalen via doorvragen? De {isSuspect ? 'verdachte' : 'getuige'} geeft hints; de student wordt beoordeeld op of hij deze punten heeft opgespoord en verwerkt in het PV.
             </p>
           </div>
           {(caseData.keyDiscoveries || []).map((kd, i) => (
@@ -209,30 +259,20 @@ export default function EditCasePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Wat moet de student achterhalen?</label>
-                <input
-                  type="text"
-                  value={kd.description}
-                  onChange={e => setDiscovery(i, 'description', e.target.value)}
+                <input type="text" value={kd.description} onChange={e => setDiscovery(i, 'description', e.target.value)}
                   className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  placeholder="Bijv. De verdachte had een tatoeage op zijn linkerarm"
-                />
+                  placeholder="Bijv. De verdachte had een tatoeage op zijn linkerarm" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Hoe hint de getuige hier naar? (alleen zichtbaar voor de AI)</label>
-                <input
-                  type="text"
-                  value={kd.witnessHint}
-                  onChange={e => setDiscovery(i, 'witnessHint', e.target.value)}
+                <label className="block text-xs font-medium text-gray-600 mb-1">Hoe hint de {isSuspect ? 'verdachte' : 'getuige'} hier naar? (alleen zichtbaar voor de AI)</label>
+                <input type="text" value={kd.witnessHint} onChange={e => setDiscovery(i, 'witnessHint', e.target.value)}
                   className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  placeholder="Bijv. Noem terloops iets over een opvallend kenmerk als uiterlijk ter sprake komt"
-                />
+                  placeholder="Bijv. Noem terloops iets over een opvallend kenmerk als uiterlijk ter sprake komt" />
               </div>
             </div>
           ))}
-          <button
-            onClick={addDiscovery}
-            className="flex items-center gap-2 text-sm font-medium text-amber-700 hover:text-amber-900 px-3 py-2 border border-dashed border-amber-300 rounded-lg w-full justify-center hover:bg-amber-50"
-          >
+          <button onClick={addDiscovery}
+            className="flex items-center gap-2 text-sm font-medium text-amber-700 hover:text-amber-900 px-3 py-2 border border-dashed border-amber-300 rounded-lg w-full justify-center hover:bg-amber-50">
             <Plus className="w-4 h-4" />
             Sleutelpunt toevoegen
           </button>

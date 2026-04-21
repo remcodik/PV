@@ -152,7 +152,7 @@ export default function StudentCasesPage() {
                   <div className="flex items-center gap-3 mt-4">
                     <div className="flex items-center gap-1.5">
                       <Users className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">Getuige: {c.witnessName}</span>
+                      <span className="text-sm text-gray-600">{c.intervieweeType === 'verdachte' ? '🔴 Verdachte' : 'Getuige'}: {c.witnessName}</span>
                     </div>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${COOP_COLORS[c.cooperationLevel]}`}>
                       {COOP_LABELS[c.cooperationLevel]}
