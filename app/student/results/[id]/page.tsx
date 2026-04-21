@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase'
 import { Session, Case, PVReport } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { gradeColor, formatDate } from '@/lib/utils'
-import { Shield, CheckCircle, AlertCircle, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react'
+import { Shield, CheckCircle, AlertCircle, ArrowLeft, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import Link from 'next/link'
 
 const now = new Date().toISOString()
@@ -49,12 +49,9 @@ export default function ResultsPage() {
     const fetchData = async () => {
       try {
         if (isLocal) {
-          // Load session from localStorage
           const localSess = loadLocalSession(id)
           if (!localSess) return
           setSession(localSess)
-
-          // Load case from memory
           const memCase = MEMORY_CASES.find(c => c.id === localSess.caseId)
           if (memCase) setCaseData(memCase)
           else {
@@ -63,14 +60,11 @@ export default function ResultsPage() {
               if (caseDoc.exists()) setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
             } catch {}
           }
-
-          // Load report from localStorage
           const localReport = loadLocalReport(id)
           if (localReport) setReport(localReport)
           return
         }
 
-        // Firestore flow — fall back to localStorage if Firestore fails
         let sessData: Session | null = null
         try {
           const sessDoc = await getDoc(doc(db, 'sessions', id))
@@ -80,7 +74,6 @@ export default function ResultsPage() {
         if (!sessData) return
         setSession(sessData)
 
-        // Load case
         if (sessData.caseId.startsWith('builtin_')) {
           const memCase = MEMORY_CASES.find(c => c.id === sessData.caseId)
           if (memCase) setCaseData(memCase)
@@ -89,7 +82,6 @@ export default function ResultsPage() {
           if (caseDoc.exists()) setCaseData({ id: caseDoc.id, ...caseDoc.data() } as Case)
         }
 
-        // Load report from Firestore, fall back to localStorage
         try {
           const repSnap = await getDocs(query(collection(db, 'pvreports'), where('sessionId', '==', id)))
           if (!repSnap.empty) {
@@ -112,7 +104,7 @@ export default function ResultsPage() {
   if (!session || !caseData || !report) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -120,159 +112,176 @@ export default function ResultsPage() {
   const scoreCategories = [
     { key: 'formalia', label: 'Formalia', max: 15 },
     { key: 'zeven_w', label: 'Zeven W', max: 25 },
-    { key: 'getuigenverklaring', label: 'Getuigen-verklaring', max: 20 },
-    { key: 'delictsomschrijving', label: 'Delicts-omschrijving', max: 15 },
+    { key: 'getuigenverklaring', label: 'Verklaring', max: 20 },
+    { key: 'delictsomschrijving', label: 'Delict', max: 15 },
     { key: 'objectiviteit', label: 'Objectiviteit', max: 10 },
     { key: 'doorvragen', label: 'Doorvragen', max: 15 },
   ]
+
+  const gradeNum = report.cijfer
+  const gradeBg = gradeNum >= 8 ? 'bg-emerald-50 border-emerald-100' :
+                  gradeNum >= 6 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'
+  const gradeBar = gradeNum >= 8 ? 'bg-emerald-500' :
+                   gradeNum >= 6 ? 'bg-amber-500' : 'bg-red-500'
 
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <Link href="/student/dashboard" className="text-gray-400 hover:text-gray-600">
+          <Link href="/student/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="font-semibold text-gray-900">Resultaat</h1>
-            <p className="text-xs text-gray-500">{caseData.title}</p>
+            <h1 className="font-semibold text-gray-900">Beoordeling</h1>
+            <p className="text-xs text-gray-500 truncate">{caseData.title}</p>
           </div>
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-5">
         {/* Grade card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-          <p className="text-gray-500 mb-2">Jouw cijfer</p>
-          <p className={`text-7xl font-bold mb-2 ${gradeColor(report.cijfer)}`}>
-            {report.cijfer.toFixed(1)}
-          </p>
-          <p className="text-gray-400 text-sm">{report.totalScore}/100 punten</p>
-          <div className="mt-4 bg-gray-100 rounded-full h-3 overflow-hidden">
+        <div className={`rounded-xl border ${gradeBg} p-6`}>
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Eindcijfer</p>
+              <p className={`text-6xl font-bold leading-none ${gradeColor(gradeNum)}`}>
+                {gradeNum.toFixed(1)}
+              </p>
+              <p className="text-sm text-gray-400 mt-2">{report.totalScore} / 100 punten</p>
+            </div>
+            <div className="text-right text-xs text-gray-400">
+              {formatDate(report.evaluatedAt!)}
+            </div>
+          </div>
+          <div className="bg-white/60 rounded-full h-2 overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${
-                report.cijfer >= 8 ? 'bg-green-500' :
-                report.cijfer >= 6 ? 'bg-yellow-500' : 'bg-red-500'
-              }`}
+              className={`h-full rounded-full transition-all ${gradeBar}`}
               style={{ width: `${report.totalScore}%` }}
             />
           </div>
-          <p className="text-xs text-gray-400 mt-4">{formatDate(report.evaluatedAt!)}</p>
+        </div>
+
+        {/* Score breakdown — mini grid */}
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          {scoreCategories.map(cat => {
+            const score = report.scoresBreakdown[cat.key as keyof typeof report.scoresBreakdown] ?? 0
+            const pct = (score / cat.max) * 100
+            const color = pct >= 70 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600'
+            const bg = pct >= 70 ? 'bg-emerald-50 border-emerald-100' : pct >= 50 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'
+            return (
+              <div key={cat.key} className={`rounded-lg border ${bg} p-3 text-center`}>
+                <p className="text-xs text-gray-500 mb-1 leading-tight">{cat.label}</p>
+                <p className={`text-lg font-bold ${color}`}>{score}</p>
+                <p className="text-xs text-gray-400">/{cat.max}</p>
+              </div>
+            )
+          })}
         </div>
 
         {/* General feedback */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-          <h3 className="font-semibold text-blue-900 mb-2">Algemene feedback</h3>
-          <p className="text-blue-800 text-sm leading-relaxed">{report.generalFeedback}</p>
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
+          <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2">Algemene feedback</p>
+          <p className="text-sm text-blue-900 leading-relaxed">{report.generalFeedback}</p>
         </div>
 
-        {/* Score breakdown */}
+        {/* Detailed feedback */}
         <div>
-          <h3 className="font-semibold text-gray-900 mb-3">Scores per categorie</h3>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Feedback per categorie</p>
 
-          {/* Grid overview */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
-            {scoreCategories.map(cat => {
-              const score = report.scoresBreakdown[cat.key as keyof typeof report.scoresBreakdown] ?? 0
-              const pct = (score / cat.max) * 100
+          {(!report.feedback || report.feedback.length === 0) && (
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-800 mb-3">
+              Gedetailleerde feedback is niet beschikbaar. Dien het PV opnieuw in om volledige feedback te ontvangen.
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {(report.feedback ?? []).map((item, i) => {
+              const pct = item.score / item.maxScore
+              const good = pct >= 0.7
+              const iconBg = good ? 'bg-emerald-50' : pct >= 0.5 ? 'bg-amber-50' : 'bg-red-50'
+              const barColor = good ? 'bg-emerald-500' : pct >= 0.5 ? 'bg-amber-500' : 'bg-red-500'
+              const scoreColor = good ? 'text-emerald-600' : pct >= 0.5 ? 'text-amber-600' : 'text-red-600'
               return (
-                <div key={cat.key} className="bg-white rounded-xl border border-gray-200 p-3 text-center">
-                  <p className="text-xs text-gray-500 mb-1 leading-tight">{cat.label}</p>
-                  <p className={`text-xl font-bold ${pct >= 70 ? 'text-green-600' : pct >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                    {score}
-                  </p>
-                  <p className="text-xs text-gray-400">/{cat.max}</p>
+                <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <button
+                    onClick={() => setExpanded(prev => {
+                      const s = new Set(prev)
+                      s.has(i) ? s.delete(i) : s.add(i)
+                      return s
+                    })}
+                    className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+                        {good
+                          ? <CheckCircle className="w-4 h-4 text-emerald-600" />
+                          : <AlertCircle className="w-4 h-4 text-amber-600" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm">{item.category}</p>
+                        <div className="w-24 h-1 bg-gray-100 rounded-full mt-1">
+                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct * 100}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                      <span className={`text-sm font-bold ${scoreColor}`}>{item.score}</span>
+                      <span className="text-xs text-gray-400">/{item.maxScore}</span>
+                      {expanded.has(i)
+                        ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                        : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                    </div>
+                  </button>
+
+                  {expanded.has(i) && (
+                    <div className="border-t border-gray-100 px-5 py-4 bg-gray-50/50">
+                      <p className="text-sm text-gray-700 leading-relaxed mb-3">{item.feedback}</p>
+                      {item.suggestions.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Verbeterpunten</p>
+                          <ul className="space-y-1.5">
+                            {item.suggestions.map((s, j) => (
+                              <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
+                                <span className="text-blue-400 mt-0.5 flex-shrink-0">›</span>
+                                {s}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
-
-          {/* Detailed feedback per category */}
-          <div className="space-y-3">
-            {(!report.feedback || report.feedback.length === 0) && (
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm text-orange-800">
-                Gedetailleerde feedback is niet beschikbaar voor deze beoordeling. Dien het PV opnieuw in om volledige feedback te ontvangen.
-              </div>
-            )}
-            {(report.feedback ?? []).map((item, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <button
-                  onClick={() => setExpanded(prev => { const s = new Set(prev); s.has(i) ? s.delete(i) : s.add(i); return s })}
-                  className="w-full flex items-center justify-between px-5 py-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      (item.score / item.maxScore) >= 0.7 ? 'bg-green-100' :
-                      (item.score / item.maxScore) >= 0.5 ? 'bg-yellow-100' : 'bg-red-100'
-                    }`}>
-                      {(item.score / item.maxScore) >= 0.7
-                        ? <CheckCircle className="w-4 h-4 text-green-600" />
-                        : <AlertCircle className="w-4 h-4 text-red-600" />}
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-gray-900 text-sm">{item.category}</p>
-                      <div className="w-32 h-1.5 bg-gray-100 rounded-full mt-1">
-                        <div
-                          className={`h-full rounded-full ${
-                            (item.score / item.maxScore) >= 0.7 ? 'bg-green-500' :
-                            (item.score / item.maxScore) >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${(item.score / item.maxScore) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-gray-700">{item.score}/{item.maxScore}</span>
-                    {expanded.has(i) ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                  </div>
-                </button>
-                {expanded.has(i) && (
-                  <div className="border-t border-gray-100 px-5 py-4 bg-gray-50">
-                    <p className="text-sm text-gray-700 mb-3">{item.feedback}</p>
-                    {item.suggestions.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-gray-500 mb-2">Verbeterpunten:</p>
-                        <ul className="space-y-1">
-                          {item.suggestions.map((s, j) => (
-                            <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
-                              <span className="text-blue-500 mt-0.5">•</span>
-                              {s}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Your PV */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900">Jouw ingediende PV</h3>
+        {/* Submitted PV */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100">
+            <FileText className="w-4 h-4 text-gray-400" />
+            <p className="text-sm font-semibold text-gray-700">Jouw ingediende PV</p>
           </div>
-          <pre className="p-5 text-sm text-gray-700 font-mono leading-relaxed whitespace-pre-wrap">
+          <pre className="p-5 text-sm text-gray-600 font-mono leading-relaxed whitespace-pre-wrap">
             {report.content}
           </pre>
         </div>
 
+        {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
             href={`/student/pv-editor/${id}`}
-            className="flex-1 text-center bg-white border border-blue-600 text-blue-600 py-3 rounded-xl font-medium hover:bg-blue-50 transition-colors"
+            className="flex-1 text-center border border-blue-600 text-blue-600 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
           >
             PV aanpassen en opnieuw indienen
           </Link>
           <Link
             href="/student/cases"
-            className="flex-1 text-center bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors"
+            className="flex-1 text-center bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
           >
             Nieuwe oefening starten
           </Link>

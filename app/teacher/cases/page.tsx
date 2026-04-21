@@ -7,14 +7,13 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { crimeTypeLabel } from '@/lib/utils'
-import { Shield, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Sparkles } from 'lucide-react'
+import { Shield, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Sparkles, Users, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 
 const COOP_LABELS: Record<number, string> = {
   1: 'Zeer coöp.', 2: 'Coöp.', 3: 'Neutraal', 4: 'Terughoudend', 5: 'Niet coöp.',
 }
 
-// Show BUILTIN_CASES from memory immediately — Firestore is synced in background
 const seedTime = new Date().toISOString()
 const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
   ...c,
@@ -41,7 +40,6 @@ export default function TeacherCasesPage() {
       const existing = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Case)
 
       if (!existing.some(c => c.isTemplate)) {
-        // First run: seed BUILTIN_CASES to Firestore
         await Promise.all(
           BUILTIN_CASES.map(c => addDoc(collection(db, 'cases'), { ...c, createdAt: seedTime, updatedAt: seedTime }))
         )
@@ -51,7 +49,7 @@ export default function TeacherCasesPage() {
         setCases(existing)
       }
     } catch {
-      // Firestore unavailable — MEMORY_CASES already showing, nothing to do
+      // keep MEMORY_CASES
     } finally {
       setSyncing(false)
     }
@@ -84,7 +82,7 @@ export default function TeacherCasesPage() {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/teacher/dashboard" className="text-gray-400 hover:text-gray-600">
+            <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -95,20 +93,20 @@ export default function TeacherCasesPage() {
               {syncing && <p className="text-xs text-gray-400">Synchroniseren...</p>}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Link
               href="/teacher/cases/new?mode=generate"
-              className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700"
+              className="inline-flex items-center gap-2 border border-gray-200 bg-white text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-indigo-500" />
               AI genereren
             </Link>
             <Link
               href="/teacher/cases/new"
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              Handmatig
+              Nieuwe case
             </Link>
           </div>
         </div>
@@ -116,58 +114,76 @@ export default function TeacherCasesPage() {
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         {[
-          { title: 'Gepubliceerd', items: published },
-          { title: 'Concept', items: drafts },
+          { title: 'Gepubliceerd', items: published, count: published.length },
+          { title: 'Concept', items: drafts, count: drafts.length },
         ].map(section => (
           <div key={section.title} className="mb-8">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              {section.title} ({section.items.length})
-            </h2>
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{section.title}</p>
+              <span className="text-xs font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md">{section.count}</span>
+            </div>
+
             {section.items.length === 0 ? (
-              <p className="text-gray-400 text-sm">Geen cases in deze categorie.</p>
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <BookOpen className="w-5 h-5 text-gray-400" />
+                </div>
+                <p className="text-sm text-gray-500">Geen cases in deze categorie.</p>
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {section.items.map(c => (
-                  <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">
                             {crimeTypeLabel(c.crimeType)}
                           </span>
-                          <span className="text-xs text-gray-400">{c.legalArticle}</span>
+                          <span className="text-xs text-gray-400 font-mono">{c.legalArticle}</span>
                           {c.isTemplate && (
-                            <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                            <span className="text-xs font-medium bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md">
                               Sjabloon
                             </span>
                           )}
+                          {c.intervieweeType === 'verdachte' && (
+                            <span className="text-xs font-medium bg-red-50 text-red-600 px-2 py-0.5 rounded-md">
+                              Verdachte
+                            </span>
+                          )}
                         </div>
-                        <h3 className="font-semibold text-gray-900">{c.title}</h3>
-                        <p className="text-sm text-gray-500 mt-0.5">{c.description}</p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-                          <span>Getuige: {c.witnessName}</span>
-                          <span>•</span>
-                          <span>Meew.: {COOP_LABELS[c.cooperationLevel]}</span>
+                        <h3 className="font-semibold text-gray-900 text-sm">{c.title}</h3>
+                        <p className="text-sm text-gray-400 mt-0.5 truncate">{c.description}</p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="flex items-center gap-1 text-xs text-gray-400">
+                            <Users className="w-3 h-3" />
+                            {c.witnessName}
+                          </span>
+                          <span className="text-xs text-gray-300">·</span>
+                          <span className="text-xs text-gray-400">{COOP_LABELS[c.cooperationLevel]}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         {!c.id.startsWith('builtin_') ? (
                           <>
                             <button
                               onClick={() => toggleStatus(c)}
                               disabled={toggling === c.id}
-                              title={c.status === 'published' ? 'Verberg van studenten' : 'Publiceer voor studenten'}
+                              title={c.status === 'published' ? 'Verbergen' : 'Publiceren'}
                               className={`p-2 rounded-lg transition-colors ${
                                 c.status === 'published'
-                                  ? 'text-green-600 bg-green-50 hover:bg-green-100'
-                                  : 'text-gray-400 bg-gray-50 hover:bg-gray-100'
+                                  ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
+                                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                               }`}
                             >
                               {c.status === 'published' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                             </button>
                             <Link
                               href={`/teacher/cases/${c.id}`}
-                              className="p-2 rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+                              className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                              title="Bewerken"
                             >
                               <Edit className="w-4 h-4" />
                             </Link>
@@ -175,7 +191,8 @@ export default function TeacherCasesPage() {
                               <button
                                 onClick={() => deleteCase(c.id)}
                                 disabled={deleting === c.id}
-                                className="p-2 rounded-lg text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
+                                title="Verwijderen"
+                                className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>

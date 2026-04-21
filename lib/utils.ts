@@ -34,7 +34,15 @@ export function crimeTypeLabel(type: string): string {
     heling: 'Heling',
     diefstal: 'Diefstal',
     mishandeling: 'Mishandeling',
+    huiselijk_geweld: 'Huiselijk geweld',
     inbraak: 'Inbraak',
+    bedreiging: 'Bedreiging',
+    stalking: 'Stalking',
+    aanranding: 'Aanranding',
+    straatroof: 'Straatroof',
+    oplichting: 'Oplichting',
+    rijden_onder_invloed: 'Rijden onder invloed',
+    drugs: 'Drugs',
     overig: 'Overig',
   }
   return labels[type] ?? type

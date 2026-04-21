@@ -6,8 +6,8 @@ import { collection, getDocs, query } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, PVReport, UserProfile } from '@/lib/types'
-import { formatDate, statusLabel, gradeColor } from '@/lib/utils'
-import { Shield, Users, BookOpen, LogOut, Plus, Settings, ChevronRight } from 'lucide-react'
+import { gradeColor } from '@/lib/utils'
+import { Shield, Users, BookOpen, LogOut, Plus, FileText, ChevronRight, TrendingUp, ClipboardList } from 'lucide-react'
 import Link from 'next/link'
 
 export default function TeacherDashboard() {
@@ -52,7 +52,6 @@ export default function TeacherDashboard() {
     ? (reports.reduce((s, r) => s + r.cijfer, 0) / reports.length).toFixed(1)
     : null
 
-  // Group sessions by student
   const byStudent = students.map(s => {
     const studentSessions = sessions.filter(sess => sess.studentId === s.uid)
     const studentReports = reports.filter(r => r.studentId === s.uid)
@@ -71,19 +70,23 @@ export default function TeacherDashboard() {
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-semibold text-gray-900">PV Trainer — Docent</h1>
-              <p className="text-xs text-gray-500">{profile?.name}</p>
+              <h1 className="font-semibold text-gray-900">PV Trainer</h1>
+              <p className="text-xs text-gray-500">Docent — {profile?.name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               href="/teacher/cases"
-              className="flex items-center gap-2 text-sm bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
             >
               <BookOpen className="w-4 h-4" />
               Cases beheren
             </Link>
-            <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+            <button
+              onClick={handleLogout}
+              className="p-2.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              title="Uitloggen"
+            >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
@@ -92,22 +95,42 @@ export default function TeacherDashboard() {
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500 mb-1">Studenten</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                <Users className="w-4 h-4 text-blue-600" />
+              </div>
+              <p className="text-sm text-gray-500">Studenten</p>
+            </div>
             <p className="text-3xl font-bold text-gray-900">{students.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500 mb-1">Sessies totaal</p>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
+                <ClipboardList className="w-4 h-4 text-indigo-600" />
+              </div>
+              <p className="text-sm text-gray-500">Sessies</p>
+            </div>
             <p className="text-3xl font-bold text-gray-900">{sessions.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500 mb-1">Ingediende PV's</p>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+                <FileText className="w-4 h-4 text-emerald-600" />
+              </div>
+              <p className="text-sm text-gray-500">Ingediende PV's</p>
+            </div>
             <p className="text-3xl font-bold text-gray-900">{reports.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <p className="text-sm text-gray-500 mb-1">Gemiddeld cijfer</p>
-            <p className={`text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-400'}`}>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-amber-600" />
+              </div>
+              <p className="text-sm text-gray-500">Gem. cijfer</p>
+            </div>
+            <p className={`text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
               {avgGrade ?? '—'}
             </p>
           </div>
@@ -115,71 +138,84 @@ export default function TeacherDashboard() {
 
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <Link href="/teacher/cases/new" className="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all flex items-center gap-4">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+          <Link
+            href="/teacher/cases/new"
+            className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:border-blue-200 transition-all flex items-center gap-4 group"
+          >
+            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
               <Plus className="w-5 h-5 text-blue-600" />
             </div>
-            <div>
-              <p className="font-medium text-gray-900">Nieuwe case aanmaken</p>
-              <p className="text-sm text-gray-500">Handmatig of via AI genereren</p>
+            <div className="min-w-0">
+              <p className="font-medium text-gray-900 text-sm">Nieuwe case aanmaken</p>
+              <p className="text-xs text-gray-400 mt-0.5">Handmatig of via AI</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
+            <ChevronRight className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0" />
           </Link>
-          <Link href="/teacher/cases" className="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all flex items-center gap-4">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <Settings className="w-5 h-5 text-green-600" />
+          <Link
+            href="/teacher/cases"
+            className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:border-emerald-200 transition-all flex items-center gap-4 group"
+          >
+            <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+              <BookOpen className="w-5 h-5 text-emerald-600" />
             </div>
-            <div>
-              <p className="font-medium text-gray-900">Cases beheren</p>
-              <p className="text-sm text-gray-500">Publiceren, bewerken, verwijderen</p>
+            <div className="min-w-0">
+              <p className="font-medium text-gray-900 text-sm">Cases beheren</p>
+              <p className="text-xs text-gray-400 mt-0.5">Publiceren, bewerken, verwijderen</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-300 ml-auto" />
+            <ChevronRight className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0" />
           </Link>
         </div>
 
-        {/* Students overview */}
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Studenten overzicht</h2>
+        {/* Students */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Studenten overzicht</p>
 
         {loading ? (
-          <div className="text-center py-12 text-gray-400">Laden...</div>
+          <div className="flex items-center justify-center py-16">
+            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : byStudent.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Nog geen studenten geregistreerd.</p>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Users className="w-6 h-6 text-gray-400" />
+            </div>
+            <p className="font-medium text-gray-700 mb-1">Nog geen studenten</p>
+            <p className="text-sm text-gray-400">Studenten verschijnen hier zodra ze zich registreren.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {byStudent.map(({ student, sessions: ss, reports: rs, avgGrade: ag }) => (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            {byStudent.map(({ student, sessions: ss, reports: rs, avgGrade: ag }, idx) => (
               <Link
                 key={student.uid}
                 href={`/teacher/students/${student.uid}`}
-                className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between hover:border-blue-300 hover:shadow-sm transition-all"
+                className={`flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors ${
+                  idx < byStudent.length - 1 ? 'border-b border-gray-100' : ''
+                }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-semibold text-gray-600">
                       {student.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{student.name}</p>
-                    <p className="text-sm text-gray-500">{student.email}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 text-sm truncate">{student.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{student.email}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">{ss.length}</p>
+                <div className="flex items-center gap-5 flex-shrink-0 ml-4">
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-900">{ss.length}</p>
                     <p className="text-xs text-gray-400">sessies</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">{rs.length}</p>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-900">{rs.length}</p>
                     <p className="text-xs text-gray-400">PV's</p>
                   </div>
-                  <div className="text-center">
-                    <p className={`text-lg font-semibold ${ag ? gradeColor(ag) : 'text-gray-300'}`}>
+                  <div className="text-right">
+                    <p className={`text-sm font-semibold ${ag ? gradeColor(ag) : 'text-gray-300'}`}>
                       {ag ? ag.toFixed(1) : '—'}
                     </p>
-                    <p className="text-xs text-gray-400">gem. cijfer</p>
+                    <p className="text-xs text-gray-400">cijfer</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300" />
                 </div>
