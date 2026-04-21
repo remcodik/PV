@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, PVReport, UserProfile } from '@/lib/types'
 import { gradeColor } from '@/lib/utils'
-import { Shield, Users, BookOpen, LogOut, Plus, FileText, ChevronRight, TrendingUp, ClipboardList } from 'lucide-react'
+import { Shield, Users, BookOpen, LogOut, Plus, FileText, ChevronRight, TrendingUp, ClipboardList, UserCog } from 'lucide-react'
 import Link from 'next/link'
 
 export default function TeacherDashboard() {
@@ -137,7 +137,7 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Quick actions */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-4 mb-8">
           <Link
             href="/teacher/cases/new"
             className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:border-blue-200 transition-all flex items-center gap-4 group"
@@ -146,7 +146,7 @@ export default function TeacherDashboard() {
               <Plus className="w-5 h-5 text-blue-600" />
             </div>
             <div className="min-w-0">
-              <p className="font-medium text-gray-900 text-sm">Nieuwe case aanmaken</p>
+              <p className="font-medium text-gray-900 text-sm">Nieuwe case</p>
               <p className="text-xs text-gray-400 mt-0.5">Handmatig of via AI</p>
             </div>
             <ChevronRight className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0" />
@@ -160,7 +160,20 @@ export default function TeacherDashboard() {
             </div>
             <div className="min-w-0">
               <p className="font-medium text-gray-900 text-sm">Cases beheren</p>
-              <p className="text-xs text-gray-400 mt-0.5">Publiceren, bewerken, verwijderen</p>
+              <p className="text-xs text-gray-400 mt-0.5">Publiceren, bewerken</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0" />
+          </Link>
+          <Link
+            href="/teacher/users"
+            className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:border-indigo-200 transition-all flex items-center gap-4 group"
+          >
+            <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+              <UserCog className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-gray-900 text-sm">Gebruikers</p>
+              <p className="text-xs text-gray-400 mt-0.5">Rollen en accounts</p>
             </div>
             <ChevronRight className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0" />
           </Link>
