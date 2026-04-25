@@ -94,7 +94,7 @@ function TeacherCasesInner() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
@@ -111,23 +111,23 @@ function TeacherCasesInner() {
           <div className="flex items-center gap-2">
             <Link
               href="/teacher/cases/new?mode=generate"
-              className="inline-flex items-center gap-2 border border-gray-200 bg-white text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 border border-gray-200 bg-white text-gray-700 px-3 sm:px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
             >
               <Sparkles className="w-4 h-4 text-indigo-500" />
-              AI genereren
+              <span className="hidden sm:inline">AI genereren</span>
             </Link>
             <Link
               href="/teacher/cases/new"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 sm:px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              Nieuwe case
+              <span className="hidden sm:inline">Nieuwe case</span>
             </Link>
           </div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {savedBanner && (
           <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-6">
             <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -154,7 +154,7 @@ function TeacherCasesInner() {
             ) : (
               <div className="space-y-2">
                 {section.items.map(c => (
-                  <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                  <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">

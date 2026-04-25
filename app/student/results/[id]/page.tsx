@@ -126,7 +126,7 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <Link href="/student/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -141,7 +141,7 @@ export default function ResultsPage() {
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-5">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4 sm:space-y-5">
         {/* Grade card */}
         <div className={`rounded-xl border ${gradeBg} p-6`}>
           <div className="flex items-end justify-between mb-4">
@@ -277,13 +277,15 @@ export default function ResultsPage() {
             href={`/student/pv-editor/${id}`}
             className="flex-1 text-center border border-blue-600 text-blue-600 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
           >
-            PV aanpassen en opnieuw indienen
+            <span className="sm:hidden">PV aanpassen</span>
+            <span className="hidden sm:inline">PV aanpassen en opnieuw indienen</span>
           </Link>
           <Link
             href="/student/cases"
             className="flex-1 text-center bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
           >
-            Nieuwe oefening starten
+            <span className="sm:hidden">Nieuwe oefening</span>
+            <span className="hidden sm:inline">Nieuwe oefening starten</span>
           </Link>
         </div>
       </div>

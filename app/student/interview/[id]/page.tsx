@@ -453,7 +453,7 @@ export default function InterviewPage() {
       </header>
 
       {/* Case briefing banner */}
-      <div className="bg-blue-50 border-b border-blue-100 px-6 py-3">
+      <div className="bg-blue-50 border-b border-blue-100 px-4 sm:px-6 py-3">
         <div className="max-w-3xl mx-auto">
           <p className="text-sm text-blue-800">
             <strong>Zaak:</strong> {caseData.description} — <strong>Wetsartikel:</strong> {caseData.legalArticle}
@@ -462,7 +462,7 @@ export default function InterviewPage() {
       </div>
 
       {/* Witness avatar */}
-      <div className="bg-white border-b border-gray-100 px-6 py-4 flex-shrink-0">
+      <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex-shrink-0">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <div className="relative flex-shrink-0">
             {caseData.witnessPhoto ? (
@@ -501,7 +501,7 @@ export default function InterviewPage() {
       </div>
 
       {/* Transcript */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-3xl mx-auto space-y-4">
           {transcript.length === 0 && (
             <div className="text-center py-12">
@@ -587,7 +587,7 @@ export default function InterviewPage() {
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t border-gray-200 px-6 py-4 flex-shrink-0">
+      <div className="bg-white border-t border-gray-200 px-4 sm:px-6 py-4 flex-shrink-0">
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center gap-3">
             {isSpeaking && (

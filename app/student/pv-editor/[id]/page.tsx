@@ -246,9 +246,9 @@ export default function PVEditorPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden max-w-6xl mx-auto w-full px-4 py-6 gap-6">
+      <div className="flex-1 flex flex-col sm:flex-row sm:overflow-hidden max-w-6xl mx-auto w-full px-4 py-4 sm:py-6 gap-4 sm:gap-6">
         {/* Left: Transcript */}
-        <div className="w-80 flex-shrink-0 flex flex-col gap-4">
+        <div className="sm:w-80 sm:flex-shrink-0 flex flex-col gap-4">
           {/* Transcript */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <button
@@ -346,17 +346,17 @@ export default function PVEditorPage() {
         </div>
 
         {/* Right: Editor */}
-        <div className="flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
-          <div className="px-6 py-4 border-b border-gray-100">
+        <div className="flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col min-h-[60vh] sm:min-h-0">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900">Proces-Verbaal</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Verwijder de sjabloontekst en schrijf je eigen PV. Gebruik het transcript links als referentie.
+              Verwijder de sjabloontekst en schrijf je eigen PV. Gebruik het transcript als referentie.
             </p>
           </div>
           <textarea
             value={pvContent}
             onChange={e => setPvContent(e.target.value)}
-            className="flex-1 p-6 font-mono text-sm text-gray-800 resize-none focus:outline-none leading-relaxed"
+            className="flex-1 p-4 sm:p-6 font-mono text-sm text-gray-800 resize-none focus:outline-none leading-relaxed"
             spellCheck={false}
           />
           <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">

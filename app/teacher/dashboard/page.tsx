@@ -63,7 +63,7 @@ export default function TeacherDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -93,51 +93,51 @@ export default function TeacherDashboard() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Users className="w-4 h-4 text-blue-600" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
               </div>
-              <p className="text-sm text-gray-500">Studenten</p>
+              <p className="text-xs sm:text-sm text-gray-500">Studenten</p>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{students.length}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{students.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
-                <ClipboardList className="w-4 h-4 text-indigo-600" />
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <ClipboardList className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600" />
               </div>
-              <p className="text-sm text-gray-500">Sessies</p>
+              <p className="text-xs sm:text-sm text-gray-500">Sessies</p>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{sessions.length}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{sessions.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
-                <FileText className="w-4 h-4 text-emerald-600" />
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
               </div>
-              <p className="text-sm text-gray-500">Ingediende PV's</p>
+              <p className="text-xs sm:text-sm text-gray-500">PV's</p>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{reports.length}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{reports.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-amber-600" />
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
+            <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
               </div>
-              <p className="text-sm text-gray-500">Gem. cijfer</p>
+              <p className="text-xs sm:text-sm text-gray-500">Gem. cijfer</p>
             </div>
-            <p className={`text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
+            <p className={`text-2xl sm:text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
               {avgGrade ?? '—'}
             </p>
           </div>
         </div>
 
         {/* Quick actions */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Link
             href="/teacher/cases/new"
             className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:border-blue-200 transition-all flex items-center gap-4 group"
@@ -180,7 +180,7 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Students */}
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Studenten overzicht</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-2">Studenten overzicht</p>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">

@@ -113,7 +113,7 @@ export default function StudentCasesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <Link href="/student/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -128,13 +128,13 @@ export default function StudentCasesPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Beschikbare cases</p>
 
         <div className="space-y-3">
           {cases.map(c => (
-            <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-              <div className="flex items-start justify-between gap-4">
+            <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   {/* Badges */}
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -168,7 +168,7 @@ export default function StudentCasesPage() {
                 <button
                   onClick={() => startSession(c)}
                   disabled={starting === c.id}
-                  className="bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap flex-shrink-0 shadow-sm"
+                  className="bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors sm:whitespace-nowrap sm:flex-shrink-0 shadow-sm w-full sm:w-auto"
                 >
                   {starting === c.id ? 'Starten...' : 'Start oefening'}
                 </button>
