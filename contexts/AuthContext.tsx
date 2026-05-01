@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -37,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  // Prevents onAuthStateChanged from overwriting profile during registration
+  const registeringRef = useRef(false)
 
   useEffect(() => {
     const timeout = setTimeout(() => setLoading(false), 2000)
@@ -47,45 +49,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(firebaseUser)
         if (firebaseUser) {
           setSessionCookie()
+
+          // During register(), profile is set directly — skip here to avoid race
+          if (registeringRef.current) {
+            setLoading(false)
+            return
+          }
+
           try {
-            const docRef = doc(db, 'profiles', firebaseUser.uid)
-            const snap = await getDoc(docRef)
+            const snap = await getDoc(doc(db, 'profiles', firebaseUser.uid))
             if (snap.exists()) {
               setProfile(snap.data() as UserProfile)
             } else {
-              // Profile not in Firestore — check localStorage then sync up
-              const local = localStorage.getItem(`profile_${firebaseUser.uid}`)
-              let profileData: UserProfile
-              if (local) {
-                profileData = JSON.parse(local) as UserProfile
+              // Not in Firestore — try localStorage
+              const raw = localStorage.getItem(`profile_${firebaseUser.uid}`)
+              if (raw) {
+                // Found in localStorage: sync it up to Firestore so user management works
+                const localProfile = JSON.parse(raw) as UserProfile
+                setProfile(localProfile)
+                try { await setDoc(doc(db, 'profiles', firebaseUser.uid), localProfile) } catch {}
               } else {
-                profileData = {
+                // No profile anywhere: create minimal fallback (in memory only, not synced)
+                const fallback: UserProfile = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email || '',
-                  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Student',
+                  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Gebruiker',
                   role: 'student',
                   createdAt: new Date().toISOString(),
                 }
-                localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(profileData))
+                setProfile(fallback)
               }
-              setProfile(profileData)
-              // Sync missing profile to Firestore so teacher user management can find it
-              try { await setDoc(doc(db, 'profiles', firebaseUser.uid), profileData) } catch {}
             }
           } catch {
-            // Firestore unavailable — use localStorage only
-            const local = localStorage.getItem(`profile_${firebaseUser.uid}`)
-            if (local) {
-              setProfile(JSON.parse(local) as UserProfile)
+            // Firestore unavailable — use localStorage
+            const raw = localStorage.getItem(`profile_${firebaseUser.uid}`)
+            if (raw) {
+              setProfile(JSON.parse(raw) as UserProfile)
             } else {
-              const fallback: UserProfile = {
+              setProfile({
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || '',
-                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Student',
+                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Gebruiker',
                 role: 'student',
                 createdAt: new Date().toISOString(),
-              }
-              setProfile(fallback)
+              })
             }
           }
         } else {
@@ -94,7 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setLoading(false)
       }, () => {
-        // Firebase auth fout — stop met laden
         clearTimeout(timeout)
         setLoading(false)
       })
@@ -110,21 +116,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (email: string, password: string, name: string, role: UserRole) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password)
-    const newProfile: UserProfile = {
-      uid: cred.user.uid,
-      email,
-      name,
-      role,
-      createdAt: new Date().toISOString(),
-    }
-    localStorage.setItem(`profile_${cred.user.uid}`, JSON.stringify(newProfile))
+    registeringRef.current = true
     try {
-      await setDoc(doc(db, 'profiles', cred.user.uid), newProfile)
-    } catch {
-      // Firestore mislukt — gebruik localStorage fallback
+      const cred = await createUserWithEmailAndPassword(auth, email, password)
+      const newProfile: UserProfile = {
+        uid: cred.user.uid,
+        email,
+        name,
+        role,
+        createdAt: new Date().toISOString(),
+      }
+      // Write to localStorage and Firestore before setting profile state
+      localStorage.setItem(`profile_${cred.user.uid}`, JSON.stringify(newProfile))
+      try { await setDoc(doc(db, 'profiles', cred.user.uid), newProfile) } catch {}
+      setProfile(newProfile)
+    } finally {
+      registeringRef.current = false
     }
-    setProfile(newProfile)
   }
 
   const logout = async () => {
