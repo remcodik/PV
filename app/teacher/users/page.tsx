@@ -5,7 +5,7 @@ import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, writeBatc
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserProfile } from '@/lib/types'
-import { Shield, Users, Trash2, UserCog, CheckCircle, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, ExternalLink } from 'lucide-react'
+import { Shield, Users, Trash2, UserCog, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, ExternalLink, Plus, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 
 interface UserRow extends UserProfile {
@@ -30,6 +30,10 @@ export default function UsersPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null)
   const [updatingRole, setUpdatingRole] = useState<string | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'student' as 'student' | 'teacher' })
+  const [showPassword, setShowPassword] = useState(false)
 
   const addToast = (toast: Omit<Toast, 'id'>) => {
     const id = ++toastId
@@ -157,6 +161,36 @@ export default function UsersPage() {
     }
   }
 
+  const createUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCreating(true)
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createForm),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        addToast({ type: 'error', title: 'Aanmaken mislukt', lines: [data.error ?? 'Onbekende fout'] })
+        return
+      }
+      const newUser: UserRow = { ...data.profile, sessionCount: 0, reportCount: 0 }
+      setUsers(prev => [...prev, newUser].sort((a, b) => a.name.localeCompare(b.name)))
+      setShowCreateModal(false)
+      setCreateForm({ name: '', email: '', password: '', role: 'student' })
+      addToast({
+        type: 'success',
+        title: '✓ Gebruiker aangemaakt',
+        lines: data.savedTo ?? [`Firestore: profiles/${data.uid}`],
+      })
+    } catch (err) {
+      addToast({ type: 'error', title: 'Aanmaken mislukt', lines: [String(err)] })
+    } finally {
+      setCreating(false)
+    }
+  }
+
   const students = users.filter(u => u.role === 'student')
   const teachers = users.filter(u => u.role === 'teacher')
 
@@ -230,6 +264,104 @@ export default function UsersPage() {
         </div>
       )}
 
+      {/* Create user modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-semibold text-gray-900">Nieuwe gebruiker aanmaken</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={createUser} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Naam</label>
+                <input
+                  type="text"
+                  required
+                  value={createForm.name}
+                  onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Voor- en achternaam"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">E-mail</label>
+                <input
+                  type="email"
+                  required
+                  value={createForm.email}
+                  onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="naam@example.com"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Wachtwoord</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={createForm.password}
+                    onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                    placeholder="Minimaal 6 tekens"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Rol</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['student', 'teacher'] as const).map(r => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setCreateForm(f => ({ ...f, role: r }))}
+                      className={`py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+                        createForm.role === r
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {r === 'student' ? 'Student' : 'Docent'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Annuleren
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                >
+                  {creating && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                  {creating ? 'Aanmaken...' : 'Aanmaken'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
@@ -241,14 +373,23 @@ export default function UsersPage() {
               <h1 className="font-semibold text-gray-900">PV Trainer</h1>
             </div>
           </div>
-          <button
-            onClick={fetchUsers}
-            disabled={loading}
-            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
-            title="Vernieuwen"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchUsers}
+              disabled={loading}
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              title="Vernieuwen"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Nieuwe gebruiker</span>
+            </button>
+          </div>
         </div>
       </header>
 
