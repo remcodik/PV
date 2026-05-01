@@ -53,32 +53,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (snap.exists()) {
               setProfile(snap.data() as UserProfile)
             } else {
+              // Profile not in Firestore — check localStorage then sync up
               const local = localStorage.getItem(`profile_${firebaseUser.uid}`)
+              let profileData: UserProfile
               if (local) {
-                setProfile(JSON.parse(local) as UserProfile)
+                profileData = JSON.parse(local) as UserProfile
               } else {
-                // No profile anywhere — create a minimal one from auth data
-                const fallback: UserProfile = {
+                profileData = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email || '',
-                  name: firebaseUser.email?.split('@')[0] || 'Student',
+                  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Student',
                   role: 'student',
                   createdAt: new Date().toISOString(),
                 }
-                setProfile(fallback)
+                localStorage.setItem(`profile_${firebaseUser.uid}`, JSON.stringify(profileData))
               }
+              setProfile(profileData)
+              // Sync missing profile to Firestore so teacher user management can find it
+              try { await setDoc(doc(db, 'profiles', firebaseUser.uid), profileData) } catch {}
             }
           } catch {
-            // Firestore failed — try localStorage
+            // Firestore unavailable — use localStorage only
             const local = localStorage.getItem(`profile_${firebaseUser.uid}`)
             if (local) {
               setProfile(JSON.parse(local) as UserProfile)
             } else {
-              // Last resort: minimal profile from auth data
               const fallback: UserProfile = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || '',
-                name: firebaseUser.email?.split('@')[0] || 'Student',
+                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Student',
                 role: 'student',
                 createdAt: new Date().toISOString(),
               }

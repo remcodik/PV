@@ -36,7 +36,7 @@ const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
 }))
 
 export default function StudentCasesPage() {
-  const { profile, user } = useAuth()
+  const { profile, user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [cases, setCases] = useState<Case[]>(MEMORY_CASES)
   const [starting, setStarting] = useState<string | null>(null)
@@ -167,10 +167,10 @@ export default function StudentCasesPage() {
 
                 <button
                   onClick={() => startSession(c)}
-                  disabled={starting === c.id}
+                  disabled={starting === c.id || authLoading || !user}
                   className="bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors sm:whitespace-nowrap sm:flex-shrink-0 shadow-sm w-full sm:w-auto"
                 >
-                  {starting === c.id ? 'Starten...' : 'Start oefening'}
+                  {authLoading ? 'Laden...' : starting === c.id ? 'Starten...' : 'Start oefening'}
                 </button>
               </div>
             </div>

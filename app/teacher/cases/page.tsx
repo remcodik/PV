@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { collection, getDocs, query, deleteDoc, doc, updateDoc, addDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { useAuth } from '@/contexts/AuthContext'
 import { Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { crimeTypeLabel } from '@/lib/utils'
@@ -25,7 +24,6 @@ const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
 }))
 
 function TeacherCasesInner() {
-  const { profile } = useAuth()
   const searchParams = useSearchParams()
   const savedParam = searchParams.get('saved')
   const [cases, setCases] = useState<Case[]>(MEMORY_CASES)
@@ -85,12 +83,9 @@ function TeacherCasesInner() {
     setDeleting(null)
   }
 
-  // Show all cases once profile is loaded; while loading show only templates
-  const myCases = profile
-    ? cases.filter(c => c.createdBy === profile.uid || c.isTemplate)
-    : cases.filter(c => c.isTemplate)
-  const published = myCases.filter(c => c.status === 'published')
-  const drafts = myCases.filter(c => c.status === 'draft')
+  // All teachers see all cases
+  const published = cases.filter(c => c.status === 'published')
+  const drafts = cases.filter(c => c.status === 'draft')
 
   return (
     <div className="min-h-screen bg-gray-50">

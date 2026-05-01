@@ -443,7 +443,8 @@ export default function InterviewPage() {
             <button
               onClick={endInterview}
               disabled={isEnding || transcript.length === 0}
-              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+              title={transcript.length === 0 ? 'Voer eerst een interview — stel minstens één vraag' : 'Interview afsluiten en PV schrijven'}
+              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ArrowRight className="w-4 h-4" />
               <span>{isEnding ? 'Bezig...' : 'PV schrijven'}</span>
@@ -629,6 +630,11 @@ export default function InterviewPage() {
               </button>
             )}
           </div>
+          {transcript.length === 0 && !isListening && (
+            <p className="text-center text-xs text-gray-400 mt-2">
+              Stel je eerste vraag om het interview te starten — daarna kun je een PV schrijven.
+            </p>
+          )}
           {isListening && (
             <p className="text-center text-xs text-red-500 mt-2 animate-pulse">
               Luisteren... Klik op Stop om te stoppen
