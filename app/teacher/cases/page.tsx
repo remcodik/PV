@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase'
 import { Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { crimeTypeLabel } from '@/lib/utils'
-import { Shield, Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Sparkles, Users, BookOpen, CheckCircle } from 'lucide-react'
+import { Shield, Plus, Edit, Trash2, Eye, EyeOff, Sparkles, Users, BookOpen, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
@@ -22,6 +22,33 @@ const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
   createdAt: seedTime,
   updatedAt: seedTime,
 }))
+
+function TeacherCasesNav() {
+  const tabs = [
+    { key: 'dashboard', label: 'Overzicht', href: '/teacher/dashboard' },
+    { key: 'cases', label: 'Cases', href: '/teacher/cases' },
+    { key: 'users', label: 'Gebruikers', href: '/teacher/users' },
+  ]
+  return (
+    <nav className="bg-white border-b border-gray-200">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 flex">
+        {tabs.map(t => (
+          <Link
+            key={t.key}
+            href={t.href}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              t.key === 'cases'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </div>
+    </nav>
+  )
+}
 
 function TeacherCasesInner() {
   const searchParams = useSearchParams()
@@ -90,16 +117,13 @@ function TeacherCasesInner() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
             <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-semibold text-gray-900">Cases beheren</h1>
+              <h1 className="font-semibold text-gray-900">PV Trainer</h1>
               {syncing && <p className="text-xs text-gray-400">Synchroniseren...</p>}
             </div>
           </div>
@@ -122,7 +146,9 @@ function TeacherCasesInner() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <TeacherCasesNav />
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {savedBanner && (
           <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-6">
             <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />

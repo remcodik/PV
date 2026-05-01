@@ -2,13 +2,40 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { collection, getDocs, query } from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, PVReport, UserProfile } from '@/lib/types'
 import { gradeColor } from '@/lib/utils'
-import { Shield, Users, BookOpen, LogOut, Plus, FileText, ChevronRight, TrendingUp, ClipboardList, UserCog } from 'lucide-react'
+import { Shield, Users, BookOpen, LogOut, FileText, ChevronRight, TrendingUp, ClipboardList, UserCog } from 'lucide-react'
 import Link from 'next/link'
+
+function TeacherNav({ active }: { active: 'dashboard' | 'cases' | 'users' }) {
+  const tabs = [
+    { key: 'dashboard', label: 'Overzicht', href: '/teacher/dashboard' },
+    { key: 'cases', label: 'Cases', href: '/teacher/cases' },
+    { key: 'users', label: 'Gebruikers', href: '/teacher/users' },
+  ] as const
+  return (
+    <nav className="bg-white border-b border-gray-200">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 flex">
+        {tabs.map(t => (
+          <Link
+            key={t.key}
+            href={t.href}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              active === t.key
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </div>
+    </nav>
+  )
+}
 
 export default function TeacherDashboard() {
   const { profile, logout } = useAuth()
@@ -74,24 +101,18 @@ export default function TeacherDashboard() {
               <p className="text-xs text-gray-500">Docent — {profile?.name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/teacher/cases"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              <BookOpen className="w-4 h-4" />
-              Cases beheren
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="p-2.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              title="Uitloggen"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 p-2 sm:px-3 sm:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            title="Uitloggen"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Uitloggen</span>
+          </button>
         </div>
       </header>
+
+      <TeacherNav active="dashboard" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats */}
@@ -136,51 +157,8 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <Link
-            href="/teacher/cases/new"
-            className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:border-blue-200 transition-all flex items-center gap-4 group"
-          >
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-              <Plus className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-gray-900 text-sm">Nieuwe case</p>
-              <p className="text-xs text-gray-400 mt-0.5">Handmatig of via AI</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0" />
-          </Link>
-          <Link
-            href="/teacher/cases"
-            className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:border-emerald-200 transition-all flex items-center gap-4 group"
-          >
-            <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-              <BookOpen className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-gray-900 text-sm">Cases beheren</p>
-              <p className="text-xs text-gray-400 mt-0.5">Publiceren, bewerken</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0" />
-          </Link>
-          <Link
-            href="/teacher/users"
-            className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:border-indigo-200 transition-all flex items-center gap-4 group"
-          >
-            <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
-              <UserCog className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-gray-900 text-sm">Gebruikers</p>
-              <p className="text-xs text-gray-400 mt-0.5">Rollen en accounts</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-300 ml-auto flex-shrink-0" />
-          </Link>
-        </div>
-
         {/* Students */}
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-2">Studenten overzicht</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Studenten</p>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
@@ -215,12 +193,12 @@ export default function TeacherDashboard() {
                     <p className="text-xs text-gray-400 truncate">{student.email}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-5 flex-shrink-0 ml-4">
-                  <div className="text-right">
+                <div className="flex items-center gap-4 sm:gap-5 flex-shrink-0 ml-4">
+                  <div className="text-right hidden sm:block">
                     <p className="text-sm font-semibold text-gray-900">{ss.length}</p>
                     <p className="text-xs text-gray-400">sessies</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right hidden sm:block">
                     <p className="text-sm font-semibold text-gray-900">{rs.length}</p>
                     <p className="text-xs text-gray-400">PV's</p>
                   </div>

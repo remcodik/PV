@@ -5,7 +5,7 @@ import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, writeBatc
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserProfile } from '@/lib/types'
-import { Shield, ArrowLeft, Users, Trash2, UserCog, CheckCircle, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, ExternalLink } from 'lucide-react'
+import { Shield, Users, Trash2, UserCog, CheckCircle, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 interface UserRow extends UserProfile {
@@ -232,17 +232,13 @@ export default function UsersPage() {
 
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
             <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-semibold text-gray-900">Gebruikersbeheer</h1>
-              <p className="text-xs text-gray-500">Rollen en accounts beheren</p>
+              <h1 className="font-semibold text-gray-900">PV Trainer</h1>
             </div>
           </div>
           <button
@@ -256,7 +252,29 @@ export default function UsersPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <nav className="bg-white border-b border-gray-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex">
+          {[
+            { key: 'dashboard', label: 'Overzicht', href: '/teacher/dashboard' },
+            { key: 'cases', label: 'Cases', href: '/teacher/cases' },
+            { key: 'users', label: 'Gebruikers', href: '/teacher/users' },
+          ].map(t => (
+            <Link
+              key={t.key}
+              href={t.href}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                t.key === 'users'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
