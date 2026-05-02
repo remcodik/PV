@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { Shield } from 'lucide-react'
+import { Shield, AlertTriangle } from 'lucide-react'
 
 export default function DocentStart() {
-  const { user, profile, loading, login } = useAuth()
+  const { user, profile, loading, login, logout } = useAuth()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -33,6 +33,12 @@ export default function DocentStart() {
     }
   }
 
+  const handleLogout = async () => {
+    await logout()
+    setEmail('')
+    setPassword('')
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-emerald-50">
@@ -41,6 +47,42 @@ export default function DocentStart() {
     )
   }
 
+  // Logged in but wrong role
+  if (user && profile && profile.role !== 'teacher') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-emerald-50 px-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-600 rounded-2xl mb-4 shadow-md">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">PV Trainer</h1>
+            <p className="text-sm text-emerald-700 font-medium mt-1">Docent</p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Geen docentenrol</p>
+                <p className="text-sm text-amber-700 mt-0.5">
+                  Je bent ingelogd als <strong>{profile.name}</strong> met de rol <strong>{profile.role}</strong>.
+                  Dit is de docenten-ingang. Vraag de beheerder om je rol aan te passen.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full border border-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              Uitloggen en opnieuw proberen
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Not logged in — show login form
   return (
     <div className="min-h-screen flex items-center justify-center bg-emerald-50 px-4">
       <div className="w-full max-w-sm">

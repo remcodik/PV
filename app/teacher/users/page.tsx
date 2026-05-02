@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore'
+import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, writeBatch, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserProfile } from '@/lib/types'
@@ -175,26 +175,21 @@ export default function UsersPage() {
         addToast({ type: 'error', title: 'Aanmaken mislukt', lines: [data.error ?? 'Onbekende fout'] })
         return
       }
-      setShowCreateModal(false)
-      setCreateForm({ name: '', email: '', password: '', role: 'student' })
-      if (res.status === 207) {
-        // Auth created but Firestore write failed
-        addToast({
-          type: 'warning',
-          title: '⚠ Account aangemaakt, profiel mislukt',
-          lines: [
-            data.error ?? 'Firestore-profiel kon niet worden opgeslagen.',
-            'Voeg Firebase Admin-sleutels toe in Vercel en maak de gebruiker opnieuw aan.',
-          ],
-        })
-        return
+
+      // Always write profile from browser using teacher's own Firestore credentials
+      // This is more reliable than server-side REST API (no admin credentials needed)
+      if (data.uid && data.profile) {
+        await setDoc(doc(db, 'profiles', data.uid), data.profile)
       }
+
       const newUser: UserRow = { ...data.profile, sessionCount: 0, reportCount: 0 }
       setUsers(prev => [...prev, newUser].sort((a, b) => a.name.localeCompare(b.name)))
+      setShowCreateModal(false)
+      setCreateForm({ name: '', email: '', password: '', role: 'student' })
       addToast({
         type: 'success',
         title: '✓ Gebruiker aangemaakt',
-        lines: data.savedTo ?? [`Firestore: profiles/${data.uid}`],
+        lines: [`Firebase Auth: account aangemaakt`, `Firestore: profiles/${data.uid} (rol: ${data.profile.role})`],
       })
     } catch (err) {
       addToast({ type: 'error', title: 'Aanmaken mislukt', lines: [String(err)] })
