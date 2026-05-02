@@ -5,7 +5,7 @@ import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, writeBatc
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserProfile } from '@/lib/types'
-import { Shield, Users, Trash2, UserCog, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, ExternalLink, Plus, Eye, EyeOff } from 'lucide-react'
+import { Shield, Users, Trash2, UserCog, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, ExternalLink, Plus, Eye, EyeOff, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 interface UserRow extends UserProfile {
@@ -536,52 +536,46 @@ function UserSection({
               key={user.uid}
               className={`flex items-center gap-4 px-5 py-4 ${idx < users.length - 1 ? 'border-b border-gray-100' : ''}`}
             >
-              {/* Avatar */}
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-                user.role === 'teacher' ? 'bg-emerald-100' : 'bg-blue-100'
-              }`}>
-                <span className={`text-sm font-semibold ${
-                  user.role === 'teacher' ? 'text-emerald-700' : 'text-blue-700'
-                }`}>
-                  {user.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
-                  {user.uid === myUid && (
-                    <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">jij</span>
-                  )}
+              {/* Clickable area — navigates to student detail */}
+              {user.role === 'student' ? (
+                <Link href={`/teacher/students/${user.uid}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-blue-700">{user.name.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
+                      {user.uid === myUid && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">jij</span>}
+                    </div>
+                    <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-4 flex-shrink-0 text-right">
+                    <div><p className="text-sm font-semibold text-gray-900">{user.sessionCount}</p><p className="text-xs text-gray-400">sessies</p></div>
+                    <div><p className="text-sm font-semibold text-gray-900">{user.reportCount}</p><p className="text-xs text-gray-400">PV's</p></div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                </Link>
+              ) : (
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-emerald-700">{user.name.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
+                      {user.uid === myUid && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">jij</span>}
+                    </div>
+                    <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-4 flex-shrink-0 text-right">
+                    <div><p className="text-sm font-semibold text-gray-900">{user.sessionCount}</p><p className="text-xs text-gray-400">sessies</p></div>
+                    <div><p className="text-sm font-semibold text-gray-900">{user.reportCount}</p><p className="text-xs text-gray-400">PV's</p></div>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 truncate">{user.email}</p>
-              </div>
-
-              {/* Stats */}
-              <div className="hidden sm:flex items-center gap-4 flex-shrink-0 text-right">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{user.sessionCount}</p>
-                  <p className="text-xs text-gray-400">sessies</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{user.reportCount}</p>
-                  <p className="text-xs text-gray-400">PV's</p>
-                </div>
-              </div>
+              )}
 
               {/* Actions */}
               <div className="flex items-center gap-1 flex-shrink-0">
-                {/* Link to results — students only */}
-                {user.role === 'student' && user.sessionCount > 0 && (
-                  <Link
-                    href={`/teacher/students/${user.uid}`}
-                    title="Bekijk resultaten"
-                    className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </Link>
-                )}
                 {user.uid !== myUid && (
                   <>
                     <button
