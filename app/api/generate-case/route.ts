@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
 **Vereisten:**
 - Gebruik een Nederlandse locatie
-- Gebruik realistische, diverse Nederlandse namen
+- Namen: gebruik een realistische mix van gewone Nederlandse namen (bijv. Jan de Vries, Sandra Bakker, Thomas Smit). Gebruik NIET stelselmatig niet-Nederlandse namen voor verdachten — verdachten en getuigen mogen alle soorten namen hebben, ook uitgesproken Nederlandse. Vooroordelen in naamkeuze zijn onacceptabel.
 - Schrijf een gedetailleerd achtergrondverhaal (150-250 woorden) vanuit politieperspectief
 - Beschrijf exact wat de verdachte daadwerkelijk heeft gedaan (suspectBackground)
 - Geef 6-8 feiten die de verdachte weet of heeft gedaan
@@ -107,7 +107,7 @@ Geef UITSLUITEND geldig JSON terug, zonder markdown-opmaak:
 
 **Vereisten:**
 - Gebruik een Nederlandse locatie
-- Gebruik realistische, diverse Nederlandse namen
+- Namen: gebruik een realistische mix van gewone Nederlandse namen (bijv. Jan de Vries, Sandra Bakker, Thomas Smit). Gebruik NIET stelselmatig niet-Nederlandse namen voor verdachten — verdachten en getuigen mogen alle soorten namen hebben, ook uitgesproken Nederlandse. Vooroordelen in naamkeuze zijn onacceptabel.
 - Schrijf een gedetailleerd achtergrondverhaal (150-250 woorden) met datum, tijdstip, locatie
 - Geef 6-8 specifieke feiten die de getuige weet
 - Maak 3-4 sleutelpunten die de student moet achterhalen via doorvragen

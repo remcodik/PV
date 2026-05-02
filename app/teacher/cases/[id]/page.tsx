@@ -159,8 +159,8 @@ export default function EditCasePage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Achtergrondinformatie</label>
-            <textarea value={caseData.backgroundStory} onChange={e => setField('backgroundStory', e.target.value)} rows={5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+            <textarea value={caseData.backgroundStory} onChange={e => setField('backgroundStory', e.target.value)} rows={8}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y" />
           </div>
         </div>
 
@@ -189,15 +189,15 @@ export default function EditCasePage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Profiel van de {isSuspect ? 'verdachte' : 'getuige'}</label>
-            <textarea value={caseData.witnessProfile} onChange={e => setField('witnessProfile', e.target.value)} rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+            <textarea value={caseData.witnessProfile} onChange={e => setField('witnessProfile', e.target.value)} rows={5}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y" />
           </div>
           {isSuspect && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Wat heeft de verdachte daadwerkelijk gedaan?</label>
-                <textarea value={caseData.suspectBackground || ''} onChange={e => setField('suspectBackground', e.target.value)} rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                <textarea value={caseData.suspectBackground || ''} onChange={e => setField('suspectBackground', e.target.value)} rows={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
                   placeholder="Beschrijf exact wat de verdachte heeft gedaan — alleen zichtbaar voor de AI..." />
               </div>
               <label className="flex items-center gap-3 cursor-pointer">
@@ -232,10 +232,10 @@ export default function EditCasePage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
           <h3 className="font-semibold text-gray-900">Wat weet de {isSuspect ? 'verdachte' : 'getuige'}?</h3>
           {caseData.witnessKnows.map((k, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-sm text-gray-400 w-5">{i+1}.</span>
-              <input type="text" value={k} onChange={e => setKnows(i, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <div key={i} className="flex items-start gap-2">
+              <span className="text-sm text-gray-400 w-5 pt-2">{i+1}.</span>
+              <textarea value={k} onChange={e => setKnows(i, e.target.value)} rows={2}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
                 placeholder={`Feit ${i+1}...`} />
             </div>
           ))}
@@ -259,14 +259,14 @@ export default function EditCasePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Wat moet de student achterhalen?</label>
-                <input type="text" value={kd.description} onChange={e => setDiscovery(i, 'description', e.target.value)}
-                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                <textarea value={kd.description} onChange={e => setDiscovery(i, 'description', e.target.value)} rows={2}
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-y"
                   placeholder="Bijv. De verdachte had een tatoeage op zijn linkerarm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Hoe hint de {isSuspect ? 'verdachte' : 'getuige'} hier naar? (alleen zichtbaar voor de AI)</label>
-                <input type="text" value={kd.witnessHint} onChange={e => setDiscovery(i, 'witnessHint', e.target.value)}
-                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                <textarea value={kd.witnessHint} onChange={e => setDiscovery(i, 'witnessHint', e.target.value)} rows={2}
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-y"
                   placeholder="Bijv. Noem terloops iets over een opvallend kenmerk als uiterlijk ter sprake komt" />
               </div>
             </div>

@@ -385,8 +385,8 @@ function NewCaseInner() {
               <textarea
                 value={form.backgroundStory || ''}
                 onChange={e => setField('backgroundStory', e.target.value)}
-                rows={5}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none transition-colors"
+                rows={8}
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y transition-colors"
                 placeholder="Volledige zaakachtergrond: datum, tijd, locatie, wat er is gebeurd..."
               />
             </div>
@@ -440,8 +440,8 @@ function NewCaseInner() {
               <textarea
                 value={form.witnessProfile || ''}
                 onChange={e => setField('witnessProfile', e.target.value)}
-                rows={3}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none transition-colors"
+                rows={5}
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y transition-colors"
                 placeholder={isSuspect ? 'Wie is de verdachte, achtergrond, motieven...' : 'Wie is de getuige, relatie tot de zaak...'}
               />
             </div>
@@ -455,8 +455,8 @@ function NewCaseInner() {
                   <textarea
                     value={form.suspectBackground || ''}
                     onChange={e => setField('suspectBackground', e.target.value)}
-                    rows={4}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none transition-colors"
+                    rows={6}
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y transition-colors"
                     placeholder="Beschrijf exact wat de verdachte heeft gedaan — de AI gebruikt dit om consistent in karakter te blijven..."
                   />
                 </div>
@@ -515,13 +515,13 @@ function NewCaseInner() {
               </p>
             </div>
             {(form.witnessKnows || []).map((k, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 w-5 text-right">{i + 1}.</span>
-                <input
-                  type="text"
+              <div key={i} className="flex items-start gap-2">
+                <span className="text-xs text-gray-400 w-5 text-right pt-2.5">{i + 1}.</span>
+                <textarea
                   value={k}
                   onChange={e => setKnows(i, e.target.value)}
-                  className="flex-1 px-3.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                  rows={2}
+                  className="flex-1 px-3.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y transition-colors"
                   placeholder={`Feit ${i + 1}...`}
                 />
               </div>
@@ -547,11 +547,11 @@ function NewCaseInner() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Wat moet de student achterhalen?</label>
-                  <input
-                    type="text"
+                  <textarea
                     value={kd.description}
                     onChange={e => setDiscovery(i, 'description', e.target.value)}
-                    className="w-full px-3.5 py-2 border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-colors"
+                    rows={2}
+                    className="w-full px-3.5 py-2 border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 resize-y transition-colors"
                     placeholder="Bijv. De verdachte had een tatoeage op zijn linkerarm"
                   />
                 </div>
@@ -559,11 +559,11 @@ function NewCaseInner() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Hoe hint de {isSuspect ? 'verdachte' : 'getuige'} hier naar? <span className="text-gray-400">(alleen voor AI)</span>
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     value={kd.witnessHint}
                     onChange={e => setDiscovery(i, 'witnessHint', e.target.value)}
-                    className="w-full px-3.5 py-2 border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-colors"
+                    rows={2}
+                    className="w-full px-3.5 py-2 border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 resize-y transition-colors"
                     placeholder="Bijv. Noem terloops iets over een opvallend kenmerk als uiterlijk ter sprake komt"
                   />
                 </div>
