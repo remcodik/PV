@@ -171,14 +171,26 @@ export default function UsersPage() {
         body: JSON.stringify(createForm),
       })
       const data = await res.json()
-      if (!res.ok) {
+      if (!res.ok && res.status !== 207) {
         addToast({ type: 'error', title: 'Aanmaken mislukt', lines: [data.error ?? 'Onbekende fout'] })
+        return
+      }
+      setShowCreateModal(false)
+      setCreateForm({ name: '', email: '', password: '', role: 'student' })
+      if (res.status === 207) {
+        // Auth created but Firestore write failed
+        addToast({
+          type: 'warning',
+          title: '⚠ Account aangemaakt, profiel mislukt',
+          lines: [
+            data.error ?? 'Firestore-profiel kon niet worden opgeslagen.',
+            'Voeg Firebase Admin-sleutels toe in Vercel en maak de gebruiker opnieuw aan.',
+          ],
+        })
         return
       }
       const newUser: UserRow = { ...data.profile, sessionCount: 0, reportCount: 0 }
       setUsers(prev => [...prev, newUser].sort((a, b) => a.name.localeCompare(b.name)))
-      setShowCreateModal(false)
-      setCreateForm({ name: '', email: '', password: '', role: 'student' })
       addToast({
         type: 'success',
         title: '✓ Gebruiker aangemaakt',

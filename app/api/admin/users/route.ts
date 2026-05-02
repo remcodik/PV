@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       await adminDb.collection('profiles').doc(uid).set(profileData)
     } else {
       const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-      await fetch(
+      const fsRes = await fetch(
         `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/profiles/${uid}`,
         {
           method: 'PATCH',
@@ -123,6 +123,18 @@ export async function POST(req: NextRequest) {
           }),
         }
       )
+      if (!fsRes.ok) {
+        const fsErr = await fsRes.json().catch(() => ({}))
+        console.error('Firestore REST write failed:', fsErr)
+        // Auth account was created — return uid so caller can still show partial success
+        return NextResponse.json({
+          success: false,
+          uid,
+          profile: profileData,
+          error: 'Account aangemaakt in Firebase Auth, maar profiel kon niet worden opgeslagen in Firestore. Configureer Firebase Admin-sleutels in Vercel.',
+          savedTo: ['Firebase Auth: account aangemaakt'],
+        }, { status: 207 })
+      }
     }
 
     return NextResponse.json({
