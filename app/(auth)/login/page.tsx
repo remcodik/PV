@@ -95,6 +95,16 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
+        {/* Build version */}
+        <p className="text-center text-xs text-gray-300 mt-4">
+          {process.env.NEXT_PUBLIC_BUILD_TIME
+            ? `Versie: ${new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString('nl-NL', {
+                day: 'numeric', month: 'long', year: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+              })}`
+            : 'Versie: onbekend'}
+        </p>
       </div>
     </div>
   )
