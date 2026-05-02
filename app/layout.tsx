@@ -5,6 +5,11 @@ import { AuthProvider } from '@/contexts/AuthContext'
 export const metadata: Metadata = {
   title: 'PV Trainer — Politieopleiding',
   description: 'Trainingsapp voor het schrijven van proces-verbaal',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'PV Trainer',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
