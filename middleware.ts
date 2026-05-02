@@ -6,8 +6,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const isProtected =
-    pathname.startsWith('/student') || pathname.startsWith('/teacher') ||
-    pathname === '/docent-start' || pathname === '/student-start'
+    pathname.startsWith('/student') || pathname.startsWith('/teacher')
   const isAuthPage = pathname === '/login' || pathname === '/register'
 
   if (isProtected && !session) {
@@ -26,5 +25,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/student/:path*', '/teacher/:path*', '/docent-start', '/student-start', '/login', '/register'],
+  matcher: ['/student/:path*', '/teacher/:path*', '/login', '/register'],
 }
