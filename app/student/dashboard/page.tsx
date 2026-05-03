@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, PVReport } from '@/lib/types'
 import { formatDate, statusLabel, gradeColor } from '@/lib/utils'
-import { Shield, BookOpen, CheckCircle, Clock, Plus, LogOut, TrendingUp } from 'lucide-react'
+import { Shield, BookOpen, CheckCircle, Plus, LogOut, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
 export default function StudentDashboard() {
@@ -48,10 +48,15 @@ export default function StudentDashboard() {
     router.replace('/login')
   }
 
+  const sessionHref = (session: Session) =>
+    session.status === 'evaluated' ? `/student/results/${session.id}` :
+    session.status === 'writing_pv' ? `/student/pv-editor/${session.id}` :
+    `/student/interview/${session.id}`
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -138,15 +143,18 @@ export default function StudentDashboard() {
           <div className="space-y-2">
             {sessions.map(session => {
               const report = reports.find(r => r.sessionId === session.id)
+              const href = sessionHref(session)
               return (
-                <div
+                <Link
                   key={session.id}
-                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between"
+                  href={href}
+                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                       session.status === 'evaluated' ? 'bg-emerald-500' :
                       session.status === 'submitted' ? 'bg-amber-400' :
+                      session.status === 'writing_pv' ? 'bg-blue-400' :
                       'bg-gray-300'
                     }`} />
                     <div className="min-w-0">
@@ -160,20 +168,13 @@ export default function StudentDashboard() {
                         {report.cijfer.toFixed(1)}
                       </span>
                     )}
-                    <Link
-                      href={
-                        session.status === 'evaluated' ? `/student/results/${session.id}` :
-                        session.status === 'writing_pv' ? `/student/pv-editor/${session.id}` :
-                        `/student/interview/${session.id}`
-                      }
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-                    >
+                    <span className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">
                       {session.status === 'evaluated' ? 'Bekijken' :
                        session.status === 'writing_pv' ? 'PV schrijven' :
                        'Doorgaan'}
-                    </Link>
+                    </span>
                   </div>
-                </div>
+                </Link>
               )
             })}
           </div>

@@ -91,19 +91,19 @@ export default function EditCasePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/teacher/cases" className="text-gray-400 hover:text-gray-600">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <h1 className="font-semibold text-gray-900">Case bewerken</h1>
           </div>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
             <Save className="w-4 h-4" />
             {saving ? 'Opslaan...' : 'Opslaan'}
           </button>
@@ -167,21 +167,21 @@ export default function EditCasePage() {
         {/* Getuige / Verdachte */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           <h3 className="font-semibold text-gray-900">{isSuspect ? 'Verdachte' : 'Getuige'}</h3>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Naam {isSuspect ? 'verdachte' : 'getuige'}</label>
               <input type="text" value={caseData.witnessName} onChange={e => setField('witnessName', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Leeftijd</label>
               <input type="number" value={caseData.witnessAge} onChange={e => setField('witnessAge', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Geslacht</label>
               <select value={caseData.witnessGender || 'vrouw'} onChange={e => setField('witnessGender', e.target.value as 'man' | 'vrouw')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                 <option value="vrouw">Vrouw</option>
                 <option value="man">Man</option>
               </select>

@@ -40,12 +40,12 @@ export default function AllPVReportsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -58,7 +58,7 @@ export default function AllPVReportsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : reports.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
@@ -77,8 +77,8 @@ export default function AllPVReportsPage() {
                     onClick={() => setExpanded(isOpen ? null : r.id)}
                     className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-gray-50 transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-semibold text-blue-700">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-semibold text-green-700">
                         {student?.name?.charAt(0).toUpperCase() ?? '?'}
                       </span>
                     </div>
@@ -107,7 +107,7 @@ export default function AllPVReportsPage() {
                       </div>
                       <Link
                         href={`/teacher/students/${r.studentId}`}
-                        className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        className="inline-flex items-center gap-1.5 text-xs text-green-700 hover:text-green-800 font-medium"
                       >
                         Bekijk alle sessies van {student?.name ?? 'student'} →
                       </Link>

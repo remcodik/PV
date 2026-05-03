@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase'
 import { Session, PVReport, UserProfile, Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { gradeColor, formatDate, statusLabel, crimeTypeLabel } from '@/lib/utils'
-import { Shield, ArrowLeft, CheckCircle, Clock, ChevronDown, ChevronUp, AlertCircle, BookOpen, FileText, TrendingUp, MessageSquare } from 'lucide-react'
+import { Shield, ArrowLeft, CheckCircle, ChevronDown, ChevronUp, AlertCircle, BookOpen, FileText, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
 const now = new Date().toISOString()
@@ -91,7 +91,7 @@ export default function StudentDetailPage() {
           <p className="text-sm text-gray-500 mb-4">Controleer je verbinding en probeer opnieuw.</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
           >
             Opnieuw proberen
           </button>
@@ -103,19 +103,19 @@ export default function StudentDetailPage() {
   if (!student) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>

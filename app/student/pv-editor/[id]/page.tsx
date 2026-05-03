@@ -215,7 +215,19 @@ export default function PVEditorPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+      {/* AI loading overlay */}
+      {submitting && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-xl px-8 py-6 flex flex-col items-center gap-4 max-w-xs w-full mx-4">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="text-center">
+              <p className="font-semibold text-gray-900">PV wordt beoordeeld...</p>
+              <p className="text-sm text-gray-500 mt-1">De AI analyseert je PV. Dit duurt 10-20 seconden.</p>
+            </div>
+          </div>
+        </div>
+      )}
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <button
@@ -237,9 +249,11 @@ export default function PVEditorPage() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors"
             >
-              <Send className="w-4 h-4" />
+              {submitting
+                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <Send className="w-4 h-4" />}
               <span className="hidden sm:inline">{submitting ? 'Beoordelen...' : 'PV indienen'}</span>
             </button>
           </div>

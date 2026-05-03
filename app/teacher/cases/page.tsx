@@ -6,10 +6,13 @@ import { db } from '@/lib/firebase'
 import { Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { crimeTypeLabel } from '@/lib/utils'
-import { Shield, Plus, Edit, Trash2, Eye, EyeOff, Sparkles, Users, BookOpen, CheckCircle } from 'lucide-react'
+import { Shield, Plus, Edit, Trash2, Eye, EyeOff, Sparkles, Users, BookOpen, CheckCircle, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
+import TeacherNav from '@/app/teacher/components/TeacherNav'
 
 const COOP_LABELS: Record<number, string> = {
   1: 'Zeer coöp.', 2: 'Coöp.', 3: 'Neutraal', 4: 'Terughoudend', 5: 'Niet coöp.',
@@ -23,34 +26,9 @@ const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
   updatedAt: seedTime,
 }))
 
-function TeacherCasesNav() {
-  const tabs = [
-    { key: 'dashboard', label: 'Overzicht', href: '/teacher/dashboard' },
-    { key: 'cases', label: 'Cases', href: '/teacher/cases' },
-    { key: 'users', label: 'Gebruikers', href: '/teacher/users' },
-  ]
-  return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 flex">
-        {tabs.map(t => (
-          <Link
-            key={t.key}
-            href={t.href}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              t.key === 'cases'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </div>
-    </nav>
-  )
-}
-
 function TeacherCasesInner() {
+  const { profile, logout } = useAuth()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const savedParam = searchParams.get('saved')
   const [cases, setCases] = useState<Case[]>(MEMORY_CASES)
@@ -110,16 +88,21 @@ function TeacherCasesInner() {
     setDeleting(null)
   }
 
+  const handleLogout = async () => {
+    await logout()
+    router.replace('/login')
+  }
+
   // All teachers see all cases
   const published = cases.filter(c => c.status === 'published')
   const drafts = cases.filter(c => c.status === 'draft')
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -137,16 +120,24 @@ function TeacherCasesInner() {
             </Link>
             <Link
               href="/teacher/cases/new"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 sm:px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-green-600 text-white px-3 sm:px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nieuwe case</span>
             </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 p-2 sm:px-3 sm:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              title="Uitloggen"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Uitloggen</span>
+            </button>
           </div>
         </div>
       </header>
 
-      <TeacherCasesNav />
+      <TeacherNav />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {savedBanner && (
@@ -184,7 +175,7 @@ function TeacherCasesInner() {
                           </span>
                           <span className="text-xs text-gray-400 font-mono">{c.legalArticle}</span>
                           {c.isTemplate && (
-                            <span className="text-xs font-medium bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md">
+                            <span className="text-xs font-medium bg-green-50 text-green-700 px-2 py-0.5 rounded-md">
                               Sjabloon
                             </span>
                           )}
@@ -207,14 +198,14 @@ function TeacherCasesInner() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
                         {!c.id.startsWith('builtin_') ? (
                           <>
                             <button
                               onClick={() => toggleStatus(c)}
                               disabled={toggling === c.id}
                               title={c.status === 'published' ? 'Verbergen' : 'Publiceren'}
-                              className={`p-2 rounded-lg transition-colors ${
+                              className={`p-2.5 rounded-lg transition-colors ${
                                 c.status === 'published'
                                   ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
                                   : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -224,7 +215,7 @@ function TeacherCasesInner() {
                             </button>
                             <Link
                               href={`/teacher/cases/${c.id}`}
-                              className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                              className="p-2.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
                               title="Bewerken"
                             >
                               <Edit className="w-4 h-4" />
@@ -234,7 +225,7 @@ function TeacherCasesInner() {
                                 onClick={() => deleteCase(c.id)}
                                 disabled={deleting === c.id}
                                 title="Verwijderen"
-                                className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                className="p-2.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>

@@ -409,7 +409,7 @@ export default function InterviewPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <button
@@ -574,10 +574,13 @@ export default function InterviewPage() {
                 <User className="w-4 h-4 text-gray-600" />
               </div>
               <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
-                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
-                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}}/>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}}/>
+                  </div>
+                  <span className="text-xs text-gray-400 ml-1">Antwoord komt...</span>
                 </div>
               </div>
             </div>

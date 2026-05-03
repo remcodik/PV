@@ -5,8 +5,10 @@ import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, writeBatc
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserProfile } from '@/lib/types'
-import { Shield, Users, Trash2, UserCog, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, ExternalLink, Plus, Eye, EyeOff, ChevronRight } from 'lucide-react'
+import { Shield, Users, Trash2, UserCog, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, Plus, Eye, EyeOff, ChevronRight, LogOut } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import TeacherNav from '@/app/teacher/components/TeacherNav'
 
 interface UserRow extends UserProfile {
   sessionCount: number
@@ -23,7 +25,8 @@ interface Toast {
 let toastId = 0
 
 export default function UsersPage() {
-  const { profile: myProfile } = useAuth()
+  const { profile: myProfile, logout } = useAuth()
+  const router = useRouter()
   const [users, setUsers] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -88,12 +91,8 @@ export default function UsersPage() {
       setUsers(prev => prev.map(u => u.uid === user.uid ? { ...u, role: newRole } : u))
       addToast({
         type: 'success',
-        title: '✓ Opgeslagen in Firebase',
-        lines: [
-          `Firestore: profiles/${user.uid}`,
-          `Rol gewijzigd: ${user.role} → ${newRole}`,
-          `Tijdstip: ${new Date(timestamp).toLocaleTimeString('nl-NL')}`,
-        ],
+        title: '✓ Opgeslagen',
+        lines: [`Rol gewijzigd: ${user.role} → ${newRole}`],
       })
     } catch (err) {
       addToast({ type: 'error', title: 'Bijwerken mislukt', lines: [String(err)] })
@@ -109,39 +108,32 @@ export default function UsersPage() {
     const warnings: string[] = []
 
     try {
-      // 1. Try server-side delete (Firebase Auth + Firestore via Admin SDK)
       const res = await fetch(`/api/admin/users/${user.uid}`, { method: 'DELETE' })
       const data = await res.json()
 
       if (res.ok) {
-        // Admin API succeeded
         savedTo.push(...(data.savedTo ?? []))
         warnings.push(...(data.warnings ?? []))
         setUsers(prev => prev.filter(u => u.uid !== user.uid))
       } else if (res.status === 503) {
-        // Admin SDK not configured — fall back to client-side Firestore delete
         warnings.push('Firebase Admin niet geconfigureerd — Auth-account blijft actief')
-
-        // Delete profile
         await deleteDoc(doc(db, 'profiles', user.uid))
-        savedTo.push(`Firestore: profiles/${user.uid}`)
+        savedTo.push(`Profiel verwijderd`)
 
-        // Delete sessions
         const sessSnap = await getDocs(query(collection(db, 'sessions'), where('studentId', '==', user.uid)))
         if (!sessSnap.empty) {
           const batch = writeBatch(db)
           sessSnap.docs.forEach(d => batch.delete(d.ref))
           await batch.commit()
-          savedTo.push(`Firestore: ${sessSnap.size} sessie(s) verwijderd`)
+          savedTo.push(`${sessSnap.size} sessie(s) verwijderd`)
         }
 
-        // Delete reports
         const repSnap = await getDocs(query(collection(db, 'pvreports'), where('studentId', '==', user.uid)))
         if (!repSnap.empty) {
           const batch = writeBatch(db)
           repSnap.docs.forEach(d => batch.delete(d.ref))
           await batch.commit()
-          savedTo.push(`Firestore: ${repSnap.size} PV-rapport(en) verwijderd`)
+          savedTo.push(`${repSnap.size} PV-rapport(en) verwijderd`)
         }
 
         setUsers(prev => prev.filter(u => u.uid !== user.uid))
@@ -151,7 +143,7 @@ export default function UsersPage() {
 
       addToast({
         type: warnings.length > 0 ? 'warning' : 'success',
-        title: warnings.length > 0 ? '⚠ Gedeeltelijk verwijderd' : '✓ Verwijderd uit Firebase',
+        title: warnings.length > 0 ? '⚠ Gedeeltelijk verwijderd' : '✓ Verwijderd',
         lines: [...savedTo, ...warnings],
       })
     } catch (err) {
@@ -176,8 +168,6 @@ export default function UsersPage() {
         return
       }
 
-      // Always write profile from browser using teacher's own Firestore credentials
-      // This is more reliable than server-side REST API (no admin credentials needed)
       if (data.uid && data.profile) {
         await setDoc(doc(db, 'profiles', data.uid), data.profile)
       }
@@ -189,13 +179,18 @@ export default function UsersPage() {
       addToast({
         type: 'success',
         title: '✓ Gebruiker aangemaakt',
-        lines: [`Firebase Auth: account aangemaakt`, `Firestore: profiles/${data.uid} (rol: ${data.profile.role})`],
+        lines: [`${data.profile.name} (${data.profile.role})`],
       })
     } catch (err) {
       addToast({ type: 'error', title: 'Aanmaken mislukt', lines: [String(err)] })
     } finally {
       setCreating(false)
     }
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    router.replace('/login')
   }
 
   const students = users.filter(u => u.role === 'student')
@@ -221,7 +216,7 @@ export default function UsersPage() {
                   t.type === 'warning' ? 'text-amber-800' : 'text-red-800'
                 }`}>{t.title}</p>
                 {t.lines.map((l, i) => (
-                  <p key={i} className={`text-xs mt-0.5 font-mono ${
+                  <p key={i} className={`text-xs mt-0.5 ${
                     t.type === 'success' ? 'text-emerald-700' :
                     t.type === 'warning' ? 'text-amber-700' : 'text-red-700'
                   }`}>{l}</p>
@@ -251,18 +246,17 @@ export default function UsersPage() {
             </p>
             <p className="text-xs text-gray-400 mb-5">
               Dit verwijdert het profiel, alle sessies en PV-rapporten uit Firestore.
-              Het Firebase Auth-account wordt verwijderd als Admin-sleutels zijn ingesteld.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 border border-gray-200 text-gray-700 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 Annuleren
               </button>
               <button
                 onClick={() => deleteUser(confirmDelete)}
-                className="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                className="flex-1 bg-red-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
               >
                 Verwijderen
               </button>
@@ -293,7 +287,7 @@ export default function UsersPage() {
                   value={createForm.name}
                   onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="Voor- en achternaam"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -304,7 +298,7 @@ export default function UsersPage() {
                   value={createForm.email}
                   onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
                   placeholder="naam@example.com"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -317,7 +311,7 @@ export default function UsersPage() {
                     value={createForm.password}
                     onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
                     placeholder="Minimaal 6 tekens"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                   <button
                     type="button"
@@ -336,9 +330,11 @@ export default function UsersPage() {
                       key={r}
                       type="button"
                       onClick={() => setCreateForm(f => ({ ...f, role: r }))}
-                      className={`py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+                      className={`py-3 rounded-lg text-sm font-medium border transition-colors ${
                         createForm.role === r
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          ? r === 'teacher'
+                            ? 'border-green-500 bg-green-50 text-green-700'
+                            : 'border-blue-500 bg-blue-50 text-blue-700'
                           : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
                     >
@@ -351,14 +347,14 @@ export default function UsersPage() {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-gray-200 text-gray-700 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                 >
                   Annuleren
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
                 >
                   {creating && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                   {creating ? 'Aanmaken...' : 'Aanmaken'}
@@ -370,10 +366,10 @@ export default function UsersPage() {
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -391,44 +387,32 @@ export default function UsersPage() {
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nieuwe gebruiker</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 p-2 sm:px-3 sm:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              title="Uitloggen"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Uitloggen</span>
             </button>
           </div>
         </div>
       </header>
 
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex">
-          {[
-            { key: 'dashboard', label: 'Overzicht', href: '/teacher/dashboard' },
-            { key: 'cases', label: 'Cases', href: '/teacher/cases' },
-            { key: 'users', label: 'Gebruikers', href: '/teacher/users' },
-          ].map(t => (
-            <Link
-              key={t.key}
-              href={t.href}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                t.key === 'users'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <TeacherNav />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" />
               </div>
               <p className="text-xs text-gray-500 leading-tight">Totaal</p>
             </div>
@@ -436,8 +420,8 @@ export default function UsersPage() {
           </div>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
               </div>
               <p className="text-xs text-gray-500 leading-tight">Studenten</p>
             </div>
@@ -445,8 +429,8 @@ export default function UsersPage() {
           </div>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" />
               </div>
               <p className="text-xs text-gray-500 leading-tight">Docenten</p>
             </div>
@@ -454,7 +438,7 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* Info banner when Admin SDK not configured */}
+        {/* Info banner */}
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex gap-3">
           <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
@@ -469,11 +453,10 @@ export default function UsersPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
-            {/* Students */}
             <UserSection
               title="Studenten"
               users={students}
@@ -483,8 +466,6 @@ export default function UsersPage() {
               onDelete={setConfirmDelete}
               onChangeRole={changeRole}
             />
-
-            {/* Teachers */}
             <UserSection
               title="Docenten"
               users={teachers}
@@ -534,18 +515,17 @@ function UserSection({
           {users.map((user, idx) => (
             <div
               key={user.uid}
-              className={`flex items-center gap-4 px-5 py-4 ${idx < users.length - 1 ? 'border-b border-gray-100' : ''}`}
+              className={`flex items-center gap-3 px-4 py-3.5 ${idx < users.length - 1 ? 'border-b border-gray-100' : ''}`}
             >
-              {/* Clickable area — navigates to student detail */}
               {user.role === 'student' ? (
-                <Link href={`/teacher/students/${user.uid}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                <Link href={`/teacher/students/${user.uid}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                   <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-semibold text-blue-700">{user.name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
-                      {user.uid === myUid && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">jij</span>}
+                      {user.uid === myUid && <span className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-medium">jij</span>}
                     </div>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
@@ -556,14 +536,14 @@ function UserSection({
                   <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
                 </Link>
               ) : (
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-emerald-700">{user.name.charAt(0).toUpperCase()}</span>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-green-700">{user.name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
-                      {user.uid === myUid && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">jij</span>}
+                      {user.uid === myUid && <span className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-medium">jij</span>}
                     </div>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
@@ -574,37 +554,36 @@ function UserSection({
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                {user.uid !== myUid && (
-                  <>
-                    <button
-                      onClick={() => onChangeRole(user)}
-                      disabled={updatingRole === user.uid}
-                      title={`Maak ${user.role === 'teacher' ? 'student' : 'docent'}`}
-                      className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                    >
-                      {updatingRole === user.uid ? (
-                        <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <UserCog className="w-3.5 h-3.5" />
-                      )}
-                      <span className="hidden sm:inline">{user.role === 'teacher' ? 'Maak student' : 'Maak docent'}</span>
-                    </button>
-                    <button
-                      onClick={() => onDelete(user)}
-                      disabled={deleting === user.uid}
-                      title="Verwijderen"
-                      className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
-                    >
-                      {deleting === user.uid
-                        ? <div className="w-4 h-4 border border-red-400 border-t-transparent rounded-full animate-spin" />
-                        : <Trash2 className="w-4 h-4" />
-                      }
-                    </button>
-                  </>
-                )}
-              </div>
+              {/* Actions — larger tap targets */}
+              {user.uid !== myUid && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => onChangeRole(user)}
+                    disabled={updatingRole === user.uid}
+                    title={`Maak ${user.role === 'teacher' ? 'student' : 'docent'}`}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors min-w-[44px] justify-center"
+                  >
+                    {updatingRole === user.uid ? (
+                      <div className="w-3.5 h-3.5 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <UserCog className="w-4 h-4" />
+                    )}
+                    <span className="hidden sm:inline">{user.role === 'teacher' ? 'Maak student' : 'Maak docent'}</span>
+                  </button>
+                  <button
+                    onClick={() => onDelete(user)}
+                    disabled={deleting === user.uid}
+                    title="Verwijderen"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 text-red-500 hover:bg-red-50 hover:border-red-200 disabled:opacity-50 transition-colors min-w-[44px] justify-center"
+                  >
+                    {deleting === user.uid
+                      ? <div className="w-3.5 h-3.5 border border-red-400 border-t-transparent rounded-full animate-spin" />
+                      : <Trash2 className="w-4 h-4" />
+                    }
+                    <span className="hidden sm:inline">Verwijderen</span>
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

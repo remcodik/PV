@@ -174,13 +174,13 @@ function NewCaseInner() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/teacher/cases" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -201,7 +201,7 @@ function NewCaseInner() {
             <button
               onClick={() => handleSave('published')}
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 shadow-sm transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 shadow-sm transition-colors"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Opslaan...' : 'Publiceren'}
@@ -226,7 +226,7 @@ function NewCaseInner() {
           <div className="flex rounded-lg overflow-hidden border border-gray-200">
             <button
               onClick={() => setField('intervieweeType', 'getuige')}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${!isSuspect ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${!isSuspect ? 'bg-green-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
             >
               Getuigenverhoor
             </button>
@@ -243,7 +243,7 @@ function NewCaseInner() {
         <div className="flex rounded-lg overflow-hidden border border-gray-200 bg-white">
           <button
             onClick={() => setMode('manual')}
-            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${mode === 'manual' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${mode === 'manual' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             Handmatig invullen
           </button>
@@ -338,7 +338,7 @@ function NewCaseInner() {
                 type="text"
                 value={form.title || ''}
                 onChange={e => setField('title', e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors"
                 placeholder="Bijv. Vernieling parkeerplaats supermarkt"
               />
             </div>
@@ -349,7 +349,7 @@ function NewCaseInner() {
                 <select
                   value={form.crimeType || 'diefstal'}
                   onChange={e => setCrimeType(e.target.value as CrimeType)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors"
                 >
                   {CRIME_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label} — {ct.article || 'handmatig'}</option>)}
                 </select>
@@ -363,7 +363,7 @@ function NewCaseInner() {
                   type="text"
                   value={form.legalArticle || ''}
                   onChange={e => setField('legalArticle', e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors"
                   placeholder="Art. 310 Sr"
                 />
               </div>
@@ -375,7 +375,7 @@ function NewCaseInner() {
                 type="text"
                 value={form.description || ''}
                 onChange={e => setField('description', e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors"
                 placeholder="Één zin samenvatting zichtbaar voor studenten"
               />
             </div>
@@ -386,7 +386,7 @@ function NewCaseInner() {
                 value={form.backgroundStory || ''}
                 onChange={e => setField('backgroundStory', e.target.value)}
                 rows={8}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y transition-colors"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 resize-y transition-colors"
                 placeholder="Volledige zaakachtergrond: datum, tijd, locatie, wat er is gebeurd..."
               />
             </div>
@@ -398,7 +398,7 @@ function NewCaseInner() {
               {isSuspect ? 'Verdachte' : 'Getuige'}
             </h3>
 
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                   Naam {isSuspect ? 'verdachte' : 'getuige'}
@@ -407,7 +407,7 @@ function NewCaseInner() {
                   type="text"
                   value={form.witnessName || ''}
                   onChange={e => setField('witnessName', e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors"
                   placeholder="Maria Janssen"
                 />
               </div>
@@ -417,7 +417,7 @@ function NewCaseInner() {
                   type="number"
                   value={form.witnessAge || 30}
                   onChange={e => setField('witnessAge', parseInt(e.target.value))}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors"
                 />
               </div>
               <div>
@@ -425,7 +425,7 @@ function NewCaseInner() {
                 <select
                   value={form.witnessGender || 'vrouw'}
                   onChange={e => setField('witnessGender', e.target.value as 'man' | 'vrouw')}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors"
                 >
                   <option value="vrouw">Vrouw</option>
                   <option value="man">Man</option>
@@ -441,7 +441,7 @@ function NewCaseInner() {
                 value={form.witnessProfile || ''}
                 onChange={e => setField('witnessProfile', e.target.value)}
                 rows={5}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y transition-colors"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 resize-y transition-colors"
                 placeholder={isSuspect ? 'Wie is de verdachte, achtergrond, motieven...' : 'Wie is de getuige, relatie tot de zaak...'}
               />
             </div>
@@ -456,7 +456,7 @@ function NewCaseInner() {
                     value={form.suspectBackground || ''}
                     onChange={e => setField('suspectBackground', e.target.value)}
                     rows={6}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y transition-colors"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 resize-y transition-colors"
                     placeholder="Beschrijf exact wat de verdachte heeft gedaan — de AI gebruikt dit om consistent in karakter te blijven..."
                   />
                 </div>
@@ -521,7 +521,7 @@ function NewCaseInner() {
                   value={k}
                   onChange={e => setKnows(i, e.target.value)}
                   rows={2}
-                  className="flex-1 px-3.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-y transition-colors"
+                  className="flex-1 px-3.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 resize-y transition-colors"
                   placeholder={`Feit ${i + 1}...`}
                 />
               </div>
@@ -591,7 +591,7 @@ function NewCaseInner() {
             <button
               onClick={() => handleSave('published')}
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 shadow-sm transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50 shadow-sm transition-colors"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Opslaan...' : 'Publiceren'}

@@ -7,35 +7,9 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, PVReport, UserProfile } from '@/lib/types'
 import { gradeColor } from '@/lib/utils'
-import { Shield, Users, BookOpen, LogOut, FileText, ChevronRight, TrendingUp, ClipboardList, UserCog } from 'lucide-react'
+import { Shield, Users, LogOut, FileText, ChevronRight, TrendingUp, ClipboardList } from 'lucide-react'
 import Link from 'next/link'
-
-function TeacherNav({ active }: { active: 'dashboard' | 'cases' | 'users' }) {
-  const tabs = [
-    { key: 'dashboard', label: 'Overzicht', href: '/teacher/dashboard' },
-    { key: 'cases', label: 'Cases', href: '/teacher/cases' },
-    { key: 'users', label: 'Gebruikers', href: '/teacher/users' },
-  ] as const
-  return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 flex">
-        {tabs.map(t => (
-          <Link
-            key={t.key}
-            href={t.href}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              active === t.key
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </div>
-    </nav>
-  )
-}
+import TeacherNav from '@/app/teacher/components/TeacherNav'
 
 export default function TeacherDashboard() {
   const { profile, logout } = useAuth()
@@ -90,10 +64,10 @@ export default function TeacherDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -112,15 +86,15 @@ export default function TeacherDashboard() {
         </div>
       </header>
 
-      <TeacherNav active="dashboard" />
+      <TeacherNav />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" />
               </div>
               <p className="text-xs sm:text-sm text-gray-500">Studenten</p>
             </div>
@@ -162,7 +136,7 @@ export default function TeacherDashboard() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : byStudent.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">

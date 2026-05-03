@@ -126,7 +126,7 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <Link href="/student/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -266,7 +266,7 @@ export default function ResultsPage() {
             <FileText className="w-4 h-4 text-gray-400" />
             <p className="text-sm font-semibold text-gray-700">Jouw ingediende PV</p>
           </div>
-          <pre className="p-5 text-sm text-gray-600 font-mono leading-relaxed whitespace-pre-wrap">
+          <pre className="p-5 text-sm text-gray-600 font-mono leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">
             {report.content}
           </pre>
         </div>
