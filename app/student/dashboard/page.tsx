@@ -145,11 +145,12 @@ export default function StudentDashboard() {
               const report = reports.find(r => r.sessionId === session.id)
               const href = sessionHref(session)
               return (
-                <Link
+                <div
                   key={session.id}
-                  href={href}
-                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  className="relative bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between active:bg-gray-50 transition-colors"
                 >
+                  {/* Invisible overlay link covers entire card — guaranteed tappable on iOS */}
+                  <Link href={href} className="absolute inset-0 rounded-xl" aria-label={session.caseTitle} />
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                       session.status === 'evaluated' ? 'bg-emerald-500' :
@@ -168,13 +169,13 @@ export default function StudentDashboard() {
                         {report.cijfer.toFixed(1)}
                       </span>
                     )}
-                    <span className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">
+                    <span className="relative bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">
                       {session.status === 'evaluated' ? 'Bekijken' :
                        session.status === 'writing_pv' ? 'PV schrijven' :
                        'Doorgaan'}
                     </span>
                   </div>
-                </Link>
+                </div>
               )
             })}
           </div>
