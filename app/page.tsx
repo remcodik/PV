@@ -12,7 +12,11 @@ export default function HomePage() {
     if (loading) return
     if (!user) {
       router.replace('/login')
-    } else if (profile?.role === 'teacher') {
+    } else if (!profile) {
+      // Authenticated in Firebase but no Firestore profile — send to login
+      // (login page will show the "geen account" error if they try again)
+      router.replace('/login')
+    } else if (profile.role === 'teacher') {
       router.replace('/teacher/dashboard')
     } else {
       router.replace('/student/dashboard')

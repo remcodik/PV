@@ -37,16 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  // Prevents onAuthStateChanged from overwriting profile during registration
   const registeringRef = useRef(false)
 
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 2000)
+    const timeout = setTimeout(() => setLoading(false), 3000)
     let unsub: (() => void) | undefined
     try {
       unsub = onAuthStateChanged(auth, async (firebaseUser) => {
         clearTimeout(timeout)
         setUser(firebaseUser)
+
         if (firebaseUser) {
           setSessionCookie()
 
@@ -56,43 +56,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return
           }
 
+          // Fetch real profile from Firestore — never create a fallback
           try {
             const snap = await getDoc(doc(db, 'profiles', firebaseUser.uid))
             if (snap.exists()) {
               setProfile(snap.data() as UserProfile)
             } else {
-              // Not in Firestore — try localStorage
+              // Check localStorage (for offline/local sessions)
               const raw = localStorage.getItem(`profile_${firebaseUser.uid}`)
               if (raw) {
-                // Found in localStorage: sync it up to Firestore so user management works
                 const localProfile = JSON.parse(raw) as UserProfile
                 setProfile(localProfile)
+                // Sync up to Firestore
                 try { await setDoc(doc(db, 'profiles', firebaseUser.uid), localProfile) } catch {}
               } else {
-                // No profile anywhere: create minimal fallback (in memory only, not synced)
-                const fallback: UserProfile = {
-                  uid: firebaseUser.uid,
-                  email: firebaseUser.email || '',
-                  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Gebruiker',
-                  role: 'student',
-                  createdAt: new Date().toISOString(),
-                }
-                setProfile(fallback)
+                // No profile at all — leave as null so routing blocks this user
+                setProfile(null)
               }
             }
           } catch {
-            // Firestore unavailable — use localStorage
+            // Firestore unavailable — check localStorage
             const raw = localStorage.getItem(`profile_${firebaseUser.uid}`)
             if (raw) {
               setProfile(JSON.parse(raw) as UserProfile)
             } else {
-              setProfile({
-                uid: firebaseUser.uid,
-                email: firebaseUser.email || '',
-                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Gebruiker',
-                role: 'student',
-                createdAt: new Date().toISOString(),
-              })
+              // Can't determine role — leave as null, don't guess
+              setProfile(null)
             }
           }
         } else {
@@ -112,7 +101,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password)
+    // Step 1: authenticate with Firebase Auth
+    const cred = await signInWithEmailAndPassword(auth, email, password)
+
+    // Step 2: verify profile exists in Firestore — no profile = no access
+    let snap
+    try {
+      snap = await getDoc(doc(db, 'profiles', cred.user.uid))
+    } catch {
+      // Firestore unavailable — check localStorage as fallback
+      const raw = localStorage.getItem(`profile_${cred.user.uid}`)
+      if (!raw) {
+        await signOut(auth)
+        throw new Error('NO_PROFILE')
+      }
+      return
+    }
+
+    if (!snap.exists()) {
+      // Authenticated in Firebase Auth but no Firestore profile — reject login
+      await signOut(auth)
+      throw new Error('NO_PROFILE')
+    }
+
+    // Step 3: set profile immediately so routing is instant and correct
+    setProfile(snap.data() as UserProfile)
   }
 
   const register = async (email: string, password: string, name: string, role: UserRole) => {
@@ -126,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
         createdAt: new Date().toISOString(),
       }
-      // Write to localStorage and Firestore before setting profile state
       localStorage.setItem(`profile_${cred.user.uid}`, JSON.stringify(newProfile))
       try { await setDoc(doc(db, 'profiles', cred.user.uid), newProfile) } catch {}
       setProfile(newProfile)

@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { Shield } from 'lucide-react'
+import { Shield, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [noProfile, setNoProfile] = useState(false)
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const router = useRouter()
@@ -17,12 +18,18 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setNoProfile(false)
     setLoading(true)
     try {
       await login(email, password)
       router.replace('/')
-    } catch {
-      setError('Ongeldig e-mailadres of wachtwoord.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg === 'NO_PROFILE') {
+        setNoProfile(true)
+      } else {
+        setError('Ongeldig e-mailadres of wachtwoord.')
+      }
     } finally {
       setLoading(false)
     }
@@ -43,6 +50,28 @@ export default function LoginPage() {
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <h2 className="text-base font-semibold text-gray-800 mb-6">Inloggen</h2>
+
+          {/* No profile error — prominent block */}
+          {noProfile && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+              <div className="flex gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-900">Geen account gevonden</p>
+                  <p className="text-sm text-amber-800 mt-0.5">
+                    Je e-mailadres bestaat in Firebase maar heeft geen profiel.
+                    Vraag je docent om een account aan te maken, of registreer je hieronder.
+                  </p>
+                  <Link
+                    href="/register"
+                    className="inline-block mt-2 text-sm font-medium text-amber-900 underline hover:no-underline"
+                  >
+                    Naar registratie →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
