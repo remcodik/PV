@@ -3,9 +3,9 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { Case, TranscriptMessage, ScoreBreakdown, FeedbackItem } from '@/lib/types'
+import { Case, TranscriptMessage, ScoreBreakdown, FeedbackItem, SCORE_CATEGORY_LABELS } from '@/lib/types'
 import { scoreToGrade } from '@/lib/utils'
-import { requireAuth, AuthError } from '@/lib/firebase-admin'
+import { requireAuth, AuthError, adminDb } from '@/lib/firebase-admin'
 
 const CRIME_ELEMENTS: Record<string, string> = {
   vernieling: 'Bestanddelen art. 350 Sr: opzet + beschadigen/vernielen/onbruikbaar maken + goed toebehorend aan ander.',
@@ -133,12 +133,31 @@ Geef je beoordeling UITSLUITEND als geldig JSON, zonder markdown-opmaak of extra
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAuth(req)
+    const { uid } = await requireAuth(req)
     const { pvContent, caseData, transcript }: {
       pvContent: string
       caseData: Case
       transcript: TranscriptMessage[]
     } = await req.json()
+
+    // Teacher-set attention note/focus areas are read server-side by the
+    // authenticated uid — never trusted from the client — so a student
+    // can't tamper with their own note to influence grading.
+    let teacherGuidance = ''
+    try {
+      const profileSnap = await adminDb()!.collection('profiles').doc(uid).get()
+      const p = profileSnap.exists ? profileSnap.data() : null
+      const note = p?.attentionNote as string | undefined
+      const focusAreas = p?.focusAreas as (keyof ScoreBreakdown)[] | undefined
+      if (note || focusAreas?.length) {
+        const focusLabels = focusAreas?.map(f => SCORE_CATEGORY_LABELS[f]).join(', ')
+        teacherGuidance = `\n## Docentinstructie voor deze student (weeg mee in de beoordeling)\n${
+          note ? `${note}\n` : ''
+        }${focusLabels ? `Extra aandacht vereist voor: ${focusLabels}.` : ''}`
+      }
+    } catch {
+      // Non-fatal — evaluation proceeds without teacher guidance if this fails
+    }
 
     const transcriptText = transcript
       .map(m => `${m.role === 'student' ? 'Agent' : caseData.witnessName}: ${m.content}`)
@@ -167,7 +186,7 @@ Zaak: ${caseData.title}
 Type interview: ${intervieweeLabel}verhoor
 Delict: ${caseData.crimeType} (${caseData.legalArticle})
 Achtergrond: ${caseData.backgroundStory}
-${keyDiscoveriesText}${cautieNote}${crimeElements}
+${keyDiscoveriesText}${cautieNote}${crimeElements}${teacherGuidance}
 
 ## Interview transcript
 

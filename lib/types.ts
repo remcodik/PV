@@ -12,6 +12,10 @@ export interface UserProfile {
   name: string
   role: UserRole
   createdAt: string
+  // Teacher-set, standing per-student customization (not per-assignment).
+  classGroup?: string               // e.g. "Klas 2B" — informational label
+  attentionNote?: string            // free text, shown to student + fed to grader
+  focusAreas?: ScoreCategory[]      // structured tags from the 6 rubric categories
 }
 
 export type CooperationLevel = 1 | 2 | 3 | 4 | 5
@@ -109,6 +113,17 @@ export interface ScoreBreakdown {
   delictsomschrijving: number // 0-15
   objectiviteit: number       // 0-10
   doorvragen: number          // 0-15 — did student uncover key discovery points?
+}
+
+export type ScoreCategory = keyof ScoreBreakdown
+
+export const SCORE_CATEGORY_LABELS: Record<ScoreCategory, string> = {
+  formalia: 'Formalia',
+  zeven_w: "Zeven W-vragen",
+  getuigenverklaring: 'Getuigenverklaring',
+  delictsomschrijving: 'Delictsomschrijving',
+  objectiviteit: 'Objectiviteit',
+  doorvragen: 'Doorvragen & sleutelpunten',
 }
 
 export interface FeedbackItem {

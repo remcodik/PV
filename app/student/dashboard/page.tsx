@@ -9,6 +9,7 @@ import { Session, PVReport } from '@/lib/types'
 import { formatDate, statusLabel, gradeColor } from '@/lib/utils'
 import { Shield, BookOpen, CheckCircle, Plus, LogOut, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
+import AttentionNoteBanner from '@/app/student/components/AttentionNoteBanner'
 
 export default function StudentDashboard() {
   const { profile, logout } = useAuth()
@@ -78,6 +79,7 @@ export default function StudentDashboard() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <AttentionNoteBanner profile={profile} />
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">

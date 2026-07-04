@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight, ArrowLeft, Cpu } from 'lucide-react'
+import AttentionNoteBanner from '@/app/student/components/AttentionNoteBanner'
 
 // Web Speech API - webkit prefix fallback
 declare global {
@@ -511,6 +512,7 @@ export default function InterviewPage() {
       {/* Transcript */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="max-w-3xl mx-auto space-y-4">
+          <AttentionNoteBanner profile={profile} />
           {transcript.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500 text-sm">

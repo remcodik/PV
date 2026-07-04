@@ -107,12 +107,39 @@ middleware.ts                     — coarse "logged in?" redirect (not a securi
 firestore.rules                   — database-level authorization (see above)
 ```
 
+## Per-student customization
+
+A teacher can set standing customization on a student's profile from
+`/teacher/students/[id]`:
+
+- **Class/group** (`classGroup`) — informational label
+- **Attention note** (`attentionNote`) — free text, shown to the student
+  (dashboard, interview, PV editor) and factored into their AI-graded
+  evaluation
+- **Focus areas** (`focusAreas`) — tags from the 6 rubric categories
+  (`formalia`, `zeven_w`, `getuigenverklaring`, `delictsomschrijving`,
+  `objectiviteit`, `doorvragen`), also shown to the student and fed to
+  the grader
+
+These are **standing per-student settings**, not per-assignment — set once,
+apply to every future session for that student. Difficulty
+(`cooperationLevel`) intentionally stays per-*case*, not per-student — see
+the plan doc for why that distinction was made.
+
+`/api/evaluate` fetches the note/focus areas **server-side by the
+authenticated uid**, never from the client request body, so a student
+can't tamper with their own note to influence grading.
+
 ## Known follow-ups (not yet built)
 
 - Rate limiting / spend caps on the AI-calling endpoints
 - Audit log for role changes and account deletion
 - Pagination on the users/sessions/reports list views
-- Per-student/per-case teacher customization (grade/class, difficulty,
-  specific things to pay attention to)
+- A visible indicator on the teacher's session/PV review screens when a
+  student has an active attention note (easy to forget it's set)
 - Distinct male/female AI voice selection tied to witness/suspect gender
-  beyond the current TTS voice mapping
+  beyond the current TTS voice mapping (voice mapping already exists in
+  `/api/tts`; scope for "more" wasn't yet confirmed)
+- A deliberate visual/structural pass to make the teacher and student
+  experiences feel like clearly distinct apps, not one app with role
+  branches
