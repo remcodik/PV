@@ -147,6 +147,19 @@ mid-conversation. `/api/tts` validates `voiceId` against the real set of
 supported voices before ever passing it to OpenAI, and falls back to a
 fixed default per gender for any older case created before this existed.
 
+## Platform & browser support
+
+| Feature | Windows (Chrome/Edge) | iPhone (Safari) |
+|---|---|---|
+| AI chat / grading / case-gen | ✅ | ✅ |
+| AI witness voice (OpenAI TTS) | ✅ | ✅ (uses `AudioContext`, not a plain `<audio>` element, specifically to work around iOS autoplay blocking) |
+| Browser-voice fallback (`speechSynthesis`) | ✅ | ✅ with caveat — falls back to a non-Dutch voice if the device has no Dutch voice installed |
+| Mic / dictation (speech-to-text) | ✅ | ❌ — Safari has never implemented the `SpeechRecognition` API, on iPhone or Mac. Not fixable app-side. The mic button is feature-detected and simply hidden when unsupported; students type instead |
+
+Not yet verified on a real device: behavior when installed to an iPhone
+home screen and run as a standalone PWA rather than in a normal Safari
+tab — audio/mic permissions can differ there.
+
 ## Known follow-ups (not yet built)
 
 - Rate limiting / spend caps on the AI-calling endpoints
