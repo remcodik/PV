@@ -8,8 +8,26 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-mono-data), ui-monospace, monospace;
+
+  /* Teacher identity — "het bureau": an official records-desk feel.
+     Ink navy + brass accent, paper background, slab-serif type. */
+  --color-teacher-ink: #1b2a38;
+  --color-teacher-ink-dark: #12202b;
+  --color-teacher-brass: #a9762f;
+  --color-teacher-paper: #f7f5f0;
+  --color-teacher-tint: #ece8dd;
+  --font-teacher: var(--font-teacher), Georgia, serif;
+
+  /* Student identity — "het interview": an active field/case feel.
+     Deep indigo + amber accent, cream background, geometric sans type. */
+  --color-student-indigo: #2b3a67;
+  --color-student-indigo-dark: #1f2b4d;
+  --color-student-amber: #e0a458;
+  --color-student-cream: #fbf8f3;
+  --color-student-tint: #e8eaf2;
+  --font-student: var(--font-student), Arial, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +40,4 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

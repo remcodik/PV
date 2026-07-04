@@ -13,7 +13,7 @@ import Link from 'next/link'
 
 const COOP_COLORS: Record<number, string> = {
   1: 'bg-emerald-50 text-emerald-700',
-  2: 'bg-blue-50 text-blue-700',
+  2: 'bg-student-tint text-student-indigo',
   3: 'bg-gray-100 text-gray-600',
   4: 'bg-amber-50 text-amber-700',
   5: 'bg-red-50 text-red-700',
@@ -112,13 +112,13 @@ export default function StudentCasesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-student-cream">
       <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <Link href="/student/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-student-indigo rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -168,7 +168,7 @@ export default function StudentCasesPage() {
                 <button
                   onClick={() => startSession(c)}
                   disabled={starting === c.id || authLoading || !user}
-                  className="bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors sm:whitespace-nowrap sm:flex-shrink-0 shadow-sm w-full sm:w-auto"
+                  className="bg-student-indigo text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-student-indigo-dark disabled:opacity-50 transition-colors sm:whitespace-nowrap sm:flex-shrink-0 shadow-sm w-full sm:w-auto"
                 >
                   {authLoading ? 'Laden...' : starting === c.id ? 'Starten...' : 'Start oefening'}
                 </button>

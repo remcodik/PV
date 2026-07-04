@@ -98,11 +98,11 @@ function TeacherCasesInner() {
   const drafts = cases.filter(c => c.status === 'draft')
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-teacher-paper">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -120,7 +120,7 @@ function TeacherCasesInner() {
             </Link>
             <Link
               href="/teacher/cases/new"
-              className="inline-flex items-center gap-2 bg-green-600 text-white px-3 sm:px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-teacher-ink text-white px-3 sm:px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nieuwe case</span>
@@ -175,7 +175,7 @@ function TeacherCasesInner() {
                           </span>
                           <span className="text-xs text-gray-400 font-mono">{c.legalArticle}</span>
                           {c.isTemplate && (
-                            <span className="text-xs font-medium bg-green-50 text-green-700 px-2 py-0.5 rounded-md">
+                            <span className="text-xs font-medium bg-teacher-tint text-teacher-ink px-2 py-0.5 rounded-md">
                               Sjabloon
                             </span>
                           )}
@@ -215,7 +215,7 @@ function TeacherCasesInner() {
                             </button>
                             <Link
                               href={`/teacher/cases/${c.id}`}
-                              className="p-2.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                              className="p-2.5 rounded-lg text-teacher-ink hover:bg-teacher-tint transition-colors"
                               title="Bewerken"
                             >
                               <Edit className="w-4 h-4" />

@@ -221,7 +221,7 @@ export default function PVEditorPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
         <p className="font-semibold text-gray-900">Geen toegang</p>
         <p className="text-sm text-gray-500 max-w-xs">Deze sessie is niet van jouw account.</p>
-        <button onClick={() => router.replace('/student/dashboard')} className="text-sm text-blue-600 hover:underline">
+        <button onClick={() => router.replace('/student/dashboard')} className="text-sm text-student-indigo hover:underline">
           Terug naar dashboard
         </button>
       </div>
@@ -231,18 +231,18 @@ export default function PVEditorPage() {
   if (!session || !caseData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-student-indigo border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-student-cream flex flex-col">
       {/* AI loading overlay */}
       {submitting && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-xl px-8 py-6 flex flex-col items-center gap-4 max-w-xs w-full mx-4">
-            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-student-indigo border-t-transparent rounded-full animate-spin" />
             <div className="text-center">
               <p className="font-semibold text-gray-900">PV wordt beoordeeld...</p>
               <p className="text-sm text-gray-500 mt-1">De AI analyseert je PV. Dit duurt 10-20 seconden.</p>
@@ -259,7 +259,7 @@ export default function PVEditorPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-student-indigo rounded-lg flex items-center justify-center flex-shrink-0">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">

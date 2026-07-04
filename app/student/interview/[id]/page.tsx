@@ -398,7 +398,7 @@ export default function InterviewPage() {
         <div className="text-center max-w-sm">
           <p className="text-gray-700 font-medium mb-2">Interview kon niet worden geladen</p>
           <p className="text-gray-500 text-sm mb-4">Controleer je internetverbinding en probeer opnieuw.</p>
-          <button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <button onClick={() => window.location.reload()} className="bg-student-indigo text-white px-4 py-2 rounded-lg text-sm font-medium">
             Opnieuw proberen
           </button>
         </div>
@@ -409,13 +409,13 @@ export default function InterviewPage() {
   if (!session || !caseData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-student-indigo border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-student-cream flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
@@ -426,7 +426,7 @@ export default function InterviewPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-student-indigo rounded-lg flex items-center justify-center flex-shrink-0">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">
@@ -462,9 +462,9 @@ export default function InterviewPage() {
       </header>
 
       {/* Case briefing banner */}
-      <div className="bg-blue-50 border-b border-blue-100 px-4 sm:px-6 py-3">
+      <div className="bg-student-tint border-b border-student-tint px-4 sm:px-6 py-3">
         <div className="max-w-3xl mx-auto">
-          <p className="text-sm text-blue-800">
+          <p className="text-sm text-student-indigo">
             <strong>Zaak:</strong> {caseData.description} — <strong>Wetsartikel:</strong> {caseData.legalArticle}
           </p>
         </div>
@@ -482,7 +482,7 @@ export default function InterviewPage() {
               />
             ) : (
               <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold ${
-                caseData.witnessGender === 'man' ? 'bg-blue-500' : 'bg-rose-400'
+                caseData.witnessGender === 'man' ? 'bg-student-indigo' : 'bg-rose-400'
               }`}>
                 {caseData.witnessName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
@@ -546,7 +546,7 @@ export default function InterviewPage() {
                 className={`flex gap-3 ${msg.role === 'student' ? 'flex-row-reverse' : ''}`}
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  msg.role === 'student' ? 'bg-blue-600' : 'bg-gray-200'
+                  msg.role === 'student' ? 'bg-student-indigo' : 'bg-gray-200'
                 }`}>
                   {msg.role === 'student'
                     ? <Shield className="w-4 h-4 text-white" />
@@ -567,9 +567,9 @@ export default function InterviewPage() {
                       <p className="text-xs text-gray-400 px-1">{caseData.witnessName}</p>
                     </>
                   ) : (
-                    <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3">
+                    <div className="bg-student-indigo text-white rounded-2xl rounded-tr-sm px-4 py-3">
                       <p className="text-sm leading-relaxed">{msg.content}</p>
-                      <p className="text-xs mt-1 text-blue-200">Agent</p>
+                      <p className="text-xs mt-1 text-student-tint">Agent</p>
                     </div>
                   )}
                 </div>
@@ -604,7 +604,7 @@ export default function InterviewPage() {
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center gap-3">
             {isSpeaking && (
-              <div className="flex items-center gap-1.5 text-sm text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
+              <div className="flex items-center gap-1.5 text-sm text-student-indigo bg-student-tint px-3 py-1.5 rounded-lg">
                 <Volume2 className="w-4 h-4 animate-pulse" />
                 Spreekt...
               </div>
@@ -622,7 +622,7 @@ export default function InterviewPage() {
               <button
                 onClick={() => sendMessage(inputText)}
                 disabled={!inputText.trim() || isLoading}
-                className="text-blue-600 disabled:text-gray-300"
+                className="text-student-indigo disabled:text-gray-300"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -635,7 +635,7 @@ export default function InterviewPage() {
                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
                   isListening
                     ? 'bg-red-500 text-white animate-pulse'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-student-indigo text-white hover:bg-student-indigo-dark'
                 }`}
               >
                 {isListening ? <StopCircle className="w-5 h-5" /> : <Mic className="w-5 h-5" />}

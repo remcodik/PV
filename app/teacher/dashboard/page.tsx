@@ -63,11 +63,11 @@ export default function TeacherDashboard() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-teacher-paper">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -93,12 +93,12 @@ export default function TeacherDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-teacher-tint rounded-lg flex items-center justify-center flex-shrink-0">
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teacher-ink" />
               </div>
               <p className="text-xs sm:text-sm text-gray-500">Studenten</p>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{students.length}</p>
+            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{students.length}</p>
           </div>
           <Link href="/teacher/sessions" className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
@@ -107,7 +107,7 @@ export default function TeacherDashboard() {
               </div>
               <p className="text-xs sm:text-sm text-gray-500">Sessies</p>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{sessions.length}</p>
+            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{sessions.length}</p>
           </Link>
           <Link href="/teacher/pvreports" className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
@@ -116,7 +116,7 @@ export default function TeacherDashboard() {
               </div>
               <p className="text-xs sm:text-sm text-gray-500">PV's</p>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{reports.length}</p>
+            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{reports.length}</p>
           </Link>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
@@ -125,7 +125,7 @@ export default function TeacherDashboard() {
               </div>
               <p className="text-xs sm:text-sm text-gray-500">Gem. cijfer</p>
             </div>
-            <p className={`text-2xl sm:text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
+            <p className={`font-mono text-2xl sm:text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
               {avgGrade ?? '—'}
             </p>
           </div>
@@ -136,7 +136,7 @@ export default function TeacherDashboard() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-teacher-ink border-t-transparent rounded-full animate-spin" />
           </div>
         ) : byStudent.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
