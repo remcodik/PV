@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { CrimeType, CooperationLevel, IntervieweeType, COOPERATION_DESCRIPTIONS, SUSPECT_COOPERATION_DESCRIPTIONS } from '@/lib/types'
+import { CrimeType, CooperationLevel, IntervieweeType, COOPERATION_DESCRIPTIONS, SUSPECT_COOPERATION_DESCRIPTIONS, pickVoiceForGender } from '@/lib/types'
 import { requireTeacher, AuthError } from '@/lib/firebase-admin'
 
 const client = new Anthropic()
@@ -157,6 +157,10 @@ Geef UITSLUITEND geldig JSON terug, zonder markdown-opmaak:
     if (!Array.isArray(generatedCase.keyDiscoveries)) {
       generatedCase.keyDiscoveries = []
     }
+
+    // Pick a voice once per case, from the pool matching the witness/
+    // suspect's gender, so the same case always sounds like the same person.
+    generatedCase.voiceId = pickVoiceForGender(generatedCase.witnessGender === 'man' ? 'man' : 'vrouw')
 
     return NextResponse.json({ case: generatedCase })
   } catch (error) {

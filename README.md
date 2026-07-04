@@ -130,6 +130,23 @@ the plan doc for why that distinction was made.
 authenticated uid**, never from the client request body, so a student
 can't tamper with their own note to influence grading.
 
+## AI voice variety
+
+Each case gets **one voice, assigned once, from a pool of four per
+gender** (OpenAI `tts-1`/`tts-1-hd` voices — verified against current
+OpenAI docs, not assumed):
+
+- `man`: onyx, echo, ash, fable
+- `vrouw`: nova, shimmer, coral, sage
+
+Built-in cases have a hand-picked voice each (`lib/cases.ts`); AI-generated
+cases (`/api/generate-case`) get a random pick from the matching pool at
+creation time. The voice is stored on the `Case` (`voiceId`) and stays
+fixed for that case's whole interview — a witness doesn't change voice
+mid-conversation. `/api/tts` validates `voiceId` against the real set of
+supported voices before ever passing it to OpenAI, and falls back to a
+fixed default per gender for any older case created before this existed.
+
 ## Known follow-ups (not yet built)
 
 - Rate limiting / spend caps on the AI-calling endpoints
@@ -137,9 +154,6 @@ can't tamper with their own note to influence grading.
 - Pagination on the users/sessions/reports list views
 - A visible indicator on the teacher's session/PV review screens when a
   student has an active attention note (easy to forget it's set)
-- Distinct male/female AI voice selection tied to witness/suspect gender
-  beyond the current TTS voice mapping (voice mapping already exists in
-  `/api/tts`; scope for "more" wasn't yet confirmed)
 - A deliberate visual/structural pass to make the teacher and student
   experiences feel like clearly distinct apps, not one app with role
   branches

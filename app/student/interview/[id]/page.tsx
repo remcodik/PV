@@ -206,7 +206,7 @@ export default function InterviewPage() {
       const res = await authFetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: spokenText, gender: caseData.witnessGender }),
+        body: JSON.stringify({ text: spokenText, gender: caseData.witnessGender, voiceId: caseData.voiceId }),
       })
       if (res.status === 503) {
         setTtsError('AI-stem niet beschikbaar (geen API key) — browserstem gebruikt')

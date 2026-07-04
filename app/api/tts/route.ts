@@ -9,6 +9,10 @@ const VOICE_MAP = {
   vrouw: 'nova',
 }
 
+// Whitelist of voices actually supported by tts-1/tts-1-hd — validated so a
+// client can't pass an arbitrary string through to the OpenAI API call.
+const VALID_VOICES = new Set(['alloy', 'ash', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer'])
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
@@ -17,8 +21,10 @@ export async function POST(req: NextRequest) {
 
   try {
     await requireAuth(req)
-    const { text, gender }: { text: string; gender: 'man' | 'vrouw' } = await req.json()
-    const voice = VOICE_MAP[gender] ?? 'nova'
+    const { text, gender, voiceId }: { text: string; gender: 'man' | 'vrouw'; voiceId?: string } = await req.json()
+    // Prefer the case's own assigned voice (consistent per witness); fall
+    // back to a fixed default per gender for older cases with no voiceId.
+    const voice = voiceId && VALID_VOICES.has(voiceId) ? voiceId : (VOICE_MAP[gender] ?? 'nova')
 
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',

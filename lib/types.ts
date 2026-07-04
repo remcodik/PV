@@ -71,6 +71,7 @@ export interface Case {
   witnessPhoto?: string
   witnessProfile: string
   witnessKnows: string[]
+  voiceId?: string  // OpenAI TTS voice for this case's witness/suspect — picked once per case, stays consistent for the whole interview
   // Suspect-specific fields
   isGuilty?: boolean
   suspectBackground?: string  // What the suspect actually did (for AI consistency)
@@ -81,6 +82,17 @@ export interface Case {
   createdBy: string
   createdAt: string
   updatedAt: string
+}
+
+// OpenAI tts-1/tts-1-hd voice pools, split by the gender they read most
+// naturally as. Picked once per case (not per line) so a witness sounds
+// like the same person for the whole interview.
+export const MALE_VOICES = ['onyx', 'echo', 'ash', 'fable'] as const
+export const FEMALE_VOICES = ['nova', 'shimmer', 'coral', 'sage'] as const
+
+export function pickVoiceForGender(gender: 'man' | 'vrouw'): string {
+  const pool = gender === 'man' ? MALE_VOICES : FEMALE_VOICES
+  return pool[Math.floor(Math.random() * pool.length)]
 }
 
 export interface TranscriptMessage {
