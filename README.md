@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PV Trainer
 
-## Getting Started
+A training tool for Dutch police students to practice writing a
+**proces-verbaal (PV)**. Students interview an AI-played witness or suspect,
+then write up a PV, which is auto-graded against a 6-criteria rubric.
+Teachers manage cases, students, and review PV reports.
 
-First, run the development server:
+## Stack
+
+- Next.js 15 (App Router) + TypeScript + Tailwind
+- Firebase Auth + Firestore (client SDK for reads in the UI, Admin SDK for
+  every privileged/admin operation)
+- Anthropic API (witness/suspect roleplay, case generation, PV grading)
+- OpenAI TTS (optional — spoken witness/suspect voice in the interview)
+- Deploy target: Vercel
+
+## Local setup
 
 ```bash
+npm install
+cp .env.local.example .env.local   # fill in the values below
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Required environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Required | Purpose |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Yes | Witness/suspect chat, case generation, PV grading |
+| `OPENAI_API_KEY` | No | Text-to-speech for the interview voice |
+| `NEXT_PUBLIC_FIREBASE_*` | Yes | Firebase client SDK (Auth + Firestore) |
+| `FIREBASE_ADMIN_PROJECT_ID` | **Yes** | Firebase Admin SDK — see below |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | **Yes** | Firebase Admin SDK |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | **Yes** | Firebase Admin SDK — paste the raw PEM value, `\n`-escaped, **without** surrounding quote characters |
+| `SEED_SECRET` | No | Token required to call `/api/seed` (built-in case seeding) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**The Firebase Admin SDK is mandatory**, not optional. It's used to verify
+every authenticated request server-side (`lib/firebase-admin.ts`
+`requireAuth`/`requireTeacher`) and to create/manage accounts. There is no
+fallback path if it's missing — protected routes will return 500 until it's
+configured.
 
-## Learn More
+## Account model
 
-To learn more about Next.js, take a look at the following resources:
+There is **no public self-registration**. Every account — student or
+teacher — is created by an existing teacher via the "New user" flow on
+`/teacher/users`, which:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Creates the Firebase Auth account with a random, unusable placeholder
+   password (nobody, including the admin, ever sees or sets it)
+2. Writes the Firestore `profiles/{uid}` document with the chosen role
+3. Sets a `role` custom claim on the Firebase Auth user (used for fast
+   server-side role checks without a Firestore read)
+4. Triggers Firebase's built-in password-reset email so the new user sets
+   their own password on first access
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`/login` is the only public auth page. A signed-in user with no matching
+Firestore profile is treated as unauthorized (not given a fallback role).
 
-## Deploy on Vercel
+## Authorization model
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **API routes** (`app/api/**`) verify a Firebase ID token via
+  `requireAuth`/`requireTeacher` in `lib/firebase-admin.ts` before doing
+  anything. `requireTeacher` additionally checks the caller's role.
+- **Client pages** do a lightweight role check for UX (redirect a
+  non-teacher away from `/teacher/*` immediately) — this is not the real
+  security boundary, just avoids flashing the wrong UI. The real boundary
+  is the API layer above and the Firestore rules below.
+- **`firestore.rules`** (tracked in this repo) mirrors the same checks at
+  the database layer, so direct client Firestore access can't bypass the
+  API's authorization even if a route were ever misconfigured. Deploy rule
+  changes to Firebase whenever this file changes:
+  ```bash
+  firebase deploy --only firestore:rules
+  ```
+- **Session/PV ownership**: a student can only read their own
+  `sessions`/`pvreports` documents (checked both client-side, for a clean
+  "access denied" screen, and in Firestore rules, which is what actually
+  enforces it).
+- `middleware.ts` only checks whether a session cookie is present — it is
+  a coarse "are you logged in at all" redirect for UX, **not** a role
+  check. Don't rely on it for anything privileged.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Directory structure
+
+```
+app/
+  (auth)/login                    — the only public auth page
+  api/
+    admin/users, admin/users/[uid] — user CRUD (teacher-only, Admin SDK)
+    chat                          — AI witness/suspect reply (any signed-in user)
+    generate-case                 — AI case generator (teacher-only)
+    evaluate                      — AI PV grading (any signed-in user)
+    seed                          — one-time builtin case seeding (token-gated)
+    tts                           — OpenAI text-to-speech (any signed-in user)
+  student-start, docent-start     — role-specific landing/login shortcuts
+  student/                        — cases, dashboard, interview, pv-editor, results
+  teacher/                        — cases, dashboard, pvreports, sessions, students, users
+contexts/AuthContext.tsx          — Firebase auth state + profile fetch
+lib/
+  types.ts                        — Case, Session, PVReport, ScoreBreakdown…
+  cases.ts                        — built-in seed cases
+  firebase.ts / firebase-admin.ts — client / admin SDK init + auth helpers
+  api-client.ts                   — authFetch() — attaches the ID token to API calls
+  utils.ts                        — grade conversion, labels, formatting
+middleware.ts                     — coarse "logged in?" redirect (not a security boundary)
+firestore.rules                   — database-level authorization (see above)
+```
+
+## Known follow-ups (not yet built)
+
+- Rate limiting / spend caps on the AI-calling endpoints
+- Audit log for role changes and account deletion
+- Pagination on the users/sessions/reports list views
+- Per-student/per-case teacher customization (grade/class, difficulty,
+  specific things to pay attention to)
+- Distinct male/female AI voice selection tied to witness/suspect gender
+  beyond the current TTS voice mapping

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { doc, getDoc, addDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { authFetch } from '@/lib/api-client'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
@@ -66,7 +67,7 @@ function loadLocalSession(id: string): Session | null {
 
 export default function PVEditorPage() {
   const { id } = useParams<{ id: string }>()
-  const { profile } = useAuth()
+  const { profile, loading: authLoading } = useAuth()
   const router = useRouter()
   const isLocal = id.startsWith('local_')
 
@@ -77,12 +78,14 @@ export default function PVEditorPage() {
   const [showGuide, setShowGuide] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [accessDenied, setAccessDenied] = useState(false)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sessionRef = useRef<Session | null>(null)
 
   useEffect(() => { sessionRef.current = session }, [session])
 
   useEffect(() => {
+    if (authLoading) return
     const fetchData = async () => {
       try {
         if (isLocal) {
@@ -105,6 +108,13 @@ export default function PVEditorPage() {
         const sessDoc = await getDoc(doc(db, 'sessions', id))
         if (!sessDoc.exists()) return
         const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
+        // Ownership check: a student may only open their own session. This
+        // is defense-in-depth — Firestore rules enforce the same
+        // restriction server-side regardless of what the client does here.
+        if (profile?.role !== 'teacher' && sessData.studentId !== profile?.uid) {
+          setAccessDenied(true)
+          return
+        }
         setSession(sessData)
         if (sessData.pvContent) setPvContent(sessData.pvContent)
 
@@ -121,7 +131,7 @@ export default function PVEditorPage() {
       }
     }
     fetchData()
-  }, [id, isLocal])
+  }, [id, isLocal, authLoading, profile?.uid, profile?.role])
 
   // Auto-save pvContent 1.5s after last keystroke
   useEffect(() => {
@@ -147,7 +157,7 @@ export default function PVEditorPage() {
     if (!session || !caseData || !profile) return
     setSubmitting(true)
     try {
-      const res = await fetch('/api/evaluate', {
+      const res = await authFetch('/api/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -203,6 +213,18 @@ export default function PVEditorPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
+        <p className="font-semibold text-gray-900">Geen toegang</p>
+        <p className="text-sm text-gray-500 max-w-xs">Deze sessie is niet van jouw account.</p>
+        <button onClick={() => router.replace('/student/dashboard')} className="text-sm text-blue-600 hover:underline">
+          Terug naar dashboard
+        </button>
+      </div>
+    )
   }
 
   if (!session || !caseData) {

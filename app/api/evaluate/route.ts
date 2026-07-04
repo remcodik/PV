@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { Case, TranscriptMessage, ScoreBreakdown, FeedbackItem } from '@/lib/types'
 import { scoreToGrade } from '@/lib/utils'
+import { requireAuth, AuthError } from '@/lib/firebase-admin'
 
 const CRIME_ELEMENTS: Record<string, string> = {
   vernieling: 'Bestanddelen art. 350 Sr: opzet + beschadigen/vernielen/onbruikbaar maken + goed toebehorend aan ander.',
@@ -132,6 +133,7 @@ Geef je beoordeling UITSLUITEND als geldig JSON, zonder markdown-opmaak of extra
 
 export async function POST(req: NextRequest) {
   try {
+    await requireAuth(req)
     const { pvContent, caseData, transcript }: {
       pvContent: string
       caseData: Case
@@ -225,6 +227,9 @@ ${transcriptText}`
       cijfer,
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Evaluate API error:', error)
     return NextResponse.json({ error: 'Evaluatie mislukt' }, { status: 500 })
   }

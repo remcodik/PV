@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { authFetch } from '@/lib/api-client'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
@@ -41,7 +42,7 @@ function saveLocalSession(session: Session) {
 
 export default function InterviewPage() {
   const { id } = useParams<{ id: string }>()
-  const { profile } = useAuth()
+  const { profile, loading: authLoading } = useAuth()
   const router = useRouter()
 
   const [session, setSession] = useState<Session | null>(null)
@@ -92,6 +93,7 @@ export default function InterviewPage() {
   }, [])
 
   useEffect(() => {
+    if (authLoading) return
     const fetchData = async () => {
       try {
         // Local session — load from localStorage
@@ -118,6 +120,11 @@ export default function InterviewPage() {
         const sessDoc = await getDoc(doc(db, 'sessions', id))
         if (!sessDoc.exists()) { setLoadError(true); return }
         const sessData = { id: sessDoc.id, ...sessDoc.data() } as Session
+        // Ownership check — defense-in-depth alongside Firestore rules.
+        if (profile?.role !== 'teacher' && sessData.studentId !== profile?.uid) {
+          setLoadError(true)
+          return
+        }
         setSession(sessData)
         setTranscript(sessData.transcript || [])
 
@@ -136,7 +143,7 @@ export default function InterviewPage() {
       }
     }
     fetchData()
-  }, [id, isLocal])
+  }, [id, isLocal, authLoading, profile?.uid, profile?.role])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -195,7 +202,7 @@ export default function InterviewPage() {
     setTtsError(null)
     setIsSpeaking(true)
     try {
-      const res = await fetch('/api/tts', {
+      const res = await authFetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: spokenText, gender: caseData.witnessGender }),
@@ -259,7 +266,7 @@ export default function InterviewPage() {
     setIsLoading(true)
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await authFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

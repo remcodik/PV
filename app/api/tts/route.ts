@@ -2,6 +2,7 @@ export const maxDuration = 30
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth, AuthError } from '@/lib/firebase-admin'
 
 const VOICE_MAP = {
   man: 'onyx',
@@ -15,6 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    await requireAuth(req)
     const { text, gender }: { text: string; gender: 'man' | 'vrouw' } = await req.json()
     const voice = VOICE_MAP[gender] ?? 'nova'
 
@@ -37,6 +39,9 @@ export async function POST(req: NextRequest) {
       headers: { 'Content-Type': 'audio/mpeg' },
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('TTS error:', error)
     return NextResponse.json({ error: 'TTS mislukt' }, { status: 500 })
   }

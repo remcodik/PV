@@ -1,0 +1,73 @@
+rules_version = '2';
+
+// PV Trainer — Firestore security rules
+//
+// Role source of truth is the Firebase Auth custom claim `role`, set
+// server-side by /api/admin/users (create) and /api/admin/users/[uid]
+// (role change) via the Admin SDK. These rules are defense-in-depth:
+// the primary enforcement is in the API routes (lib/firebase-admin.ts
+// requireAuth/requireTeacher), which verify the same claim. Client-direct
+// Firestore access should still be blocked correctly even if an API route
+// were ever bypassed or misconfigured.
+//
+// There is no public self-registration anymore — every account (student
+// or teacher) is created by an admin via the API, which sets both the
+// profile document and the matching custom claim together. A user with
+// no profile document and/or no role claim gets no access below.
+
+function isSignedIn() {
+  return request.auth != null;
+}
+
+function role() {
+  return request.auth.token.role;
+}
+
+function isTeacher() {
+  return isSignedIn() && role() == 'teacher';
+}
+
+function isOwner(uid) {
+  return isSignedIn() && request.auth.uid == uid;
+}
+
+match /databases/{database}/documents {
+
+  // profiles/{uid} — a user's own profile, or any profile if you're a
+  // teacher. Only the API (Admin SDK, which bypasses these rules) may
+  // write profiles — no client writes at all, including by the owner,
+  // since role/name changes must go through the audited API path.
+  match /profiles/{uid} {
+    allow read: if isOwner(uid) || isTeacher();
+    allow write: if false;
+  }
+
+  // cases/{caseId} — any signed-in user can read published cases (needed
+  // for students to run an interview); only teachers can read drafts or
+  // write/create/delete cases.
+  match /cases/{caseId} {
+    allow read: if isSignedIn() &&
+      (resource.data.status == 'published' || isTeacher());
+    allow create, update, delete: if isTeacher();
+  }
+
+  // sessions/{sessionId} — a student may read/write only their own
+  // session; teachers can read all (for review) but not edit a student's
+  // transcript/PV directly.
+  match /sessions/{sessionId} {
+    allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
+    allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+    allow update: if isSignedIn() && resource.data.studentId == request.auth.uid;
+    allow delete: if isTeacher();
+  }
+
+  // pvreports/{reportId} — a student can read/create their own report;
+  // only teachers (via the graded evaluate flow) should ever update one,
+  // and only teachers can delete.
+  match /pvreports/{reportId} {
+    allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
+    allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+    allow update: if isTeacher();
+    allow delete: if isTeacher();
+  }
+}
