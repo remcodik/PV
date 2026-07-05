@@ -11,8 +11,24 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [noProfile, setNoProfile] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const [showForgot, setShowForgot] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotStatus, setForgotStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const { login, resetPassword } = useAuth()
   const router = useRouter()
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setForgotStatus('sending')
+    try {
+      await resetPassword(forgotEmail)
+      // Always show success, regardless of whether the account exists —
+      // this avoids leaking which emails have accounts.
+      setForgotStatus('sent')
+    } catch {
+      setForgotStatus('sent')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,9 +99,18 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                Wachtwoord
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Wachtwoord
+                </label>
+                <button
+                  type="button"
+                  onClick={() => { setShowForgot(true); setForgotEmail(email); setForgotStatus('idle') }}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Vergeten?
+                </button>
+              </div>
               <input
                 type="password"
                 value={password}
@@ -126,6 +151,60 @@ export default function LoginPage() {
             : 'Versie: onbekend'}
         </p>
       </div>
+
+      {showForgot && (
+        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            {forgotStatus === 'sent' ? (
+              <>
+                <h3 className="font-semibold text-gray-900 mb-1">E-mail verstuurd</h3>
+                <p className="text-sm text-gray-500 mb-5">
+                  Als er een account bestaat bij <strong>{forgotEmail}</strong>, ontvang je een
+                  e-mail om een nieuw wachtwoord in te stellen. Geen e-mail werkt (bijv.
+                  testaccount)? Vraag een beheerder om de link handmatig te delen.
+                </p>
+                <button
+                  onClick={() => setShowForgot(false)}
+                  className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Sluiten
+                </button>
+              </>
+            ) : (
+              <form onSubmit={handleForgotSubmit}>
+                <h3 className="font-semibold text-gray-900 mb-1">Wachtwoord vergeten</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Vul je e-mailadres in — je ontvangt een link om een nieuw wachtwoord in te stellen.
+                </p>
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  placeholder="naam@politie.nl"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgot(false)}
+                    className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Annuleren
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={forgotStatus === 'sending'}
+                    className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  >
+                    {forgotStatus === 'sending' ? 'Bezig...' : 'Versturen'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

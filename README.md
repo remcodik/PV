@@ -57,6 +57,48 @@ teacher — is created by an existing teacher via the "New user" flow on
 `/login` is the only public auth page. A signed-in user with no matching
 Firestore profile is treated as unauthorized (not given a fallback role).
 
+## Bootstrapping the very first account
+
+Since there's no self-registration, a brand-new setup has zero accounts —
+including no teacher who could use `/teacher/users` to create one. Solved
+with a one-time, secret-gated endpoint:
+
+```bash
+curl -X POST https://your-app.vercel.app/api/admin/bootstrap \
+  -H "Content-Type: application/json" \
+  -d '{"token":"<ADMIN_BOOTSTRAP_SECRET value>", "name":"Your Name", "email":"you@example.com"}'
+```
+
+This returns a `resetLink` directly in the response (not just via email,
+since at this point there's no other admin to hand you one) — open it to
+set a password, then log in at `/admin` (see below).
+
+This only ever works **once**: it refuses to run if any teacher profile
+already exists, so even if the secret leaks later it can't be used to
+mint additional accounts. After the first account exists, use
+`/teacher/users` for everyone else.
+
+## Admin entrance
+
+`/admin` is a separate login page for account administration — same
+teacher role as `/teacher/*` under the hood (there's no distinct "admin"
+role in the data model), just a different door that lands directly on
+`/teacher/users` instead of the teaching dashboard. `/teacher/dashboard`
+and the rest of the teaching tools are still reachable normally after
+logging in either way.
+
+## Password reset
+
+- **New accounts**: created via `/teacher/users`, get a reset link
+  returned directly in the UI (copyable) in addition to an attempted
+  email — so a test account with a fake/non-existent email address
+  doesn't get stuck with no way to set a password. The admin can share
+  the link through any channel.
+- **Existing accounts**: "Wachtwoord vergeten?" on `/login` sends a
+  standard Firebase password-reset email. The response is intentionally
+  the same whether or not the email has an account, to avoid leaking
+  which addresses exist.
+
 ## Authorization model
 
 - **API routes** (`app/api/**`) verify a Firebase ID token via
