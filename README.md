@@ -130,6 +130,36 @@ the plan doc for why that distinction was made.
 authenticated uid**, never from the client request body, so a student
 can't tamper with their own note to influence grading.
 
+## AI voice variety
+
+Each case gets **one voice, assigned once, from a pool of four per
+gender** (OpenAI `tts-1`/`tts-1-hd` voices — verified against current
+OpenAI docs, not assumed):
+
+- `man`: onyx, echo, ash, fable
+- `vrouw`: nova, shimmer, coral, sage
+
+Built-in cases have a hand-picked voice each (`lib/cases.ts`); AI-generated
+cases (`/api/generate-case`) get a random pick from the matching pool at
+creation time. The voice is stored on the `Case` (`voiceId`) and stays
+fixed for that case's whole interview — a witness doesn't change voice
+mid-conversation. `/api/tts` validates `voiceId` against the real set of
+supported voices before ever passing it to OpenAI, and falls back to a
+fixed default per gender for any older case created before this existed.
+
+## Platform & browser support
+
+| Feature | Windows (Chrome/Edge) | iPhone (Safari) |
+|---|---|---|
+| AI chat / grading / case-gen | ✅ | ✅ |
+| AI witness voice (OpenAI TTS) | ✅ | ✅ (uses `AudioContext`, not a plain `<audio>` element, specifically to work around iOS autoplay blocking) |
+| Browser-voice fallback (`speechSynthesis`) | ✅ | ✅ with caveat — falls back to a non-Dutch voice if the device has no Dutch voice installed |
+| Mic / dictation (speech-to-text) | ✅ | ❌ — Safari has never implemented the `SpeechRecognition` API, on iPhone or Mac. Not fixable app-side. The mic button is feature-detected and simply hidden when unsupported; students type instead |
+
+Not yet verified on a real device: behavior when installed to an iPhone
+home screen and run as a standalone PWA rather than in a normal Safari
+tab — audio/mic permissions can differ there.
+
 ## Known follow-ups (not yet built)
 
 - Rate limiting / spend caps on the AI-calling endpoints
@@ -137,9 +167,6 @@ can't tamper with their own note to influence grading.
 - Pagination on the users/sessions/reports list views
 - A visible indicator on the teacher's session/PV review screens when a
   student has an active attention note (easy to forget it's set)
-- Distinct male/female AI voice selection tied to witness/suspect gender
-  beyond the current TTS voice mapping (voice mapping already exists in
-  `/api/tts`; scope for "more" wasn't yet confirmed)
 - A deliberate visual/structural pass to make the teacher and student
   experiences feel like clearly distinct apps, not one app with role
   branches
