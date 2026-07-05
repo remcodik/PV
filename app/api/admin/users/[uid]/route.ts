@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ui
   try {
     await requireTeacher(req)
 
-    const { role, name } = await req.json()
+    const { role, name, classGroup, attentionNote, focusAreas } = await req.json()
     if (role && role !== 'student' && role !== 'teacher') {
       return NextResponse.json({ error: 'Ongeldige rol.' }, { status: 400 })
     }
@@ -16,9 +16,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ui
     const db = adminDb()!
     const auth = adminAuth()!
 
-    const updates: Record<string, string> = { updatedAt: new Date().toISOString() }
+    const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() }
     if (role) updates.role = role
     if (name) updates.name = name
+    if (classGroup !== undefined) updates.classGroup = classGroup
+    if (attentionNote !== undefined) updates.attentionNote = attentionNote
+    if (focusAreas !== undefined) updates.focusAreas = focusAreas
 
     await db.collection('profiles').doc(uid).update(updates)
     if (role) {

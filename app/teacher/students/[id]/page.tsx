@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { Session, PVReport, UserProfile, Case } from '@/lib/types'
+import { Session, PVReport, UserProfile, Case, ScoreCategory, SCORE_CATEGORY_LABELS } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
+import { authFetch } from '@/lib/api-client'
 import { gradeColor, formatDate, statusLabel, crimeTypeLabel } from '@/lib/utils'
-import { Shield, ArrowLeft, CheckCircle, ChevronDown, ChevronUp, AlertCircle, BookOpen, FileText, TrendingUp } from 'lucide-react'
+import { Shield, ArrowLeft, CheckCircle, ChevronDown, ChevronUp, AlertCircle, BookOpen, FileText, TrendingUp, Save } from 'lucide-react'
 import Link from 'next/link'
 
 const now = new Date().toISOString()
@@ -35,6 +36,11 @@ export default function StudentDetailPage() {
   const [cases, setCases] = useState<Record<string, Case>>({})
   const [expanded, setExpanded] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
+  const [classGroup, setClassGroup] = useState('')
+  const [attentionNote, setAttentionNote] = useState('')
+  const [focusAreas, setFocusAreas] = useState<ScoreCategory[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,7 +51,13 @@ export default function StudentDetailPage() {
           getDocs(query(collection(db, 'pvreports'), where('studentId', '==', id))),
         ])
 
-        if (profileSnap.exists()) setStudent(profileSnap.data() as UserProfile)
+        if (profileSnap.exists()) {
+          const p = profileSnap.data() as UserProfile
+          setStudent(p)
+          setClassGroup(p.classGroup ?? '')
+          setAttentionNote(p.attentionNote ?? '')
+          setFocusAreas(p.focusAreas ?? [])
+        }
 
         const sessData = sessSnap.docs
           .map(d => ({ id: d.id, ...d.data() }) as Session)
@@ -79,6 +91,29 @@ export default function StudentDetailPage() {
   const avgGrade = reports.length > 0
     ? (reports.reduce((s, r) => s + r.cijfer, 0) / reports.length).toFixed(1)
     : null
+
+  const toggleFocusArea = (cat: ScoreCategory) => {
+    setFocusAreas(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])
+    setSaved(false)
+  }
+
+  const saveCustomization = async () => {
+    setSaving(true)
+    try {
+      const res = await authFetch(`/api/admin/users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classGroup, attentionNote, focusAreas }),
+      })
+      if (!res.ok) throw new Error()
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch {
+      // Keep it simple — the fields stay editable, teacher can just retry
+    } finally {
+      setSaving(false)
+    }
+  }
 
   if (loadError) {
     return (
@@ -156,6 +191,73 @@ export default function StudentDetailPage() {
             <p className={`text-2xl sm:text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
               {avgGrade ?? '—'}
             </p>
+          </div>
+        </div>
+
+        {/* Customization — standing per-student settings */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 mb-6 sm:mb-8">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            Aanpassingen voor deze student
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Klas / groep</label>
+              <input
+                type="text"
+                value={classGroup}
+                onChange={e => { setClassGroup(e.target.value); setSaved(false) }}
+                placeholder="Bijv. Klas 2B"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Aandachtspunt (zichtbaar voor student + gebruikt bij beoordeling)
+              </label>
+              <textarea
+                value={attentionNote}
+                onChange={e => { setAttentionNote(e.target.value); setSaved(false) }}
+                placeholder="Bijv. Let extra op het uitschrijven van de zeven W-vragen."
+                rows={3}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Focuscategorieën (extra aandacht bij beoordeling)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(SCORE_CATEGORY_LABELS) as ScoreCategory[]).map(cat => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => toggleFocusArea(cat)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      focusAreas.includes(cat)
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {SCORE_CATEGORY_LABELS[cat]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                onClick={saveCustomization}
+                disabled={saving}
+                className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors"
+              >
+                {saving ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {saving ? 'Opslaan...' : 'Opslaan'}
+              </button>
+              {saved && <span className="text-xs text-green-600 font-medium">✓ Opgeslagen</span>}
+            </div>
           </div>
         </div>
 

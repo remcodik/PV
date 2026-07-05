@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import AttentionNoteBanner from '@/app/student/components/AttentionNoteBanner'
 
 const now = new Date().toISOString()
 const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
@@ -281,6 +282,10 @@ export default function PVEditorPage() {
           </div>
         </div>
       </header>
+
+      <div className="max-w-6xl mx-auto w-full px-4 pt-4 sm:pt-6">
+        <AttentionNoteBanner profile={profile} />
+      </div>
 
       <div className="flex-1 flex flex-col sm:flex-row sm:overflow-hidden max-w-6xl mx-auto w-full px-4 py-4 sm:py-6 gap-4 sm:gap-6">
         {/* Left: Transcript */}
