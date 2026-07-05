@@ -160,7 +160,7 @@ export default function UsersPage() {
   const teachers = users.filter(u => u.role === 'teacher')
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-teacher-paper">
       {/* Toasts */}
       <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm w-full pointer-events-none">
         {toasts.map(t => (
@@ -250,7 +250,7 @@ export default function UsersPage() {
                   value={createForm.name}
                   onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="Voor- en achternaam"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink focus:border-transparent"
                 />
               </div>
               <div>
@@ -261,7 +261,7 @@ export default function UsersPage() {
                   value={createForm.email}
                   onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
                   placeholder="naam@example.com"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink focus:border-transparent"
                 />
               </div>
               <p className="text-xs text-gray-400 -mt-1">
@@ -278,7 +278,7 @@ export default function UsersPage() {
                       className={`py-3 rounded-lg text-sm font-medium border transition-colors ${
                         createForm.role === r
                           ? r === 'teacher'
-                            ? 'border-green-500 bg-green-50 text-green-700'
+                            ? 'border-teacher-ink bg-teacher-tint text-teacher-ink'
                             : 'border-blue-500 bg-blue-50 text-blue-700'
                           : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
@@ -299,7 +299,7 @@ export default function UsersPage() {
                 <button
                   type="submit"
                   disabled={creating}
-                  className="flex-1 bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-teacher-ink text-white py-3 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
                 >
                   {creating && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                   {creating ? 'Aanmaken...' : 'Aanmaken'}
@@ -314,7 +314,7 @@ export default function UsersPage() {
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -332,7 +332,7 @@ export default function UsersPage() {
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-teacher-ink text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nieuwe gebruiker</span>
@@ -356,12 +356,12 @@ export default function UsersPage() {
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-teacher-tint rounded-lg flex items-center justify-center flex-shrink-0">
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teacher-ink" />
               </div>
               <p className="text-xs text-gray-500 leading-tight">Totaal</p>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{users.length}</p>
+            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{users.length}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
@@ -370,22 +370,22 @@ export default function UsersPage() {
               </div>
               <p className="text-xs text-gray-500 leading-tight">Studenten</p>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{students.length}</p>
+            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{students.length}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-teacher-tint rounded-lg flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teacher-ink" />
               </div>
               <p className="text-xs text-gray-500 leading-tight">Docenten</p>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{teachers.length}</p>
+            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{teachers.length}</p>
           </div>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-teacher-ink border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <>
@@ -457,7 +457,7 @@ function UserSection({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
-                      {user.uid === myUid && <span className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-medium">jij</span>}
+                      {user.uid === myUid && <span className="text-xs bg-teacher-tint text-teacher-ink px-1.5 py-0.5 rounded font-medium">jij</span>}
                     </div>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
@@ -469,13 +469,13 @@ function UserSection({
                 </Link>
               ) : (
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-green-700">{user.name.charAt(0).toUpperCase()}</span>
+                  <div className="w-9 h-9 rounded-full bg-teacher-tint flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-teacher-ink">{user.name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
-                      {user.uid === myUid && <span className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-medium">jij</span>}
+                      {user.uid === myUid && <span className="text-xs bg-teacher-tint text-teacher-ink px-1.5 py-0.5 rounded font-medium">jij</span>}
                     </div>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>

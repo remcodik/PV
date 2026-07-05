@@ -114,7 +114,7 @@ export default function ResultsPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
         <p className="font-semibold text-gray-900">Geen toegang</p>
         <p className="text-sm text-gray-500 max-w-xs">Dit resultaat is niet van jouw account.</p>
-        <button onClick={() => router.replace('/student/dashboard')} className="text-sm text-blue-600 hover:underline">
+        <button onClick={() => router.replace('/student/dashboard')} className="text-sm text-student-indigo hover:underline">
           Terug naar dashboard
         </button>
       </div>
@@ -124,7 +124,7 @@ export default function ResultsPage() {
   if (!session || !caseData || !report) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-7 h-7 border-2 border-student-indigo border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -145,13 +145,13 @@ export default function ResultsPage() {
                    gradeNum >= 6 ? 'bg-amber-500' : 'bg-red-500'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-student-cream">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <Link href="/student/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-student-indigo rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -202,9 +202,9 @@ export default function ResultsPage() {
         </div>
 
         {/* General feedback */}
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
-          <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2">Algemene feedback</p>
-          <p className="text-sm text-blue-900 leading-relaxed">{report.generalFeedback}</p>
+        <div className="bg-student-tint border border-student-tint rounded-xl p-5">
+          <p className="text-xs font-semibold text-student-indigo uppercase tracking-wider mb-2">Algemene feedback</p>
+          <p className="text-sm text-student-indigo leading-relaxed">{report.generalFeedback}</p>
         </div>
 
         {/* Detailed feedback */}
@@ -265,7 +265,7 @@ export default function ResultsPage() {
                           <ul className="space-y-1.5">
                             {item.suggestions.map((s, j) => (
                               <li key={j} className="flex items-start gap-2 text-sm text-gray-600">
-                                <span className="text-blue-400 mt-0.5 flex-shrink-0">›</span>
+                                <span className="text-student-indigo mt-0.5 flex-shrink-0">›</span>
                                 {s}
                               </li>
                             ))}
@@ -295,14 +295,14 @@ export default function ResultsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
             href={`/student/pv-editor/${id}`}
-            className="flex-1 text-center border border-blue-600 text-blue-600 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+            className="flex-1 text-center border border-student-indigo text-student-indigo py-2.5 rounded-lg text-sm font-medium hover:bg-student-tint transition-colors"
           >
             <span className="sm:hidden">PV aanpassen</span>
             <span className="hidden sm:inline">PV aanpassen en opnieuw indienen</span>
           </Link>
           <Link
             href="/student/cases"
-            className="flex-1 text-center bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+            className="flex-1 text-center bg-student-indigo text-white py-2.5 rounded-lg text-sm font-medium hover:bg-student-indigo-dark transition-colors shadow-sm"
           >
             <span className="sm:hidden">Nieuwe oefening</span>
             <span className="hidden sm:inline">Nieuwe oefening starten</span>

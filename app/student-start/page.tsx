@@ -41,8 +41,8 @@ export default function StudentStart() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-student-tint">
+        <div className="w-6 h-6 border-2 border-student-indigo border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -50,14 +50,14 @@ export default function StudentStart() {
   // Logged in but wrong role
   if (user && profile && profile.role !== 'student') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-student-tint px-4">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-md">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-student-indigo rounded-2xl mb-4 shadow-md">
               <GraduationCap className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">PV Trainer</h1>
-            <p className="text-sm text-blue-700 font-medium mt-1">Student</p>
+            <p className="text-sm text-student-indigo font-medium mt-1">Student</p>
           </div>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
@@ -84,14 +84,14 @@ export default function StudentStart() {
 
   // Not logged in — show login form
   return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-student-tint px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-md">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-student-indigo rounded-2xl mb-4 shadow-md">
             <GraduationCap className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">PV Trainer</h1>
-          <p className="text-sm text-blue-700 font-medium mt-1">Student</p>
+          <p className="text-sm text-student-indigo font-medium mt-1">Student</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -104,7 +104,7 @@ export default function StudentStart() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-student-indigo/20 focus:border-blue-500 transition-colors"
                 placeholder="naam@politie.nl"
               />
             </div>
@@ -115,7 +115,7 @@ export default function StudentStart() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-student-indigo/20 focus:border-blue-500 transition-colors"
                 placeholder="••••••••"
               />
             </div>
@@ -125,7 +125,7 @@ export default function StudentStart() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors mt-2"
+              className="w-full bg-student-indigo text-white py-2.5 rounded-lg text-sm font-medium hover:bg-student-indigo-dark disabled:opacity-50 transition-colors mt-2"
             >
               {submitting ? 'Bezig...' : 'Inloggen'}
             </button>

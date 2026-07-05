@@ -126,7 +126,7 @@ export default function StudentDetailPage() {
           <p className="text-sm text-gray-500 mb-4">Controleer je verbinding en probeer opnieuw.</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+            className="bg-teacher-ink text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark transition-colors"
           >
             Opnieuw proberen
           </button>
@@ -138,19 +138,19 @@ export default function StudentDetailPage() {
   if (!student) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-teacher-ink border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-teacher-paper">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -170,7 +170,7 @@ export default function StudentDetailPage() {
               </div>
               <p className="text-xs text-gray-500 leading-tight">Sessies</p>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{sessions.length}</p>
+            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{sessions.length}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
@@ -179,7 +179,7 @@ export default function StudentDetailPage() {
               </div>
               <p className="text-xs text-gray-500 leading-tight">Beoordeeld</p>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{reports.length}</p>
+            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{reports.length}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
@@ -188,7 +188,7 @@ export default function StudentDetailPage() {
               </div>
               <p className="text-xs text-gray-500 leading-tight">Gem. cijfer</p>
             </div>
-            <p className={`text-2xl sm:text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
+            <p className={`font-mono text-2xl sm:text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
               {avgGrade ?? '—'}
             </p>
           </div>
@@ -207,7 +207,7 @@ export default function StudentDetailPage() {
                 value={classGroup}
                 onChange={e => { setClassGroup(e.target.value); setSaved(false) }}
                 placeholder="Bijv. Klas 2B"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink focus:border-transparent"
               />
             </div>
             <div>
@@ -219,7 +219,7 @@ export default function StudentDetailPage() {
                 onChange={e => { setAttentionNote(e.target.value); setSaved(false) }}
                 placeholder="Bijv. Let extra op het uitschrijven van de zeven W-vragen."
                 rows={3}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink focus:border-transparent resize-none"
               />
             </div>
             <div>
@@ -234,7 +234,7 @@ export default function StudentDetailPage() {
                     onClick={() => toggleFocusArea(cat)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                       focusAreas.includes(cat)
-                        ? 'border-green-500 bg-green-50 text-green-700'
+                        ? 'border-teacher-ink bg-teacher-tint text-teacher-ink'
                         : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                     }`}
                   >
@@ -247,7 +247,7 @@ export default function StudentDetailPage() {
               <button
                 onClick={saveCustomization}
                 disabled={saving}
-                className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors"
+                className="inline-flex items-center gap-2 bg-teacher-ink text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark disabled:opacity-60 transition-colors"
               >
                 {saving ? (
                   <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -256,7 +256,7 @@ export default function StudentDetailPage() {
                 )}
                 {saving ? 'Opslaan...' : 'Opslaan'}
               </button>
-              {saved && <span className="text-xs text-green-600 font-medium">✓ Opgeslagen</span>}
+              {saved && <span className="text-xs text-teacher-ink font-medium">✓ Opgeslagen</span>}
             </div>
           </div>
         </div>

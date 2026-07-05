@@ -55,12 +55,12 @@ export default function StudentDashboard() {
     `/student/interview/${session.id}`
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-student-cream">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-student-indigo rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -84,8 +84,8 @@ export default function StudentDashboard() {
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
             <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-student-tint rounded-lg flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-student-indigo" />
               </div>
               <p className="text-xs text-gray-500 leading-tight">Sessies</p>
             </div>
@@ -119,7 +119,7 @@ export default function StudentDashboard() {
         <div className="mb-6 sm:mb-8">
           <Link
             href="/student/cases"
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 bg-student-indigo text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-student-indigo-dark transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Nieuwe oefening starten
@@ -131,7 +131,7 @@ export default function StudentDashboard() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-student-indigo border-t-transparent rounded-full animate-spin" />
           </div>
         ) : sessions.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
@@ -157,7 +157,7 @@ export default function StudentDashboard() {
                     <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                       session.status === 'evaluated' ? 'bg-emerald-500' :
                       session.status === 'submitted' ? 'bg-amber-400' :
-                      session.status === 'writing_pv' ? 'bg-blue-400' :
+                      session.status === 'writing_pv' ? 'bg-student-indigo' :
                       'bg-gray-300'
                     }`} />
                     <div className="min-w-0">
@@ -171,7 +171,7 @@ export default function StudentDashboard() {
                         {report.cijfer.toFixed(1)}
                       </span>
                     )}
-                    <span className="relative bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">
+                    <span className="relative bg-student-indigo text-white px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">
                       {session.status === 'evaluated' ? 'Bekijken' :
                        session.status === 'writing_pv' ? 'PV schrijven' :
                        'Doorgaan'}

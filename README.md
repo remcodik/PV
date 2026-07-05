@@ -160,6 +160,39 @@ Not yet verified on a real device: behavior when installed to an iPhone
 home screen and run as a standalone PWA rather than in a normal Safari
 tab — audio/mic permissions can differ there.
 
+## Two distinct visual identities
+
+Teacher and student are deliberately different apps visually, not one app
+with a color swapped in an if-branch:
+
+**Teacher — "het bureau" (the records desk).** An official, administrative
+feel: ink navy (`teacher-ink`) + a brass accent (`teacher-brass`), a warm
+paper background, and a slab-serif display face (Roboto Slab) applied
+app-wide within `/teacher/*` via `app/teacher/layout.tsx`. Stat numbers use
+a monospace font (IBM Plex Mono) for a ledger feel. The persistent
+`TeacherNav` tab bar has a brass signature stripe and uppercase,
+letter-spaced labels.
+
+**Student — "het interview" (the field case).** An active, approachable
+feel: deep indigo (`student-indigo`) + a warm amber accent
+(`student-amber`, already the color of the attention-note banner from
+§ per-student customization), a soft cream background, and a geometric
+sans display face (Space Grotesk) applied app-wide within `/student/*`
+via `app/student/layout.tsx`.
+
+**The shared `/login` page stays neutral** (the original blue), on
+purpose — it's the single gate before role is known, so the experience
+only diverges into one identity or the other *after* logging in.
+
+All identity color tokens are custom Tailwind v4 theme values in
+`app/globals.css` (`teacher-ink`, `teacher-brass`, `teacher-paper`,
+`student-indigo`, `student-amber`, `student-cream`, plus tint variants) —
+never hardcoded hex values in components. **Semantic status colors are
+untouched on purpose**: emerald = success, amber (outside the student
+accent context) = warning, red = error, everywhere in both apps — those
+are UI conventions independent of brand identity, not something this pass
+should have touched.
+
 ## Known follow-ups (not yet built)
 
 - Rate limiting / spend caps on the AI-calling endpoints
@@ -167,6 +200,3 @@ tab — audio/mic permissions can differ there.
 - Pagination on the users/sessions/reports list views
 - A visible indicator on the teacher's session/PV review screens when a
   student has an active attention note (easy to forget it's set)
-- A deliberate visual/structural pass to make the teacher and student
-  experiences feel like clearly distinct apps, not one app with role
-  branches

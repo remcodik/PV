@@ -41,13 +41,13 @@ export default function AllSessionsPage() {
     s === 'evaluated' ? 'Beoordeeld' : s === 'submitted' ? 'Ingediend' : 'Bezig'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-teacher-paper">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function AllSessionsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-teacher-ink border-t-transparent rounded-full animate-spin" />
           </div>
         ) : sessions.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
@@ -77,8 +77,8 @@ export default function AllSessionsPage() {
                   href={`/teacher/students/${s.studentId}`}
                   className={`flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors ${idx < sessions.length - 1 ? 'border-b border-gray-100' : ''}`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-semibold text-green-700">
+                  <div className="w-8 h-8 rounded-full bg-teacher-tint flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-semibold text-teacher-ink">
                       {student?.name?.charAt(0).toUpperCase() ?? '?'}
                     </span>
                   </div>
