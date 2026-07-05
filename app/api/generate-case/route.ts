@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { CrimeType, CooperationLevel, IntervieweeType, COOPERATION_DESCRIPTIONS, SUSPECT_COOPERATION_DESCRIPTIONS } from '@/lib/types'
+import { requireTeacher, AuthError } from '@/lib/firebase-admin'
 
 const client = new Anthropic()
 
@@ -40,6 +41,7 @@ const CRIME_NOTES: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
+    await requireTeacher(req)
     const { crimeType = 'diefstal', cooperationLevel = 2, intervieweeType = 'getuige' }: {
       crimeType?: CrimeType
       cooperationLevel?: CooperationLevel
@@ -158,6 +160,9 @@ Geef UITSLUITEND geldig JSON terug, zonder markdown-opmaak:
 
     return NextResponse.json({ case: generatedCase })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Generate case error:', error)
     return NextResponse.json({ error: 'Genereren mislukt' }, { status: 500 })
   }

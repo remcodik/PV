@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Shield, AlertCircle } from 'lucide-react'
 
@@ -59,15 +58,10 @@ export default function LoginPage() {
                 <div>
                   <p className="text-sm font-semibold text-amber-900">Geen account gevonden</p>
                   <p className="text-sm text-amber-800 mt-0.5">
-                    Je e-mailadres bestaat in Firebase maar heeft geen profiel.
-                    Vraag je docent om een account aan te maken, of registreer je hieronder.
+                    Er is geen profiel bij dit e-mailadres. Vraag een beheerder om een account
+                    voor je aan te maken — je ontvangt daarna een e-mail om een wachtwoord in
+                    te stellen.
                   </p>
-                  <Link
-                    href="/register"
-                    className="inline-block mt-2 text-sm font-medium text-amber-900 underline hover:no-underline"
-                  >
-                    Naar registratie →
-                  </Link>
                 </div>
               </div>
             </div>
@@ -118,10 +112,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-sm text-gray-400 mt-6">
-            Nog geen account?{' '}
-            <Link href="/register" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
-              Registreer hier
-            </Link>
+            Geen account? Vraag een beheerder om er een voor je aan te maken.
           </p>
         </div>
 

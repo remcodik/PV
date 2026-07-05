@@ -3,6 +3,7 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { Case, TranscriptMessage } from '@/lib/types'
+import { requireAuth, AuthError } from '@/lib/firebase-admin'
 
 const client = new Anthropic()
 
@@ -24,6 +25,7 @@ const SUSPECT_STYLE: Record<number, string> = {
 
 export async function POST(req: NextRequest) {
   try {
+    await requireAuth(req)
     const { message, caseData, transcript }: {
       message: string
       caseData: Case
@@ -98,6 +100,9 @@ ${keyDiscoveriesSection}
     const reply = response.content[0].type === 'text' ? response.content[0].text : ''
     return NextResponse.json({ reply })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Chat API error:', error)
     return NextResponse.json({ error: 'Er is een fout opgetreden' }, { status: 500 })
   }

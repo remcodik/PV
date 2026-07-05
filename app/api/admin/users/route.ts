@@ -1,36 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeApp, getApps } from 'firebase-admin/app'
-import { getFirestore } from 'firebase-admin/firestore'
-import { hasAdminCredentials, adminAuth } from '@/lib/firebase-admin'
-import { cert } from 'firebase-admin/app'
+import { adminAuth, adminDb, requireTeacher, AuthError } from '@/lib/firebase-admin'
 
-function getAdminFirestore() {
-  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL
-  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n')
-
-  let app
-  const existing = getApps().find(a => a.name === 'admin')
-  if (existing) {
-    app = existing
-  } else if (clientEmail && privateKey && projectId) {
-    app = initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) }, 'admin')
-  } else {
-    return null
-  }
-  return getFirestore(app)
-}
-
-export async function GET() {
+// GET — list all profiles with session/report counts. Teachers only.
+export async function GET(req: NextRequest) {
   try {
-    const db = getAdminFirestore()
-    if (!db) {
-      return NextResponse.json(
-        { error: 'Firebase Admin niet geconfigureerd', profiles: [] },
-        { status: 503 }
-      )
-    }
+    await requireTeacher(req)
 
+    const db = adminDb()!
     const snap = await db.collection('profiles').get()
     const profiles = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
 
@@ -56,96 +32,95 @@ export async function GET() {
       reportCount: reportsByStudent[p.uid as string] ?? 0,
     }))
 
-    return NextResponse.json({ profiles: enriched, hasAdminAuth: hasAdminCredentials() })
+    return NextResponse.json({ profiles: enriched })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('GET /api/admin/users error:', error)
     return NextResponse.json({ error: 'Laden mislukt' }, { status: 500 })
   }
 }
 
-// POST — create a new user (Firebase Auth REST API + Firestore)
+// POST — admin creates a new account (student or teacher). No password is
+// set or seen by the admin: a random unusable placeholder is generated,
+// then Firebase sends the person a password-reset email so they set their
+// own password on first access. Teachers only.
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, role } = await req.json()
-    if (!name || !email || !password || !role) {
-      return NextResponse.json({ error: 'Naam, e-mail, wachtwoord en rol zijn verplicht.' }, { status: 400 })
+    await requireTeacher(req)
+
+    const { name, email, role } = await req.json()
+    if (!name || !email || !role) {
+      return NextResponse.json({ error: 'Naam, e-mail en rol zijn verplicht.' }, { status: 400 })
+    }
+    if (role !== 'student' && role !== 'teacher') {
+      return NextResponse.json({ error: 'Ongeldige rol.' }, { status: 400 })
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Firebase API key ontbreekt.' }, { status: 500 })
-    }
+    const auth = adminAuth()!
+    const db = adminDb()!
 
-    // Step 1: Create Firebase Auth account via REST API (works without admin credentials)
-    const signUpRes = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, displayName: name, returnSecureToken: true }),
-      }
-    )
-    const signUpData = await signUpRes.json()
-    if (!signUpRes.ok) {
-      const code = signUpData.error?.message || ''
+    // Random placeholder password — nobody (including the admin) ever uses
+    // this; the account is only usable after the reset-email flow below.
+    const placeholderPassword = crypto.randomUUID() + crypto.randomUUID()
+
+    let uid: string
+    try {
+      const userRecord = await auth.createUser({
+        email,
+        password: placeholderPassword,
+        displayName: name,
+      })
+      uid = userRecord.uid
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code || ''
       const msg =
-        code === 'EMAIL_EXISTS' ? 'Dit e-mailadres is al in gebruik.' :
-        code === 'WEAK_PASSWORD : Password should be at least 6 characters' ? 'Wachtwoord moet minimaal 6 tekens zijn.' :
-        code.includes('WEAK_PASSWORD') ? 'Wachtwoord te zwak (minimaal 6 tekens).' :
-        code === 'INVALID_EMAIL' ? 'Ongeldig e-mailadres.' :
-        `Aanmaken mislukt: ${code}`
+        code === 'auth/email-already-exists' ? 'Dit e-mailadres is al in gebruik.' :
+        code === 'auth/invalid-email' ? 'Ongeldig e-mailadres.' :
+        'Aanmaken mislukt.'
       return NextResponse.json({ error: msg }, { status: 400 })
     }
 
-    const uid: string = signUpData.localId
-    const idToken: string = signUpData.idToken
-    const profileData = { uid, email, name, role, createdAt: new Date().toISOString() }
+    // Custom claim carries role for fast/cheap verification (no Firestore
+    // read needed on every request) — kept in sync with the Firestore
+    // profile document below.
+    await auth.setCustomUserClaims(uid, { role })
 
-    // Step 2: Write Firestore profile — Admin SDK if available, else REST API with user's own token
-    const adminDb = getAdminFirestore()
-    if (adminDb) {
-      await adminDb.collection('profiles').doc(uid).set(profileData)
-    } else {
-      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-      const fsRes = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/profiles/${uid}`,
+    const profileData = { uid, email, name, role, createdAt: new Date().toISOString() }
+    await db.collection('profiles').doc(uid).set(profileData)
+
+    // Trigger Firebase's built-in password-reset email so the new user
+    // sets their own password. Uses the same public REST API the rest of
+    // this app already relies on for Auth.
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+    let emailSent = false
+    if (apiKey) {
+      const oobRes = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`,
         {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fields: {
-              uid: { stringValue: uid },
-              email: { stringValue: email },
-              name: { stringValue: name },
-              role: { stringValue: role },
-              createdAt: { stringValue: profileData.createdAt },
-            },
-          }),
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requestType: 'PASSWORD_RESET', email }),
         }
       )
-      if (!fsRes.ok) {
-        const fsErr = await fsRes.json().catch(() => ({}))
-        console.error('Firestore REST write failed:', fsErr)
-        // Auth account was created — return uid so caller can still show partial success
-        return NextResponse.json({
-          success: false,
-          uid,
-          profile: profileData,
-          error: 'Account aangemaakt in Firebase Auth, maar profiel kon niet worden opgeslagen in Firestore. Configureer Firebase Admin-sleutels in Vercel.',
-          savedTo: ['Firebase Auth: account aangemaakt'],
-        }, { status: 207 })
-      }
+      emailSent = oobRes.ok
     }
 
     return NextResponse.json({
       success: true,
       uid,
       profile: profileData,
-      savedTo: ['Firebase Auth: account aangemaakt', `Firestore: profiles/${uid}`],
+      emailSent,
+      message: emailSent
+        ? `Account aangemaakt. Er is een e-mail naar ${email} gestuurd om een wachtwoord in te stellen.`
+        : `Account aangemaakt, maar de wachtwoord-e-mail kon niet worden verstuurd. Vraag de gebruiker een 'wachtwoord vergeten' te doen op de inlogpagina.`,
     })
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('POST /api/admin/users error:', error)
     return NextResponse.json({ error: 'Aanmaken mislukt' }, { status: 500 })
   }
 }
-

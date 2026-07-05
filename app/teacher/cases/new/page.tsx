@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { addDoc, collection } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { authFetch } from '@/lib/api-client'
 import { useAuth } from '@/contexts/AuthContext'
 import { Case, CrimeType, CooperationLevel, IntervieweeType, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS, SUSPECT_COOPERATION_LABELS, SUSPECT_COOPERATION_DESCRIPTIONS, KeyDiscovery } from '@/lib/types'
 import { Shield, Sparkles, ArrowLeft, Save, Loader2, Plus, Trash2, CheckCircle, AlertCircle } from 'lucide-react'
@@ -97,7 +98,7 @@ function NewCaseInner() {
     setGenSuccess(null)
     setSaveError(null)
     try {
-      const res = await fetch('/api/generate-case', {
+      const res = await authFetch('/api/generate-case', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Use form.crimeType / form.cooperationLevel so AI panel and form are always in sync

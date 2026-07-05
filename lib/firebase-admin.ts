@@ -39,3 +39,62 @@ export function hasAdminCredentials(): boolean {
     (process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID)
   )
 }
+
+export class AuthError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
+/**
+ * Verifies the Firebase ID token on an incoming request and returns
+ * { uid, role }. Role comes from the custom claim set at account
+ * creation/update time — falls back to a Firestore profile lookup if the
+ * claim isn't present (e.g. accounts created before this claim existed).
+ *
+ * Throws AuthError(401) if there's no/invalid token, or if Admin
+ * credentials aren't configured at all (Admin SDK is mandatory for any
+ * route that calls this — there is no unauthenticated fallback).
+ */
+export async function requireAuth(req: Request): Promise<{ uid: string; role: string }> {
+  const auth = adminAuth()
+  const db = adminDb()
+  if (!auth || !db) {
+    throw new AuthError('Server niet correct geconfigureerd (Firebase Admin ontbreekt).', 500)
+  }
+
+  const header = req.headers.get('authorization') || ''
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null
+  if (!token) {
+    throw new AuthError('Niet ingelogd.', 401)
+  }
+
+  let decoded
+  try {
+    decoded = await auth.verifyIdToken(token)
+  } catch {
+    throw new AuthError('Ongeldige of verlopen sessie.', 401)
+  }
+
+  let role = decoded.role as string | undefined
+  if (!role) {
+    const snap = await db.collection('profiles').doc(decoded.uid).get()
+    role = snap.exists ? (snap.data()?.role as string | undefined) : undefined
+  }
+  if (!role) {
+    throw new AuthError('Geen profiel gevonden voor dit account.', 403)
+  }
+
+  return { uid: decoded.uid, role }
+}
+
+/** Same as requireAuth, but also rejects anyone who isn't a teacher. */
+export async function requireTeacher(req: Request): Promise<{ uid: string; role: string }> {
+  const result = await requireAuth(req)
+  if (result.role !== 'teacher') {
+    throw new AuthError('Alleen docenten hebben toegang tot deze actie.', 403)
+  }
+  return result
+}

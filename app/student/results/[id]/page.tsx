@@ -6,6 +6,7 @@ import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firesto
 import { db } from '@/lib/firebase'
 import { Session, Case, PVReport } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
+import { useAuth } from '@/contexts/AuthContext'
 import { gradeColor, formatDate } from '@/lib/utils'
 import { Shield, CheckCircle, AlertCircle, ArrowLeft, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import Link from 'next/link'
@@ -39,13 +40,16 @@ function loadLocalSession(id: string): Session | null {
 export default function ResultsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { profile, loading: authLoading } = useAuth()
   const [session, setSession] = useState<Session | null>(null)
   const [caseData, setCaseData] = useState<Case | null>(null)
   const [report, setReport] = useState<PVReport | null>(null)
   const [expanded, setExpanded] = useState<Set<number>>(new Set([0, 1, 2, 3, 4, 5]))
+  const [accessDenied, setAccessDenied] = useState(false)
   const isLocal = id.startsWith('local_')
 
   useEffect(() => {
+    if (authLoading) return
     const fetchData = async () => {
       try {
         if (isLocal) {
@@ -72,6 +76,10 @@ export default function ResultsPage() {
         } catch {}
         if (!sessData) sessData = loadLocalSession(id)
         if (!sessData) return
+        if (profile?.role !== 'teacher' && sessData.studentId !== profile?.uid) {
+          setAccessDenied(true)
+          return
+        }
         setSession(sessData)
 
         if (sessData.caseId.startsWith('builtin_')) {
@@ -99,7 +107,19 @@ export default function ResultsPage() {
       }
     }
     fetchData()
-  }, [id, isLocal])
+  }, [id, isLocal, authLoading, profile?.uid, profile?.role])
+
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
+        <p className="font-semibold text-gray-900">Geen toegang</p>
+        <p className="text-sm text-gray-500 max-w-xs">Dit resultaat is niet van jouw account.</p>
+        <button onClick={() => router.replace('/student/dashboard')} className="text-sm text-blue-600 hover:underline">
+          Terug naar dashboard
+        </button>
+      </div>
+    )
+  }
 
   if (!session || !caseData || !report) {
     return (

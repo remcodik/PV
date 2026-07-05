@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, where, doc, updateDoc, deleteDoc, writeBatch, setDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
+import { authFetch } from '@/lib/api-client'
 import { UserProfile } from '@/lib/types'
-import { Shield, Users, Trash2, UserCog, AlertTriangle, X, RefreshCw, GraduationCap, BookOpen, Plus, Eye, EyeOff, ChevronRight, LogOut } from 'lucide-react'
+import { Shield, Users, Trash2, UserCog, X, RefreshCw, GraduationCap, BookOpen, Plus, ChevronRight, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import TeacherNav from '@/app/teacher/components/TeacherNav'
@@ -25,18 +24,26 @@ interface Toast {
 let toastId = 0
 
 export default function UsersPage() {
-  const { profile: myProfile, logout } = useAuth()
+  const { profile: myProfile, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const [users, setUsers] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Client-side guard: redirect non-teachers away immediately. This is
+  // defense-in-depth for UX only — the real enforcement is server-side in
+  // /api/admin/users* (which reject non-teacher tokens) and Firestore rules.
+  useEffect(() => {
+    if (!authLoading && myProfile && myProfile.role !== 'teacher') {
+      router.replace('/student/dashboard')
+    }
+  }, [authLoading, myProfile, router])
   const [toasts, setToasts] = useState<Toast[]>([])
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null)
   const [updatingRole, setUpdatingRole] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'student' as 'student' | 'teacher' })
-  const [showPassword, setShowPassword] = useState(false)
+  const [createForm, setCreateForm] = useState({ name: '', email: '', role: 'student' as 'student' | 'teacher' })
 
   const addToast = (toast: Omit<Toast, 'id'>) => {
     const id = ++toastId
@@ -47,47 +54,37 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setLoading(true)
     try {
-      const [profSnap, sessSnap, repSnap] = await Promise.all([
-        getDocs(collection(db, 'profiles')),
-        getDocs(collection(db, 'sessions')),
-        getDocs(collection(db, 'pvreports')),
-      ])
+      const res = await authFetch('/api/admin/users')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Onbekende fout')
 
-      const sessionsByStudent: Record<string, number> = {}
-      const reportsByStudent: Record<string, number> = {}
-      sessSnap.docs.forEach(d => {
-        const uid = d.data().studentId as string
-        if (uid) sessionsByStudent[uid] = (sessionsByStudent[uid] ?? 0) + 1
-      })
-      repSnap.docs.forEach(d => {
-        const uid = d.data().studentId as string
-        if (uid) reportsByStudent[uid] = (reportsByStudent[uid] ?? 0) + 1
-      })
-
-      const rows = profSnap.docs.map(d => ({
-        ...(d.data() as UserProfile),
-        sessionCount: sessionsByStudent[d.id] ?? 0,
-        reportCount: reportsByStudent[d.id] ?? 0,
-      }))
-
-      rows.sort((a, b) => a.name.localeCompare(b.name))
+      const rows = (data.profiles as UserRow[]).slice().sort((a, b) => a.name.localeCompare(b.name))
       setUsers(rows)
     } catch (err) {
       console.error('fetchUsers error:', err)
-      addToast({ type: 'error', title: 'Laden mislukt', lines: ['Controleer je Firebase-verbinding.'] })
+      addToast({ type: 'error', title: 'Laden mislukt', lines: [String(err)] })
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchUsers() }, [])
+  useEffect(() => {
+    if (!authLoading && myProfile?.role === 'teacher') fetchUsers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, myProfile?.role])
 
   const changeRole = async (user: UserRow) => {
     const newRole = user.role === 'teacher' ? 'student' : 'teacher'
     setUpdatingRole(user.uid)
-    const timestamp = new Date().toISOString()
     try {
-      await updateDoc(doc(db, 'profiles', user.uid), { role: newRole, updatedAt: timestamp })
+      const res = await authFetch(`/api/admin/users/${user.uid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Onbekende fout')
+
       setUsers(prev => prev.map(u => u.uid === user.uid ? { ...u, role: newRole } : u))
       addToast({
         type: 'success',
@@ -104,47 +101,17 @@ export default function UsersPage() {
   const deleteUser = async (user: UserRow) => {
     setDeleting(user.uid)
     setConfirmDelete(null)
-    const savedTo: string[] = []
-    const warnings: string[] = []
 
     try {
-      const res = await fetch(`/api/admin/users/${user.uid}`, { method: 'DELETE' })
+      const res = await authFetch(`/api/admin/users/${user.uid}`, { method: 'DELETE' })
       const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Onbekende fout')
 
-      if (res.ok) {
-        savedTo.push(...(data.savedTo ?? []))
-        warnings.push(...(data.warnings ?? []))
-        setUsers(prev => prev.filter(u => u.uid !== user.uid))
-      } else if (res.status === 503) {
-        warnings.push('Firebase Admin niet geconfigureerd — Auth-account blijft actief')
-        await deleteDoc(doc(db, 'profiles', user.uid))
-        savedTo.push(`Profiel verwijderd`)
-
-        const sessSnap = await getDocs(query(collection(db, 'sessions'), where('studentId', '==', user.uid)))
-        if (!sessSnap.empty) {
-          const batch = writeBatch(db)
-          sessSnap.docs.forEach(d => batch.delete(d.ref))
-          await batch.commit()
-          savedTo.push(`${sessSnap.size} sessie(s) verwijderd`)
-        }
-
-        const repSnap = await getDocs(query(collection(db, 'pvreports'), where('studentId', '==', user.uid)))
-        if (!repSnap.empty) {
-          const batch = writeBatch(db)
-          repSnap.docs.forEach(d => batch.delete(d.ref))
-          await batch.commit()
-          savedTo.push(`${repSnap.size} PV-rapport(en) verwijderd`)
-        }
-
-        setUsers(prev => prev.filter(u => u.uid !== user.uid))
-      } else {
-        throw new Error(data.error ?? 'Onbekende fout')
-      }
-
+      setUsers(prev => prev.filter(u => u.uid !== user.uid))
       addToast({
-        type: warnings.length > 0 ? 'warning' : 'success',
-        title: warnings.length > 0 ? '⚠ Gedeeltelijk verwijderd' : '✓ Verwijderd',
-        lines: [...savedTo, ...warnings],
+        type: (data.warnings ?? []).length > 0 ? 'warning' : 'success',
+        title: (data.warnings ?? []).length > 0 ? '⚠ Gedeeltelijk verwijderd' : '✓ Verwijderd',
+        lines: [...(data.savedTo ?? []), ...(data.warnings ?? [])],
       })
     } catch (err) {
       addToast({ type: 'error', title: 'Verwijderen mislukt', lines: [String(err)] })
@@ -157,29 +124,25 @@ export default function UsersPage() {
     e.preventDefault()
     setCreating(true)
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await authFetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(createForm),
+        body: JSON.stringify({ name: createForm.name, email: createForm.email, role: createForm.role }),
       })
       const data = await res.json()
-      if (!res.ok && res.status !== 207) {
+      if (!res.ok) {
         addToast({ type: 'error', title: 'Aanmaken mislukt', lines: [data.error ?? 'Onbekende fout'] })
         return
-      }
-
-      if (data.uid && data.profile) {
-        await setDoc(doc(db, 'profiles', data.uid), data.profile)
       }
 
       const newUser: UserRow = { ...data.profile, sessionCount: 0, reportCount: 0 }
       setUsers(prev => [...prev, newUser].sort((a, b) => a.name.localeCompare(b.name)))
       setShowCreateModal(false)
-      setCreateForm({ name: '', email: '', password: '', role: 'student' })
+      setCreateForm({ name: '', email: '', role: 'student' })
       addToast({
-        type: 'success',
-        title: '✓ Gebruiker aangemaakt',
-        lines: [`${data.profile.name} (${data.profile.role})`],
+        type: data.emailSent ? 'success' : 'warning',
+        title: data.emailSent ? '✓ Gebruiker aangemaakt' : '⚠ Aangemaakt, e-mail niet verstuurd',
+        lines: [data.message ?? `${data.profile.name} (${data.profile.role})`],
       })
     } catch (err) {
       addToast({ type: 'error', title: 'Aanmaken mislukt', lines: [String(err)] })
@@ -301,27 +264,9 @@ export default function UsersPage() {
                   className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Wachtwoord</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    minLength={6}
-                    value={createForm.password}
-                    onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
-                    placeholder="Minimaal 6 tekens"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
+              <p className="text-xs text-gray-400 -mt-1">
+                Er is geen wachtwoord nodig — de gebruiker krijgt een e-mail om er zelf een in te stellen.
+              </p>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Rol</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -435,19 +380,6 @@ export default function UsersPage() {
               <p className="text-xs text-gray-500 leading-tight">Docenten</p>
             </div>
             <p className="text-2xl sm:text-3xl font-bold text-gray-900">{teachers.length}</p>
-          </div>
-        </div>
-
-        {/* Info banner */}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex gap-3">
-          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-amber-800">Firebase Auth-verwijdering uitgeschakeld</p>
-            <p className="text-amber-700 mt-0.5">
-              Rollen en Firestore-data kun je nu al beheren. Voor volledige Auth-verwijdering:
-              voeg <code className="bg-amber-100 px-1 rounded text-xs">FIREBASE_ADMIN_CLIENT_EMAIL</code> en{' '}
-              <code className="bg-amber-100 px-1 rounded text-xs">FIREBASE_ADMIN_PRIVATE_KEY</code> toe in Vercel.
-            </p>
           </div>
         </div>
 
