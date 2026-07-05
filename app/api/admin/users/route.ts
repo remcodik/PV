@@ -90,21 +90,35 @@ export async function POST(req: NextRequest) {
     const profileData = { uid, email, name, role, createdAt: new Date().toISOString() }
     await db.collection('profiles').doc(uid).set(profileData)
 
-    // Trigger Firebase's built-in password-reset email so the new user
-    // sets their own password. Uses the same public REST API the rest of
-    // this app already relies on for Auth.
+    // Generate the actual reset link via the Admin SDK — this works
+    // regardless of whether the email address can actually receive mail
+    // (e.g. test accounts with fake addresses), since it doesn't depend on
+    // delivery. The admin can copy/share this link through any channel.
+    let resetLink: string | null = null
+    try {
+      resetLink = await auth.generatePasswordResetLink(email)
+    } catch (err) {
+      console.error('generatePasswordResetLink failed:', err)
+    }
+
+    // Also attempt to actually send the email, for real addresses where
+    // that's more convenient than the admin manually forwarding a link.
     const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
     let emailSent = false
     if (apiKey) {
-      const oobRes = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ requestType: 'PASSWORD_RESET', email }),
-        }
-      )
-      emailSent = oobRes.ok
+      try {
+        const oobRes = await fetch(
+          `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestType: 'PASSWORD_RESET', email }),
+          }
+        )
+        emailSent = oobRes.ok
+      } catch {
+        // Non-fatal — resetLink above is the reliable fallback
+      }
     }
 
     return NextResponse.json({
@@ -112,9 +126,10 @@ export async function POST(req: NextRequest) {
       uid,
       profile: profileData,
       emailSent,
+      resetLink,
       message: emailSent
-        ? `Account aangemaakt. Er is een e-mail naar ${email} gestuurd om een wachtwoord in te stellen.`
-        : `Account aangemaakt, maar de wachtwoord-e-mail kon niet worden verstuurd. Vraag de gebruiker een 'wachtwoord vergeten' te doen op de inlogpagina.`,
+        ? `Account aangemaakt. Er is een e-mail naar ${email} gestuurd om een wachtwoord in te stellen. Werkt het e-mailadres niet (bijv. testaccount)? Gebruik dan de link hieronder.`
+        : `Account aangemaakt. De wachtwoord-e-mail kon niet worden verstuurd — deel de link hieronder handmatig met de gebruiker.`,
     })
   } catch (error) {
     if (error instanceof AuthError) {

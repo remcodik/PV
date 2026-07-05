@@ -43,6 +43,8 @@ export default function UsersPage() {
   const [updatingRole, setUpdatingRole] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [resetLinkInfo, setResetLinkInfo] = useState<{ email: string; link: string; emailSent: boolean } | null>(null)
+  const [linkCopied, setLinkCopied] = useState(false)
   const [createForm, setCreateForm] = useState({ name: '', email: '', role: 'student' as 'student' | 'teacher' })
 
   const addToast = (toast: Omit<Toast, 'id'>) => {
@@ -139,9 +141,13 @@ export default function UsersPage() {
       setUsers(prev => [...prev, newUser].sort((a, b) => a.name.localeCompare(b.name)))
       setShowCreateModal(false)
       setCreateForm({ name: '', email: '', role: 'student' })
+      if (data.resetLink) {
+        setResetLinkInfo({ email: data.profile.email, link: data.resetLink, emailSent: !!data.emailSent })
+        setLinkCopied(false)
+      }
       addToast({
         type: data.emailSent ? 'success' : 'warning',
-        title: data.emailSent ? '✓ Gebruiker aangemaakt' : '⚠ Aangemaakt, e-mail niet verstuurd',
+        title: data.emailSent ? '✓ Gebruiker aangemaakt' : '⚠ Aangemaakt — deel de link handmatig',
         lines: [data.message ?? `${data.profile.name} (${data.profile.role})`],
       })
     } catch (err) {
@@ -306,6 +312,43 @@ export default function UsersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset link — shown after creating a user, stays until dismissed
+          (not a toast) since the admin may need to copy it, e.g. when the
+          account's email is a test address that can't actually receive mail. */}
+      {resetLinkInfo && (
+        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full">
+            <h3 className="font-semibold text-gray-900 mb-1">Wachtwoord instellen</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {resetLinkInfo.emailSent
+                ? `Er is een e-mail naar ${resetLinkInfo.email} gestuurd. Werkt dat adres niet (bijv. een testaccount)? Deel dan onderstaande link handmatig.`
+                : `De e-mail naar ${resetLinkInfo.email} kon niet worden verstuurd. Deel deze link handmatig met de gebruiker.`}
+            </p>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-700 break-all mb-4">
+              {resetLinkInfo.link}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(resetLinkInfo.link)
+                  setLinkCopied(true)
+                  setTimeout(() => setLinkCopied(false), 2000)
+                }}
+                className="flex-1 bg-teacher-ink text-white py-2.5 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark transition-colors"
+              >
+                {linkCopied ? '✓ Gekopieerd' : 'Kopieer link'}
+              </button>
+              <button
+                onClick={() => setResetLinkInfo(null)}
+                className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Sluiten
+              </button>
+            </div>
           </div>
         </div>
       )}
