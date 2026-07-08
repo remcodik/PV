@@ -1,43 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f4f0;
+  --foreground: #131f2e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-body), Arial, Helvetica, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-data), ui-monospace, monospace;
 
-  /* Teacher identity — "het bureau": an official records-desk feel.
-     Ink navy + brass accent, paper background, slab-serif type. */
-  --color-teacher-ink: #1b2a38;
-  --color-teacher-ink-dark: #12202b;
-  --color-teacher-brass: #a9762f;
-  --color-teacher-paper: #f7f5f0;
-  --color-teacher-tint: #ece8dd;
-  --font-teacher: var(--font-teacher), Georgia, serif;
+  /* Single institutional identity, shared by every screen — a dark navy
+     "politie" ink scale for chrome/interactive elements, a warm paper
+     background evoking an official case file, and a muted gold used
+     sparingly for badges/accents (never as a second brand color). */
+  --color-ink-950: #0a1420;
+  --color-ink-900: #101d2e;
+  --color-ink-800: #182a3f;
+  --color-ink-700: #1f3752;
+  --color-ink-600: #2c4c6f;
+  --color-ink-500: #3f6390;
+  --color-ink-400: #6685a6;
+  --color-ink-300: #9db2c7;
+  --color-ink-100: #e5eaf0;
+  --color-ink-50: #f1f3f6;
 
-  /* Student identity — "het interview": an active field/case feel.
-     Deep indigo + amber accent, cream background, geometric sans type. */
-  --color-student-indigo: #2b3a67;
-  --color-student-indigo-dark: #1f2b4d;
-  --color-student-amber: #e0a458;
-  --color-student-cream: #fbf8f3;
-  --color-student-tint: #e8eaf2;
-  --font-student: var(--font-student), Arial, sans-serif;
-}
+  --color-paper: #f5f4f0;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-gold-700: #7c5f24;
+  --color-gold-600: #98782f;
+  --color-gold-100: #f0e7ce;
 }
 
 body {
-  background: var(--background);
+  background: var(--color-paper);
   color: var(--foreground);
 }
