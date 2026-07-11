@@ -439,7 +439,7 @@ export default function InterviewPage() {
               title={ttsMode === 'ai' ? 'AI-stem actief — klik voor browserstem' : 'Browserstem actief — klik voor AI-stem'}
               className={`flex items-center gap-1.5 px-2.5 py-2 rounded-md text-xs font-medium border transition-colors ${
                 ttsMode === 'ai'
-                  ? 'bg-purple-600 text-white border-purple-600'
+                  ? 'bg-gold-600 text-white border-gold-600'
                   : 'bg-white/5 text-white/70 border-white/20 hover:bg-white/10'
               }`}
             >
@@ -450,7 +450,7 @@ export default function InterviewPage() {
               onClick={endInterview}
               disabled={isEnding || transcript.length === 0}
               title={transcript.length === 0 ? 'Voer eerst een interview — stel minstens één vraag' : 'Interview afsluiten en PV schrijven'}
-              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1.5 bg-ink-700 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-ink-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ArrowRight className="w-4 h-4" />
               <span>{isEnding ? 'Bezig...' : 'PV schrijven'}</span>

@@ -246,7 +246,7 @@ function NewCaseInner() {
           </button>
           <button
             onClick={() => setMode('generate')}
-            className={`flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${mode === 'generate' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${mode === 'generate' ? 'bg-gold-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             <Sparkles className="w-4 h-4" />
             AI genereren
@@ -255,11 +255,11 @@ function NewCaseInner() {
 
         {/* AI panel — selectors shared with form (same form.crimeType / form.cooperationLevel) */}
         {mode === 'generate' && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-5 space-y-4">
+          <div className="bg-gold-100 border border-gold-600/30 rounded-lg p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-indigo-900">AI case genereren</h3>
-                <p className="text-xs text-indigo-600 mt-0.5">
+                <h3 className="font-semibold text-gold-700">AI case genereren</h3>
+                <p className="text-xs text-gold-700/80 mt-0.5">
                   {isSuspect ? 'Verdachtenverhoor' : 'Getuigenverhoor'} — instellingen hieronder gelden ook voor het formulier
                 </p>
               </div>
@@ -274,23 +274,23 @@ function NewCaseInner() {
             {/* These selectors write directly to form state */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-1.5">Delictstype</label>
+                <label className="block text-xs font-semibold text-gold-700 uppercase tracking-wide mb-1.5">Delictstype</label>
                 <select
                   value={form.crimeType as CrimeType}
                   onChange={e => setCrimeType(e.target.value as CrimeType)}
-                  className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="w-full px-3 py-2 bg-white border border-gold-600/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold-600/30"
                 >
                   {CRIME_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-1.5">
+                <label className="block text-xs font-semibold text-gold-700 uppercase tracking-wide mb-1.5">
                   {isSuspect ? 'Houding verdachte' : 'Meewerkingsniveau'}
                 </label>
                 <select
                   value={form.cooperationLevel}
                   onChange={e => setField('cooperationLevel', parseInt(e.target.value) as CooperationLevel)}
-                  className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="w-full px-3 py-2 bg-white border border-gold-600/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold-600/30"
                 >
                   {([1, 2, 3, 4, 5] as CooperationLevel[]).map(l => (
                     <option key={l} value={l}>
@@ -314,7 +314,7 @@ function NewCaseInner() {
             <button
               onClick={handleGenerate}
               disabled={generating}
-              className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition-colors"
+              className="flex items-center gap-2 bg-gold-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gold-700 disabled:opacity-50 shadow-sm transition-colors"
             >
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {generating ? 'Genereren...' : genSuccess ? 'Opnieuw genereren' : 'Genereer case'}

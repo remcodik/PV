@@ -269,7 +269,7 @@ export default function PVEditorPage() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors"
+              className="flex items-center gap-1.5 bg-gold-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gold-700 disabled:opacity-60 transition-colors"
             >
               {submitting
                 ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
