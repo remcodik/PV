@@ -8,8 +8,12 @@ import { Session, PVReport, UserProfile, Case, ScoreCategory, SCORE_CATEGORY_LAB
 import { BUILTIN_CASES } from '@/lib/cases'
 import { authFetch } from '@/lib/api-client'
 import { gradeColor, formatDate, statusLabel, crimeTypeLabel } from '@/lib/utils'
-import { Shield, ArrowLeft, CheckCircle, ChevronDown, ChevronUp, AlertCircle, BookOpen, FileText, TrendingUp, Save } from 'lucide-react'
+import { Shield, ArrowLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, FileText, TrendingUp, Save } from 'lucide-react'
 import Link from 'next/link'
+import { Card, EmptyState } from '@/app/components/ui/Card'
+import { StatCard } from '@/app/components/ui/StatCard'
+import { Button } from '@/app/components/ui/Button'
+import { PageSpinner } from '@/app/components/ui/Spinner'
 
 const now = new Date().toISOString()
 const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
@@ -117,40 +121,31 @@ export default function StudentDetailPage() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="min-h-screen flex items-center justify-center px-6 bg-paper">
         <div className="text-center max-w-sm">
-          <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 bg-red-50 rounded-md flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6 text-red-500" />
           </div>
           <p className="font-medium text-gray-900 mb-1">Gegevens konden niet worden geladen</p>
           <p className="text-sm text-gray-500 mb-4">Controleer je verbinding en probeer opnieuw.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-teacher-ink text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark transition-colors"
-          >
-            Opnieuw proberen
-          </button>
+          <Button onClick={() => window.location.reload()}>Opnieuw proberen</Button>
         </div>
       </div>
     )
   }
 
   if (!student) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-teacher-ink border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+    return <PageSpinner />
   }
 
   return (
-    <div className="min-h-screen bg-teacher-paper">
+    <div className="min-h-screen bg-paper">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <Link href="/teacher/dashboard" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+          <Link href="/teacher/dashboard" className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 bg-ink-800 rounded-md flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -163,40 +158,19 @@ export default function StudentDetailPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
-            <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
-              </div>
-              <p className="text-xs text-gray-500 leading-tight">Sessies</p>
-            </div>
-            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{sessions.length}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
-            <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
-              </div>
-              <p className="text-xs text-gray-500 leading-tight">Beoordeeld</p>
-            </div>
-            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{reports.length}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
-            <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
-              </div>
-              <p className="text-xs text-gray-500 leading-tight">Gem. cijfer</p>
-            </div>
-            <p className={`font-mono text-2xl sm:text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
-              {avgGrade ?? '—'}
-            </p>
-          </div>
+          <StatCard icon={BookOpen} label="Sessies" value={sessions.length} />
+          <StatCard icon={FileText} label="Beoordeeld" value={reports.length} />
+          <StatCard
+            icon={TrendingUp}
+            label="Gem. cijfer"
+            value={avgGrade ?? '—'}
+            valueClassName={avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}
+          />
         </div>
 
         {/* Customization — standing per-student settings */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 mb-6 sm:mb-8">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        <Card className="p-4 sm:p-5 mb-6 sm:mb-8">
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">
             Aanpassingen voor deze student
           </p>
           <div className="space-y-4">
@@ -207,7 +181,7 @@ export default function StudentDetailPage() {
                 value={classGroup}
                 onChange={e => { setClassGroup(e.target.value); setSaved(false) }}
                 placeholder="Bijv. Klas 2B"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink focus:border-transparent"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink-500/20 focus:border-ink-600 transition-colors"
               />
             </div>
             <div>
@@ -219,7 +193,7 @@ export default function StudentDetailPage() {
                 onChange={e => { setAttentionNote(e.target.value); setSaved(false) }}
                 placeholder="Bijv. Let extra op het uitschrijven van de zeven W-vragen."
                 rows={3}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink focus:border-transparent resize-none"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink-500/20 focus:border-ink-600 transition-colors resize-none"
               />
             </div>
             <div>
@@ -232,10 +206,10 @@ export default function StudentDetailPage() {
                     key={cat}
                     type="button"
                     onClick={() => toggleFocusArea(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
                       focusAreas.includes(cat)
-                        ? 'border-teacher-ink bg-teacher-tint text-teacher-ink'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        ? 'border-ink-700 bg-ink-100 text-ink-700'
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     {SCORE_CATEGORY_LABELS[cat]}
@@ -244,34 +218,24 @@ export default function StudentDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 pt-1">
-              <button
-                onClick={saveCustomization}
-                disabled={saving}
-                className="inline-flex items-center gap-2 bg-teacher-ink text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark disabled:opacity-60 transition-colors"
-              >
+              <Button onClick={saveCustomization} disabled={saving} size="sm">
                 {saving ? (
                   <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Save className="w-4 h-4" />
                 )}
                 {saving ? 'Opslaan...' : 'Opslaan'}
-              </button>
-              {saved && <span className="text-xs text-teacher-ink font-medium">✓ Opgeslagen</span>}
+              </Button>
+              {saved && <span className="text-xs text-ink-700 font-medium">✓ Opgeslagen</span>}
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Sessions */}
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Alle sessies</p>
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Alle sessies</p>
 
         {sessions.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-6 h-6 text-gray-400" />
-            </div>
-            <p className="font-medium text-gray-700 mb-1">Nog geen sessies</p>
-            <p className="text-sm text-gray-400">Deze student heeft nog geen oefeningen gestart.</p>
-          </div>
+          <EmptyState icon={BookOpen} title="Nog geen sessies" description="Deze student heeft nog geen oefeningen gestart." />
         ) : (
           <div className="space-y-3">
             {sessions.map(session => {
@@ -281,7 +245,7 @@ export default function StudentDetailPage() {
               const evaluated = session.status === 'evaluated'
 
               return (
-                <div key={session.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <Card key={session.id} className="overflow-hidden">
                   {/* Row header */}
                   <div className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-3 min-w-0">
@@ -309,7 +273,7 @@ export default function StudentDetailPage() {
 
                     <div className="flex items-center gap-3 flex-shrink-0 ml-3">
                       {report && (
-                        <span className={`text-xl font-bold ${gradeColor(report.cijfer)}`}>
+                        <span className={`text-xl font-bold font-mono ${gradeColor(report.cijfer)}`}>
                           {report.cijfer.toFixed(1)}
                         </span>
                       )}
@@ -321,7 +285,7 @@ export default function StudentDetailPage() {
                       {report && (
                         <button
                           onClick={() => setExpanded(isExpanded ? null : session.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                          className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                         >
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
@@ -340,9 +304,9 @@ export default function StudentDetailPage() {
                           const color = pct >= 70 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600'
                           const bg = pct >= 70 ? 'bg-emerald-50 border-emerald-100' : pct >= 50 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'
                           return (
-                            <div key={cat.key} className={`rounded-lg border ${bg} p-2.5 text-center`}>
+                            <div key={cat.key} className={`rounded-md border ${bg} p-2.5 text-center`}>
                               <p className="text-xs text-gray-500 leading-tight mb-1">{cat.label}</p>
-                              <p className={`text-base font-bold ${color}`}>{score}</p>
+                              <p className={`text-base font-bold font-mono ${color}`}>{score}</p>
                               <p className="text-xs text-gray-400">/{cat.max}</p>
                             </div>
                           )
@@ -352,7 +316,7 @@ export default function StudentDetailPage() {
                       {/* General feedback */}
                       <div className="px-4 pb-3">
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Algemene feedback</p>
-                        <p className="text-sm text-gray-700 bg-white border border-gray-100 rounded-lg px-3.5 py-3 leading-relaxed">
+                        <p className="text-sm text-gray-700 bg-white border border-gray-100 rounded-md px-3.5 py-3 leading-relaxed">
                           {report.generalFeedback}
                         </p>
                       </div>
@@ -362,19 +326,19 @@ export default function StudentDetailPage() {
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
                           Interview — {session.transcript.length} berichten
                         </p>
-                        <div className="bg-white border border-gray-100 rounded-lg p-3 max-h-52 overflow-y-auto space-y-2.5">
+                        <div className="bg-white border border-gray-100 rounded-md p-3 max-h-52 overflow-y-auto space-y-2.5">
                           {session.transcript.length === 0 ? (
                             <p className="text-xs text-gray-400">Geen transcript beschikbaar.</p>
                           ) : session.transcript.map((msg, i) => (
                             <div key={i} className={`flex gap-2 ${msg.role === 'student' ? '' : 'flex-row-reverse'}`}>
                               <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                                msg.role === 'student' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                                msg.role === 'student' ? 'bg-ink-100 text-ink-700' : 'bg-gray-100 text-gray-500'
                               }`}>
                                 {msg.role === 'student' ? 'A' : 'G'}
                               </div>
-                              <p className={`text-xs rounded-lg px-2.5 py-1.5 max-w-xs ${
+                              <p className={`text-xs rounded-md px-2.5 py-1.5 max-w-xs ${
                                 msg.role === 'student'
-                                  ? 'bg-blue-50 text-blue-900'
+                                  ? 'bg-ink-50 text-ink-900'
                                   : 'bg-gray-100 text-gray-700'
                               }`}>
                                 {msg.content}
@@ -387,13 +351,13 @@ export default function StudentDetailPage() {
                       {/* Submitted PV */}
                       <div className="px-4 pb-4">
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Ingediend PV</p>
-                        <pre className="bg-white border border-gray-100 rounded-lg px-3.5 py-3 text-xs text-gray-700 font-mono whitespace-pre-wrap max-h-52 overflow-y-auto leading-relaxed">
+                        <pre className="bg-white border border-gray-100 rounded-md px-3.5 py-3 text-xs text-gray-700 font-mono whitespace-pre-wrap max-h-52 overflow-y-auto leading-relaxed">
                           {report.content}
                         </pre>
                       </div>
                     </div>
                   )}
-                </div>
+                </Card>
               )
             })}
           </div>

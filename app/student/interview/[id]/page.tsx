@@ -10,6 +10,8 @@ import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight, ArrowLeft, Cpu } from 'lucide-react'
 import AttentionNoteBanner from '@/app/student/components/AttentionNoteBanner'
+import { Button } from '@/app/components/ui/Button'
+import { PageSpinner } from '@/app/components/ui/Spinner'
 
 // Web Speech API - webkit prefix fallback
 declare global {
@@ -398,40 +400,36 @@ export default function InterviewPage() {
         <div className="text-center max-w-sm">
           <p className="text-gray-700 font-medium mb-2">Interview kon niet worden geladen</p>
           <p className="text-gray-500 text-sm mb-4">Controleer je internetverbinding en probeer opnieuw.</p>
-          <button onClick={() => window.location.reload()} className="bg-student-indigo text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <Button onClick={() => window.location.reload()}>
             Opnieuw proberen
-          </button>
+          </Button>
         </div>
       </div>
     )
   }
 
   if (!session || !caseData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-student-indigo border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+    return <PageSpinner />
   }
 
   return (
-    <div className="min-h-screen bg-student-cream flex flex-col">
+    <div className="min-h-screen bg-paper flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+      <header className="sticky top-0 z-10 bg-ink-900 text-white px-4 py-3 flex-shrink-0">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => router.push('/student/dashboard')}
-              className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 p-1"
+              className="text-white/70 hover:text-white transition-colors flex-shrink-0 p-1"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 bg-student-indigo rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-md bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-semibold text-gray-900 text-sm truncate">{caseData.title}</h1>
-              <p className="text-xs text-gray-500 truncate">{caseData.intervieweeType === 'verdachte' ? 'Verdachtenverhoor' : 'Getuigenverhoor'} — {caseData.witnessName}</p>
+              <h1 className="font-semibold text-sm truncate">{caseData.title}</h1>
+              <p className="text-xs text-white/55 truncate">{caseData.intervieweeType === 'verdachte' ? 'Verdachtenverhoor' : 'Getuigenverhoor'} — {caseData.witnessName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -439,10 +437,10 @@ export default function InterviewPage() {
             <button
               onClick={toggleTtsMode}
               title={ttsMode === 'ai' ? 'AI-stem actief — klik voor browserstem' : 'Browserstem actief — klik voor AI-stem'}
-              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-md text-xs font-medium border transition-colors ${
                 ttsMode === 'ai'
-                  ? 'bg-purple-600 text-white border-purple-600'
-                  : 'bg-white text-gray-600 border-gray-300'
+                  ? 'bg-gold-600 text-white border-gold-600'
+                  : 'bg-white/5 text-white/70 border-white/20 hover:bg-white/10'
               }`}
             >
               <Cpu className="w-3.5 h-3.5" />
@@ -452,7 +450,7 @@ export default function InterviewPage() {
               onClick={endInterview}
               disabled={isEnding || transcript.length === 0}
               title={transcript.length === 0 ? 'Voer eerst een interview — stel minstens één vraag' : 'Interview afsluiten en PV schrijven'}
-              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1.5 bg-ink-700 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-ink-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ArrowRight className="w-4 h-4" />
               <span>{isEnding ? 'Bezig...' : 'PV schrijven'}</span>
@@ -462,9 +460,9 @@ export default function InterviewPage() {
       </header>
 
       {/* Case briefing banner */}
-      <div className="bg-student-tint border-b border-student-tint px-4 sm:px-6 py-3">
+      <div className="bg-ink-100 border-b border-ink-100 px-4 sm:px-6 py-3">
         <div className="max-w-3xl mx-auto">
-          <p className="text-sm text-student-indigo">
+          <p className="text-sm text-ink-700">
             <strong>Zaak:</strong> {caseData.description} — <strong>Wetsartikel:</strong> {caseData.legalArticle}
           </p>
         </div>
@@ -482,7 +480,7 @@ export default function InterviewPage() {
               />
             ) : (
               <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold ${
-                caseData.witnessGender === 'man' ? 'bg-student-indigo' : 'bg-rose-400'
+                caseData.witnessGender === 'man' ? 'bg-ink-800' : 'bg-rose-400'
               }`}>
                 {caseData.witnessName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
@@ -546,7 +544,7 @@ export default function InterviewPage() {
                 className={`flex gap-3 ${msg.role === 'student' ? 'flex-row-reverse' : ''}`}
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  msg.role === 'student' ? 'bg-student-indigo' : 'bg-gray-200'
+                  msg.role === 'student' ? 'bg-ink-800' : 'bg-gray-200'
                 }`}>
                   {msg.role === 'student'
                     ? <Shield className="w-4 h-4 text-white" />
@@ -556,20 +554,20 @@ export default function InterviewPage() {
                   {msg.role === 'witness' && parts ? (
                     <>
                       {parts.map((p, j) => p.type === 'action' ? (
-                        <div key={j} className="text-xs text-gray-400 italic px-3 py-1 bg-gray-50 border border-gray-100 rounded-xl inline-block">
+                        <div key={j} className="text-xs text-gray-400 italic px-3 py-1 bg-gray-50 border border-gray-100 rounded-lg inline-block">
                           *{p.content}*
                         </div>
                       ) : (
-                        <div key={j} className="bg-white border border-gray-200 text-gray-900 rounded-2xl rounded-tl-sm px-4 py-3">
+                        <div key={j} className="bg-white border border-gray-200 text-gray-900 rounded-lg rounded-tl-sm px-4 py-3">
                           <p className="text-sm leading-relaxed">{p.content}</p>
                         </div>
                       ))}
                       <p className="text-xs text-gray-400 px-1">{caseData.witnessName}</p>
                     </>
                   ) : (
-                    <div className="bg-student-indigo text-white rounded-2xl rounded-tr-sm px-4 py-3">
+                    <div className="bg-ink-800 text-white rounded-lg rounded-tr-sm px-4 py-3">
                       <p className="text-sm leading-relaxed">{msg.content}</p>
-                      <p className="text-xs mt-1 text-student-tint">Agent</p>
+                      <p className="text-xs mt-1 text-white/60">Agent</p>
                     </div>
                   )}
                 </div>
@@ -582,7 +580,7 @@ export default function InterviewPage() {
               <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
                 <User className="w-4 h-4 text-gray-600" />
               </div>
-              <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3">
+              <div className="bg-white border border-gray-200 rounded-lg rounded-tl-sm px-4 py-3">
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
@@ -604,12 +602,12 @@ export default function InterviewPage() {
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center gap-3">
             {isSpeaking && (
-              <div className="flex items-center gap-1.5 text-sm text-student-indigo bg-student-tint px-3 py-1.5 rounded-lg">
+              <div className="flex items-center gap-1.5 text-sm text-ink-700 bg-ink-100 px-3 py-1.5 rounded-md">
                 <Volume2 className="w-4 h-4 animate-pulse" />
                 Spreekt...
               </div>
             )}
-            <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-xl px-4 py-2.5">
+            <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-md px-4 py-2.5">
               <input
                 type="text"
                 value={inputText}
@@ -622,7 +620,7 @@ export default function InterviewPage() {
               <button
                 onClick={() => sendMessage(inputText)}
                 disabled={!inputText.trim() || isLoading}
-                className="text-student-indigo disabled:text-gray-300"
+                className="text-ink-700 disabled:text-gray-300"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -632,10 +630,10 @@ export default function InterviewPage() {
               <button
                 onClick={isListening ? stopListening : startListening}
                 disabled={isLoading}
-                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+                className={`w-12 h-12 rounded-md flex items-center justify-center transition-colors ${
                   isListening
                     ? 'bg-red-500 text-white animate-pulse'
-                    : 'bg-student-indigo text-white hover:bg-student-indigo-dark'
+                    : 'bg-ink-800 text-white hover:bg-ink-900'
                 }`}
               >
                 {isListening ? <StopCircle className="w-5 h-5" /> : <Mic className="w-5 h-5" />}

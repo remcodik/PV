@@ -6,13 +6,17 @@ import { db } from '@/lib/firebase'
 import { Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { crimeTypeLabel } from '@/lib/utils'
-import { Shield, Plus, Edit, Trash2, Eye, EyeOff, Sparkles, Users, BookOpen, CheckCircle, LogOut } from 'lucide-react'
+import { Plus, Edit, Trash2, Eye, EyeOff, Sparkles, Users, BookOpen, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import TeacherNav from '@/app/teacher/components/TeacherNav'
+import AppHeader from '@/app/components/ui/AppHeader'
+import { Card, SectionLabel, EmptyState } from '@/app/components/ui/Card'
+import { Badge } from '@/app/components/ui/Badge'
+import { PageSpinner } from '@/app/components/ui/Spinner'
 
 const COOP_LABELS: Record<number, string> = {
   1: 'Zeer coöp.', 2: 'Coöp.', 3: 'Neutraal', 4: 'Terughoudend', 5: 'Niet coöp.',
@@ -98,50 +102,37 @@ function TeacherCasesInner() {
   const drafts = cases.filter(c => c.status === 'draft')
 
   return (
-    <div className="min-h-screen bg-teacher-paper">
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-gray-900">PV Trainer</h1>
-              {syncing && <p className="text-xs text-gray-400">Synchroniseren...</p>}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-paper">
+      <AppHeader
+        roleLabel="Docent"
+        userName={profile?.name}
+        onLogout={handleLogout}
+        actions={
+          <>
             <Link
               href="/teacher/cases/new?mode=generate"
-              className="inline-flex items-center gap-2 border border-gray-200 bg-white text-gray-700 px-3 sm:px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 border border-white/20 bg-white/5 text-white px-3 sm:px-4 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors"
             >
-              <Sparkles className="w-4 h-4 text-indigo-500" />
+              <Sparkles className="w-4 h-4" />
               <span className="hidden sm:inline">AI genereren</span>
             </Link>
             <Link
               href="/teacher/cases/new"
-              className="inline-flex items-center gap-2 bg-teacher-ink text-white px-3 sm:px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-gold-600 hover:bg-gold-700 text-white px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nieuwe case</span>
             </Link>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 p-2 sm:px-3 sm:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              title="Uitloggen"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Uitloggen</span>
-            </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <TeacherNav />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {syncing && <p className="text-xs text-gray-400 mb-4">Synchroniseren...</p>}
         {savedBanner && (
-          <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-6">
+          <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 mb-6">
             <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
             <p className="text-sm font-medium text-emerald-800">Case opgeslagen en toegevoegd aan de lijst.</p>
           </div>
@@ -151,39 +142,26 @@ function TeacherCasesInner() {
           { title: 'Concept', items: drafts, count: drafts.length },
         ].map(section => (
           <div key={section.title} className="mb-8">
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{section.title}</p>
-              <span className="text-xs font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md">{section.count}</span>
-            </div>
+            <SectionLabel count={section.count}>{section.title}</SectionLabel>
 
             {section.items.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <BookOpen className="w-5 h-5 text-gray-400" />
-                </div>
-                <p className="text-sm text-gray-500">Geen cases in deze categorie.</p>
-              </div>
+              <EmptyState
+                icon={BookOpen}
+                title="Geen cases"
+                description="Er zijn nog geen cases in deze categorie."
+                className="p-6"
+              />
             ) : (
               <div className="space-y-2">
                 {section.items.map(c => (
-                  <div key={c.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+                  <Card key={c.id} className="p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">
-                            {crimeTypeLabel(c.crimeType)}
-                          </span>
+                          <Badge tone="neutral">{crimeTypeLabel(c.crimeType)}</Badge>
                           <span className="text-xs text-gray-400 font-mono">{c.legalArticle}</span>
-                          {c.isTemplate && (
-                            <span className="text-xs font-medium bg-teacher-tint text-teacher-ink px-2 py-0.5 rounded-md">
-                              Sjabloon
-                            </span>
-                          )}
-                          {c.intervieweeType === 'verdachte' && (
-                            <span className="text-xs font-medium bg-red-50 text-red-600 px-2 py-0.5 rounded-md">
-                              Verdachte
-                            </span>
-                          )}
+                          {c.isTemplate && <Badge tone="brand">Sjabloon</Badge>}
+                          {c.intervieweeType === 'verdachte' && <Badge tone="danger">Verdachte</Badge>}
                         </div>
                         <h3 className="font-semibold text-gray-900 text-sm">{c.title}</h3>
                         <p className="text-sm text-gray-400 mt-0.5 truncate">{c.description}</p>
@@ -205,7 +183,7 @@ function TeacherCasesInner() {
                               onClick={() => toggleStatus(c)}
                               disabled={toggling === c.id}
                               title={c.status === 'published' ? 'Verbergen' : 'Publiceren'}
-                              className={`p-2.5 rounded-lg transition-colors ${
+                              className={`p-2.5 rounded-md transition-colors ${
                                 c.status === 'published'
                                   ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
                                   : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -215,7 +193,7 @@ function TeacherCasesInner() {
                             </button>
                             <Link
                               href={`/teacher/cases/${c.id}`}
-                              className="p-2.5 rounded-lg text-teacher-ink hover:bg-teacher-tint transition-colors"
+                              className="p-2.5 rounded-md text-ink-700 hover:bg-ink-50 transition-colors"
                               title="Bewerken"
                             >
                               <Edit className="w-4 h-4" />
@@ -225,7 +203,7 @@ function TeacherCasesInner() {
                                 onClick={() => deleteCase(c.id)}
                                 disabled={deleting === c.id}
                                 title="Verwijderen"
-                                className="p-2.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                className="p-2.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -236,7 +214,7 @@ function TeacherCasesInner() {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             )}
@@ -249,7 +227,7 @@ function TeacherCasesInner() {
 
 export default function TeacherCasesPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-400">Laden...</div>}>
+    <Suspense fallback={<PageSpinner />}>
       <TeacherCasesInner />
     </Suspense>
   )

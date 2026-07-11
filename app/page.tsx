@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { PageSpinner } from '@/app/components/ui/Spinner'
 
 export default function HomePage() {
   const { user, profile, loading } = useAuth()
@@ -23,12 +24,5 @@ export default function HomePage() {
     }
   }, [user, profile, loading, router])
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-500">Laden...</p>
-      </div>
-    </div>
-  )
+  return <PageSpinner />
 }

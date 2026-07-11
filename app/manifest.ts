@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Trainingsapp voor het schrijven van proces-verbaal',
     start_url: '/',
     display: 'standalone',
-    background_color: '#f9fafb',
-    theme_color: '#2563eb',
+    background_color: '#f5f4f0',
+    theme_color: '#101d2e',
     icons: [
       {
         src: '/icon',

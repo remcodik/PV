@@ -7,9 +7,13 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, PVReport, UserProfile } from '@/lib/types'
 import { gradeColor } from '@/lib/utils'
-import { Shield, Users, LogOut, FileText, ChevronRight, TrendingUp, ClipboardList } from 'lucide-react'
+import { Users, FileText, ChevronRight, TrendingUp, ClipboardList } from 'lucide-react'
 import Link from 'next/link'
 import TeacherNav from '@/app/teacher/components/TeacherNav'
+import AppHeader from '@/app/components/ui/AppHeader'
+import { StatCard } from '@/app/components/ui/StatCard'
+import { Card, SectionLabel, EmptyState } from '@/app/components/ui/Card'
+import { Spinner } from '@/app/components/ui/Spinner'
 
 export default function TeacherDashboard() {
   const { profile, logout } = useAuth()
@@ -63,102 +67,46 @@ export default function TeacherDashboard() {
   })
 
   return (
-    <div className="min-h-screen bg-teacher-paper">
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-gray-900">PV Trainer</h1>
-              <p className="text-xs text-gray-500">Docent — {profile?.name}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 p-2 sm:px-3 sm:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            title="Uitloggen"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Uitloggen</span>
-          </button>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-paper">
+      <AppHeader roleLabel="Docent" userName={profile?.name} onLogout={handleLogout} />
       <TeacherNav />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
-            <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-teacher-tint rounded-lg flex items-center justify-center flex-shrink-0">
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teacher-ink" />
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">Studenten</p>
-            </div>
-            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{students.length}</p>
-          </div>
-          <Link href="/teacher/sessions" className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5 hover:bg-gray-50 transition-colors">
-            <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <ClipboardList className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600" />
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">Sessies</p>
-            </div>
-            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{sessions.length}</p>
-          </Link>
-          <Link href="/teacher/pvreports" className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5 hover:bg-gray-50 transition-colors">
-            <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">PV's</p>
-            </div>
-            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{reports.length}</p>
-          </Link>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
-            <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500">Gem. cijfer</p>
-            </div>
-            <p className={`font-mono text-2xl sm:text-3xl font-bold ${avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}`}>
-              {avgGrade ?? '—'}
-            </p>
-          </div>
+          <StatCard icon={Users} label="Studenten" value={students.length} />
+          <StatCard icon={ClipboardList} label="Sessies" value={sessions.length} href="/teacher/sessions" />
+          <StatCard icon={FileText} label="PV's" value={reports.length} href="/teacher/pvreports" />
+          <StatCard
+            icon={TrendingUp}
+            label="Gem. cijfer"
+            value={avgGrade ?? '—'}
+            valueClassName={avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}
+          />
         </div>
 
         {/* Students */}
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Studenten</p>
+        <SectionLabel>Studenten</SectionLabel>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-teacher-ink border-t-transparent rounded-full animate-spin" />
+            <Spinner />
           </div>
         ) : byStudent.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Users className="w-6 h-6 text-gray-400" />
-            </div>
-            <p className="font-medium text-gray-700 mb-1">Nog geen studenten</p>
-            <p className="text-sm text-gray-400">Studenten verschijnen hier zodra ze zich registreren.</p>
-          </div>
+          <EmptyState icon={Users} title="Nog geen studenten" description="Studenten verschijnen hier zodra ze zich registreren." />
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <Card className="overflow-hidden">
             {byStudent.map(({ student, sessions: ss, reports: rs, avgGrade: ag }, idx) => (
               <Link
                 key={student.uid}
                 href={`/teacher/students/${student.uid}`}
-                className={`flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors ${
+                className={`flex items-center justify-between px-5 py-4 hover:bg-ink-50 transition-colors ${
                   idx < byStudent.length - 1 ? 'border-b border-gray-100' : ''
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-gray-600">
+                  <div className="w-9 h-9 bg-ink-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-ink-700">
                       {student.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
@@ -169,15 +117,15 @@ export default function TeacherDashboard() {
                 </div>
                 <div className="flex items-center gap-4 sm:gap-5 flex-shrink-0 ml-4">
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-semibold text-gray-900">{ss.length}</p>
+                    <p className="text-sm font-semibold text-gray-900 font-mono">{ss.length}</p>
                     <p className="text-xs text-gray-400">sessies</p>
                   </div>
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-semibold text-gray-900">{rs.length}</p>
-                    <p className="text-xs text-gray-400">PV's</p>
+                    <p className="text-sm font-semibold text-gray-900 font-mono">{rs.length}</p>
+                    <p className="text-xs text-gray-400">PV&apos;s</p>
                   </div>
                   <div className="text-right">
-                    <p className={`text-sm font-semibold ${ag ? gradeColor(ag) : 'text-gray-300'}`}>
+                    <p className={`text-sm font-semibold font-mono ${ag ? gradeColor(ag) : 'text-gray-300'}`}>
                       {ag ? ag.toFixed(1) : '—'}
                     </p>
                     <p className="text-xs text-gray-400">cijfer</p>
@@ -186,7 +134,7 @@ export default function TeacherDashboard() {
                 </div>
               </Link>
             ))}
-          </div>
+          </Card>
         )}
       </div>
     </div>
