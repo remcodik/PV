@@ -9,6 +9,10 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Case, CrimeType, CooperationLevel, IntervieweeType, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS, SUSPECT_COOPERATION_LABELS, SUSPECT_COOPERATION_DESCRIPTIONS, KeyDiscovery } from '@/lib/types'
 import { Shield, Sparkles, ArrowLeft, Save, Loader2, Plus, Trash2, CheckCircle, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
+import { Card } from '@/app/components/ui/Card'
+import { Button } from '@/app/components/ui/Button'
+import { inputClass, labelClass } from '@/app/components/ui/form'
+import { PageSpinner } from '@/app/components/ui/Spinner'
 
 const CRIME_TYPES: { value: CrimeType; label: string; article: string; notes: string }[] = [
   { value: 'diefstal', label: 'Diefstal', article: 'Art. 310 Sr', notes: 'Wegnemen van goed toebehorend aan een ander' },
@@ -174,14 +178,14 @@ function NewCaseInner() {
   const currentCrimeType = CRIME_TYPES.find(c => c.value === form.crimeType)
 
   return (
-    <div className="min-h-screen bg-teacher-paper">
+    <div className="min-h-screen bg-paper">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/teacher/cases" className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <Link href="/teacher/cases" className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-ink-800 rounded-md flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -192,21 +196,13 @@ function NewCaseInner() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleSave('draft')}
-              disabled={saving}
-              className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-            >
+            <Button variant="secondary" onClick={() => handleSave('draft')} disabled={saving}>
               Concept
-            </button>
-            <button
-              onClick={() => handleSave('published')}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2.5 bg-teacher-ink text-white rounded-lg text-sm font-medium hover:bg-teacher-ink-dark disabled:opacity-50 shadow-sm transition-colors"
-            >
+            </Button>
+            <Button onClick={() => handleSave('published')} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Opslaan...' : 'Publiceren'}
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -215,19 +211,19 @@ function NewCaseInner() {
 
         {/* Save error */}
         {saveError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
             <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-red-800">{saveError}</p>
           </div>
         )}
 
         {/* Type toggle — always visible, drives both AI + form */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <Card className="p-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Type verhoor</p>
-          <div className="flex rounded-lg overflow-hidden border border-gray-200">
+          <div className="flex rounded-md overflow-hidden border border-gray-200">
             <button
               onClick={() => setField('intervieweeType', 'getuige')}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${!isSuspect ? 'bg-teacher-ink text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${!isSuspect ? 'bg-ink-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
             >
               Getuigenverhoor
             </button>
@@ -238,13 +234,13 @@ function NewCaseInner() {
               Verdachtenverhoor
             </button>
           </div>
-        </div>
+        </Card>
 
         {/* Mode toggle */}
-        <div className="flex rounded-lg overflow-hidden border border-gray-200 bg-white">
+        <div className="flex rounded-md overflow-hidden border border-gray-200 bg-white">
           <button
             onClick={() => setMode('manual')}
-            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${mode === 'manual' ? 'bg-teacher-ink text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${mode === 'manual' ? 'bg-ink-800 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             Handmatig invullen
           </button>
@@ -259,7 +255,7 @@ function NewCaseInner() {
 
         {/* AI panel — selectors shared with form (same form.crimeType / form.cooperationLevel) */}
         {mode === 'generate' && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 space-y-4">
+          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-indigo-900">AI case genereren</h3>
@@ -330,27 +326,27 @@ function NewCaseInner() {
         <div className="space-y-4">
 
           {/* Basisinformatie */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Basisinformatie</h3>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Titel</label>
+              <label className={labelClass}>Titel</label>
               <input
                 type="text"
                 value={form.title || ''}
                 onChange={e => setField('title', e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink transition-colors"
+                className={inputClass}
                 placeholder="Bijv. Vernieling parkeerplaats supermarkt"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Delictstype</label>
+                <label className={labelClass}>Delictstype</label>
                 <select
                   value={form.crimeType || 'diefstal'}
                   onChange={e => setCrimeType(e.target.value as CrimeType)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink transition-colors"
+                  className={inputClass}
                 >
                   {CRIME_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.label} — {ct.article || 'handmatig'}</option>)}
                 </select>
@@ -359,74 +355,74 @@ function NewCaseInner() {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Wetsartikel</label>
+                <label className={labelClass}>Wetsartikel</label>
                 <input
                   type="text"
                   value={form.legalArticle || ''}
                   onChange={e => setField('legalArticle', e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink transition-colors"
+                  className={inputClass}
                   placeholder="Art. 310 Sr"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Korte omschrijving</label>
+              <label className={labelClass}>Korte omschrijving</label>
               <input
                 type="text"
                 value={form.description || ''}
                 onChange={e => setField('description', e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink transition-colors"
+                className={inputClass}
                 placeholder="Één zin samenvatting zichtbaar voor studenten"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Achtergrondinformatie</label>
+              <label className={labelClass}>Achtergrondinformatie</label>
               <textarea
                 value={form.backgroundStory || ''}
                 onChange={e => setField('backgroundStory', e.target.value)}
                 rows={8}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink resize-y transition-colors"
+                className={`${inputClass} resize-y`}
                 placeholder="Volledige zaakachtergrond: datum, tijd, locatie, wat er is gebeurd..."
               />
             </div>
           </div>
 
           {/* Getuige / Verdachte */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">
               {isSuspect ? 'Verdachte' : 'Getuige'}
             </h3>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="col-span-2">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                <label className={labelClass}>
                   Naam {isSuspect ? 'verdachte' : 'getuige'}
                 </label>
                 <input
                   type="text"
                   value={form.witnessName || ''}
                   onChange={e => setField('witnessName', e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink transition-colors"
+                  className={inputClass}
                   placeholder="Maria Janssen"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Leeftijd</label>
+                <label className={labelClass}>Leeftijd</label>
                 <input
                   type="number"
                   value={form.witnessAge || 30}
                   onChange={e => setField('witnessAge', parseInt(e.target.value))}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink transition-colors"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Geslacht</label>
+                <label className={labelClass}>Geslacht</label>
                 <select
                   value={form.witnessGender || 'vrouw'}
                   onChange={e => setField('witnessGender', e.target.value as 'man' | 'vrouw')}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink transition-colors"
+                  className={inputClass}
                 >
                   <option value="vrouw">Vrouw</option>
                   <option value="man">Man</option>
@@ -435,14 +431,14 @@ function NewCaseInner() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              <label className={labelClass}>
                 Profiel van de {isSuspect ? 'verdachte' : 'getuige'}
               </label>
               <textarea
                 value={form.witnessProfile || ''}
                 onChange={e => setField('witnessProfile', e.target.value)}
                 rows={5}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink resize-y transition-colors"
+                className={`${inputClass} resize-y`}
                 placeholder={isSuspect ? 'Wie is de verdachte, achtergrond, motieven...' : 'Wie is de getuige, relatie tot de zaak...'}
               />
             </div>
@@ -450,14 +446,14 @@ function NewCaseInner() {
             {isSuspect && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  <label className={labelClass}>
                     Wat heeft de verdachte daadwerkelijk gedaan? <span className="text-gray-400 font-normal">(alleen voor AI)</span>
                   </label>
                   <textarea
                     value={form.suspectBackground || ''}
                     onChange={e => setField('suspectBackground', e.target.value)}
                     rows={6}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink resize-y transition-colors"
+                    className={`${inputClass} resize-y`}
                     placeholder="Beschrijf exact wat de verdachte heeft gedaan — de AI gebruikt dit om consistent in karakter te blijven..."
                   />
                 </div>
@@ -506,7 +502,7 @@ function NewCaseInner() {
           </div>
 
           {/* Kennis */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-3">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-3">
             <div>
               <h3 className="font-semibold text-gray-900">
                 Wat weet de {isSuspect ? 'verdachte' : 'getuige'}?
@@ -522,7 +518,7 @@ function NewCaseInner() {
                   value={k}
                   onChange={e => setKnows(i, e.target.value)}
                   rows={2}
-                  className="flex-1 px-3.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink/20 focus:border-teacher-ink resize-y transition-colors"
+                  className="flex-1 px-3.5 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ink-500/20 focus:border-ink-600 resize-y transition-colors"
                   placeholder={`Feit ${i + 1}...`}
                 />
               </div>
@@ -530,7 +526,7 @@ function NewCaseInner() {
           </div>
 
           {/* Sleutelpunten */}
-          <div className="bg-white rounded-xl border border-amber-200 p-6 space-y-4">
+          <div className="bg-white rounded-lg border border-amber-200 p-6 space-y-4">
             <div>
               <h3 className="font-semibold text-gray-900">Sleutelpunten voor de student</h3>
               <p className="text-xs text-gray-400 mt-1">
@@ -585,14 +581,14 @@ function NewCaseInner() {
             <button
               onClick={() => handleSave('draft')}
               disabled={saving}
-              className="flex-1 border border-gray-200 bg-white text-gray-700 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              className="flex-1 border border-gray-200 bg-white text-gray-700 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
               Opslaan als concept
             </button>
             <button
               onClick={() => handleSave('published')}
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 bg-teacher-ink text-white py-3 rounded-xl text-sm font-medium hover:bg-teacher-ink-dark disabled:opacity-50 shadow-sm transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 bg-ink-800 text-white py-3 rounded-lg text-sm font-medium hover:bg-ink-900 disabled:opacity-50 shadow-sm transition-colors"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Opslaan...' : 'Publiceren'}
@@ -606,7 +602,7 @@ function NewCaseInner() {
 
 export default function NewCasePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-400">Laden...</div>}>
+    <Suspense fallback={<PageSpinner />}>
       <NewCaseInner />
     </Suspense>
   )

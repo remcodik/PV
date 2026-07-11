@@ -4,10 +4,16 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { authFetch } from '@/lib/api-client'
 import { UserProfile } from '@/lib/types'
-import { Shield, Users, Trash2, UserCog, X, RefreshCw, GraduationCap, BookOpen, Plus, ChevronRight, LogOut } from 'lucide-react'
+import { Users, Trash2, UserCog, X, RefreshCw, GraduationCap, BookOpen, Plus, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import TeacherNav from '@/app/teacher/components/TeacherNav'
+import AppHeader from '@/app/components/ui/AppHeader'
+import { StatCard } from '@/app/components/ui/StatCard'
+import { SectionLabel, EmptyState } from '@/app/components/ui/Card'
+import { Badge } from '@/app/components/ui/Badge'
+import { Button } from '@/app/components/ui/Button'
+import { Spinner } from '@/app/components/ui/Spinner'
 
 interface UserRow extends UserProfile {
   sessionCount: number
@@ -166,13 +172,13 @@ export default function UsersPage() {
   const teachers = users.filter(u => u.role === 'teacher')
 
   return (
-    <div className="min-h-screen bg-teacher-paper">
+    <div className="min-h-screen bg-paper">
       {/* Toasts */}
       <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm w-full pointer-events-none">
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`pointer-events-auto rounded-xl border shadow-lg p-4 ${
+            className={`pointer-events-auto rounded-lg border shadow-lg p-4 ${
               t.type === 'success' ? 'bg-emerald-50 border-emerald-200' :
               t.type === 'warning' ? 'bg-amber-50 border-amber-200' :
               'bg-red-50 border-red-200'
@@ -204,9 +210,9 @@ export default function UsersPage() {
 
       {/* Delete confirmation modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
-            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
+            <div className="w-10 h-10 bg-red-50 rounded-md flex items-center justify-center mb-4">
               <Trash2 className="w-5 h-5 text-red-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">Gebruiker verwijderen</h3>
@@ -217,15 +223,12 @@ export default function UsersPage() {
               Dit verwijdert het profiel, alle sessies en PV-rapporten uit Firestore.
             </p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 border border-gray-200 text-gray-700 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
+              <Button variant="secondary" onClick={() => setConfirmDelete(null)} className="flex-1" size="sm">
                 Annuleren
-              </button>
+              </Button>
               <button
                 onClick={() => deleteUser(confirmDelete)}
-                className="flex-1 bg-red-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                className="flex-1 bg-red-600 text-white py-2.5 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
               >
                 Verwijderen
               </button>
@@ -236,13 +239,13 @@ export default function UsersPage() {
 
       {/* Create user modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-semibold text-gray-900">Nieuwe gebruiker aanmaken</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -256,7 +259,7 @@ export default function UsersPage() {
                   value={createForm.name}
                   onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="Voor- en achternaam"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink-500/20 focus:border-ink-600 transition-colors"
                 />
               </div>
               <div>
@@ -267,7 +270,7 @@ export default function UsersPage() {
                   value={createForm.email}
                   onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
                   placeholder="naam@example.com"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teacher-ink focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ink-500/20 focus:border-ink-600 transition-colors"
                 />
               </div>
               <p className="text-xs text-gray-400 -mt-1">
@@ -281,12 +284,10 @@ export default function UsersPage() {
                       key={r}
                       type="button"
                       onClick={() => setCreateForm(f => ({ ...f, role: r }))}
-                      className={`py-3 rounded-lg text-sm font-medium border transition-colors ${
+                      className={`py-2.5 rounded-md text-sm font-medium border transition-colors ${
                         createForm.role === r
-                          ? r === 'teacher'
-                            ? 'border-teacher-ink bg-teacher-tint text-teacher-ink'
-                            : 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          ? 'border-ink-700 bg-ink-100 text-ink-700'
+                          : 'border-gray-300 text-gray-600 hover:bg-gray-50'
                       }`}
                     >
                       {r === 'student' ? 'Student' : 'Docent'}
@@ -295,21 +296,13 @@ export default function UsersPage() {
                 </div>
               </div>
               <div className="flex gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 border border-gray-200 text-gray-700 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-                >
+                <Button type="button" variant="secondary" onClick={() => setShowCreateModal(false)} className="flex-1">
                   Annuleren
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="flex-1 bg-teacher-ink text-white py-3 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
-                >
+                </Button>
+                <Button type="submit" disabled={creating} className="flex-1">
                   {creating && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                   {creating ? 'Aanmaken...' : 'Aanmaken'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -320,115 +313,75 @@ export default function UsersPage() {
           (not a toast) since the admin may need to copy it, e.g. when the
           account's email is a test address that can't actually receive mail. */}
       {resetLinkInfo && (
-        <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
             <h3 className="font-semibold text-gray-900 mb-1">Wachtwoord instellen</h3>
             <p className="text-sm text-gray-500 mb-4">
               {resetLinkInfo.emailSent
                 ? `Er is een e-mail naar ${resetLinkInfo.email} gestuurd. Werkt dat adres niet (bijv. een testaccount)? Deel dan onderstaande link handmatig.`
                 : `De e-mail naar ${resetLinkInfo.email} kon niet worden verstuurd. Deel deze link handmatig met de gebruiker.`}
             </p>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-700 break-all mb-4">
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-xs text-gray-700 break-all mb-4">
               {resetLinkInfo.link}
             </div>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={async () => {
                   await navigator.clipboard.writeText(resetLinkInfo.link)
                   setLinkCopied(true)
                   setTimeout(() => setLinkCopied(false), 2000)
                 }}
-                className="flex-1 bg-teacher-ink text-white py-2.5 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark transition-colors"
+                className="flex-1"
+                size="sm"
               >
                 {linkCopied ? '✓ Gekopieerd' : 'Kopieer link'}
-              </button>
-              <button
-                onClick={() => setResetLinkInfo(null)}
-                className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
+              </Button>
+              <Button variant="secondary" onClick={() => setResetLinkInfo(null)} className="flex-1" size="sm">
                 Sluiten
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-teacher-ink rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-gray-900">PV Trainer</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+      <AppHeader
+        roleLabel="Docent"
+        userName={myProfile?.name}
+        onLogout={handleLogout}
+        actions={
+          <>
             <button
               onClick={fetchUsers}
               disabled={loading}
-              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              className="p-2 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
               title="Vernieuwen"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 bg-teacher-ink text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-teacher-ink-dark transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 bg-gold-600 hover:bg-gold-700 text-white px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nieuwe gebruiker</span>
             </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 p-2 sm:px-3 sm:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              title="Uitloggen"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Uitloggen</span>
-            </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <TeacherNav />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
-            <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-teacher-tint rounded-lg flex items-center justify-center flex-shrink-0">
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teacher-ink" />
-              </div>
-              <p className="text-xs text-gray-500 leading-tight">Totaal</p>
-            </div>
-            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{users.length}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
-            <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
-              </div>
-              <p className="text-xs text-gray-500 leading-tight">Studenten</p>
-            </div>
-            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{students.length}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
-            <div className="flex items-center gap-1.5 sm:gap-2.5 mb-2 sm:mb-3">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-teacher-tint rounded-lg flex items-center justify-center flex-shrink-0">
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teacher-ink" />
-              </div>
-              <p className="text-xs text-gray-500 leading-tight">Docenten</p>
-            </div>
-            <p className="font-mono text-2xl sm:text-3xl font-bold text-gray-900">{teachers.length}</p>
-          </div>
+          <StatCard icon={Users} label="Totaal" value={users.length} />
+          <StatCard icon={GraduationCap} label="Studenten" value={students.length} />
+          <StatCard icon={BookOpen} label="Docenten" value={teachers.length} />
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-teacher-ink border-t-transparent rounded-full animate-spin" />
+            <Spinner />
           </div>
         ) : (
           <>
@@ -476,17 +429,12 @@ function UserSection({
 }) {
   return (
     <div className="mb-8">
-      <div className="flex items-center gap-2 mb-3">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{title}</p>
-        <span className="text-xs font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md">{users.length}</span>
-      </div>
+      <SectionLabel count={users.length}>{title}</SectionLabel>
 
       {users.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
-          <p className="text-sm text-gray-400">Geen {title.toLowerCase()} gevonden.</p>
-        </div>
+        <EmptyState icon={Users} title={`Geen ${title.toLowerCase()}`} description={`Geen ${title.toLowerCase()} gevonden.`} className="p-6" />
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           {users.map((user, idx) => (
             <div
               key={user.uid}
@@ -494,37 +442,37 @@ function UserSection({
             >
               {user.role === 'student' ? (
                 <Link href={`/teacher/students/${user.uid}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-blue-700">{user.name.charAt(0).toUpperCase()}</span>
+                  <div className="w-9 h-9 rounded-full bg-ink-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-ink-700">{user.name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
-                      {user.uid === myUid && <span className="text-xs bg-teacher-tint text-teacher-ink px-1.5 py-0.5 rounded font-medium">jij</span>}
+                      {user.uid === myUid && <Badge tone="brand">jij</Badge>}
                     </div>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
                   <div className="hidden sm:flex items-center gap-4 flex-shrink-0 text-right">
-                    <div><p className="text-sm font-semibold text-gray-900">{user.sessionCount}</p><p className="text-xs text-gray-400">sessies</p></div>
-                    <div><p className="text-sm font-semibold text-gray-900">{user.reportCount}</p><p className="text-xs text-gray-400">PV's</p></div>
+                    <div><p className="text-sm font-semibold text-gray-900 font-mono">{user.sessionCount}</p><p className="text-xs text-gray-400">sessies</p></div>
+                    <div><p className="text-sm font-semibold text-gray-900 font-mono">{user.reportCount}</p><p className="text-xs text-gray-400">PV&apos;s</p></div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
                 </Link>
               ) : (
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-teacher-tint flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-teacher-ink">{user.name.charAt(0).toUpperCase()}</span>
+                  <div className="w-9 h-9 rounded-full bg-ink-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-ink-700">{user.name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900 text-sm truncate">{user.name}</p>
-                      {user.uid === myUid && <span className="text-xs bg-teacher-tint text-teacher-ink px-1.5 py-0.5 rounded font-medium">jij</span>}
+                      {user.uid === myUid && <Badge tone="brand">jij</Badge>}
                     </div>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
                   <div className="hidden sm:flex items-center gap-4 flex-shrink-0 text-right">
-                    <div><p className="text-sm font-semibold text-gray-900">{user.sessionCount}</p><p className="text-xs text-gray-400">sessies</p></div>
-                    <div><p className="text-sm font-semibold text-gray-900">{user.reportCount}</p><p className="text-xs text-gray-400">PV's</p></div>
+                    <div><p className="text-sm font-semibold text-gray-900 font-mono">{user.sessionCount}</p><p className="text-xs text-gray-400">sessies</p></div>
+                    <div><p className="text-sm font-semibold text-gray-900 font-mono">{user.reportCount}</p><p className="text-xs text-gray-400">PV&apos;s</p></div>
                   </div>
                 </div>
               )}
@@ -536,7 +484,7 @@ function UserSection({
                     onClick={() => onChangeRole(user)}
                     disabled={updatingRole === user.uid}
                     title={`Maak ${user.role === 'teacher' ? 'student' : 'docent'}`}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors min-w-[44px] justify-center"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors min-w-[44px] justify-center"
                   >
                     {updatingRole === user.uid ? (
                       <div className="w-3.5 h-3.5 border border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -549,7 +497,7 @@ function UserSection({
                     onClick={() => onDelete(user)}
                     disabled={deleting === user.uid}
                     title="Verwijderen"
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 text-red-500 hover:bg-red-50 hover:border-red-200 disabled:opacity-50 transition-colors min-w-[44px] justify-center"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium border border-gray-300 text-red-500 hover:bg-red-50 hover:border-red-200 disabled:opacity-50 transition-colors min-w-[44px] justify-center"
                   >
                     {deleting === user.uid
                       ? <div className="w-3.5 h-3.5 border border-red-400 border-t-transparent rounded-full animate-spin" />

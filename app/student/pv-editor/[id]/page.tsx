@@ -10,6 +10,7 @@ import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import AttentionNoteBanner from '@/app/student/components/AttentionNoteBanner'
+import { Spinner, PageSpinner } from '@/app/components/ui/Spinner'
 
 const now = new Date().toISOString()
 const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
@@ -221,7 +222,7 @@ export default function PVEditorPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
         <p className="font-semibold text-gray-900">Geen toegang</p>
         <p className="text-sm text-gray-500 max-w-xs">Deze sessie is niet van jouw account.</p>
-        <button onClick={() => router.replace('/student/dashboard')} className="text-sm text-student-indigo hover:underline">
+        <button onClick={() => router.replace('/student/dashboard')} className="text-sm text-ink-700 hover:underline">
           Terug naar dashboard
         </button>
       </div>
@@ -229,20 +230,16 @@ export default function PVEditorPage() {
   }
 
   if (!session || !caseData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-student-indigo border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+    return <PageSpinner />
   }
 
   return (
-    <div className="min-h-screen bg-student-cream flex flex-col">
+    <div className="min-h-screen bg-paper flex flex-col">
       {/* AI loading overlay */}
       {submitting && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-xl px-8 py-6 flex flex-col items-center gap-4 max-w-xs w-full mx-4">
-            <div className="w-12 h-12 border-4 border-student-indigo border-t-transparent rounded-full animate-spin" />
+          <div className="bg-white rounded-lg shadow-xl px-8 py-6 flex flex-col items-center gap-4 max-w-xs w-full mx-4">
+            <Spinner className="w-12 h-12" />
             <div className="text-center">
               <p className="font-semibold text-gray-900">PV wordt beoordeeld...</p>
               <p className="text-sm text-gray-500 mt-1">De AI analyseert je PV. Dit duurt 10-20 seconden.</p>
@@ -250,29 +247,29 @@ export default function PVEditorPage() {
           </div>
         </div>
       )}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+      <header className="sticky top-0 z-10 bg-ink-900 text-white px-4 py-3 flex-shrink-0">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => router.push('/student/dashboard')}
-              className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 p-1"
+              className="text-white/70 hover:text-white transition-colors flex-shrink-0 p-1"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 bg-student-indigo rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-md bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-semibold text-gray-900 text-sm truncate">{caseData.title}</h1>
-              <p className="text-xs text-gray-500">PV schrijven</p>
+              <h1 className="font-semibold text-sm truncate">{caseData.title}</h1>
+              <p className="text-xs text-white/55">PV schrijven</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {submitError && <p className="text-xs text-red-500 hidden sm:block">{submitError}</p>}
+            {submitError && <p className="text-xs text-red-300 hidden sm:block">{submitError}</p>}
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors"
+              className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition-colors"
             >
               {submitting
                 ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -291,7 +288,7 @@ export default function PVEditorPage() {
         {/* Left: Transcript */}
         <div className="sm:w-80 sm:flex-shrink-0 flex flex-col gap-4">
           {/* Transcript */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <button
               onClick={() => setShowTranscript(!showTranscript)}
               className="w-full flex items-center justify-between px-4 py-3 font-medium text-sm text-gray-700 hover:bg-gray-50"
@@ -317,7 +314,7 @@ export default function PVEditorPage() {
           </div>
 
           {/* Writing guide */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <button
               onClick={() => setShowGuide(!showGuide)}
               className="w-full flex items-center justify-between px-4 py-3 font-medium text-sm text-gray-700 hover:bg-gray-50"
@@ -387,7 +384,7 @@ export default function PVEditorPage() {
         </div>
 
         {/* Right: Editor */}
-        <div className="flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col min-h-[60vh] sm:min-h-0">
+        <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col min-h-[60vh] sm:min-h-0">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900">Proces-Verbaal</h2>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -397,7 +394,7 @@ export default function PVEditorPage() {
           <textarea
             value={pvContent}
             onChange={e => setPvContent(e.target.value)}
-            className="flex-1 p-4 sm:p-6 font-mono text-sm text-gray-800 resize-none focus:outline-none leading-relaxed"
+            className="flex-1 p-4 sm:p-6 font-mono text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ink-500/20 leading-relaxed"
             spellCheck={false}
           />
           <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
