@@ -439,7 +439,7 @@ export default function InterviewPage() {
               title={ttsMode === 'ai' ? 'AI-stem actief — klik voor browserstem' : 'Browserstem actief — klik voor AI-stem'}
               className={`flex items-center gap-1.5 px-2.5 py-2 rounded-md text-xs font-medium border transition-colors ${
                 ttsMode === 'ai'
-                  ? 'bg-gold-600 text-white border-gold-600'
+                  ? 'bg-amber-600 text-white border-amber-600'
                   : 'bg-white/5 text-white/70 border-white/20 hover:bg-white/10'
               }`}
             >

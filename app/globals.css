@@ -27,13 +27,39 @@
   --color-ink-50: #f1f3f6;
 
   --color-paper: #f5f4f0;
+  --color-paper-warm: #f7f3e8;
+  --color-cream: #fbf9f4;
 
   --color-gold-700: #7c5f24;
   --color-gold-600: #98782f;
   --color-gold-100: #f0e7ce;
+
+  /* Student accent — warm amber, ties into the existing attention-note
+     banner. Used sparingly alongside the shared ink/gold foundation to
+     give /student/* its own warmer, more approachable character. */
+  --color-amber-700: #a15c1f;
+  --color-amber-600: #c17a2e;
+  --color-amber-100: #f5e3cc;
+
+  --font-teacher: var(--font-teacher), Georgia, serif;
+  --font-student: var(--font-student), var(--font-body), sans-serif;
 }
 
 body {
   background: var(--color-paper);
   color: var(--foreground);
+}
+
+/* Scoped display fonts: only headings switch font within each app section,
+   body text stays on the shared Public Sans for readability. */
+.font-teacher-headings h1,
+.font-teacher-headings h2,
+.font-teacher-headings h3 {
+  font-family: var(--font-teacher);
+}
+
+.font-student-headings h1,
+.font-student-headings h2,
+.font-student-headings h3 {
+  font-family: var(--font-student);
 }
