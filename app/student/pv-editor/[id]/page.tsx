@@ -8,7 +8,7 @@ import { authFetch } from '@/lib/api-client'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft, Sparkles, CheckCircle2, AlertCircle, Circle } from 'lucide-react'
 import AttentionNoteBanner from '@/app/student/components/AttentionNoteBanner'
 import { Spinner, PageSpinner } from '@/app/components/ui/Spinner'
 
@@ -81,6 +81,9 @@ export default function PVEditorPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [accessDenied, setAccessDenied] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const [checkError, setCheckError] = useState<string | null>(null)
+  const [checkResult, setCheckResult] = useState<{ items: { status: string; text: string }[]; summary: string } | null>(null)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sessionRef = useRef<Session | null>(null)
 
@@ -154,6 +157,26 @@ export default function PVEditorPage() {
     }, 1500)
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current) }
   }, [pvContent, id, isLocal, session])
+
+  const handleCheck = async () => {
+    if (!session || !caseData) return
+    setChecking(true)
+    setCheckError(null)
+    try {
+      const res = await authFetch('/api/check-pv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pvContent, caseData, transcript: session.transcript }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Check mislukt')
+      setCheckResult({ items: data.items, summary: data.summary })
+    } catch (err) {
+      setCheckError(err instanceof Error ? err.message : 'Check mislukt')
+    } finally {
+      setChecking(false)
+    }
+  }
 
   const handleSubmit = async () => {
     if (!session || !caseData || !profile) return
@@ -309,6 +332,49 @@ export default function PVEditorPage() {
                     <p className="text-xs text-gray-700 bg-gray-50 rounded-lg p-2">{msg.content}</p>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Controleer mijn PV — pre-check, geen cijfer */}
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <button
+              onClick={handleCheck}
+              disabled={checking || pvContent.trim().length < 20}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 font-medium text-sm text-amber-700 hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {checking ? (
+                <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              {checking ? 'Bezig met controleren...' : 'Controleer mijn PV (geen cijfer)'}
+            </button>
+            {checkError && (
+              <div className="border-t border-gray-100 px-4 py-3 text-xs text-red-600">{checkError}</div>
+            )}
+            {checkResult && (
+              <div className="border-t border-gray-100 p-4 space-y-3">
+                {checkResult.summary && (
+                  <p className="text-xs text-gray-600 italic">{checkResult.summary}</p>
+                )}
+                <ul className="space-y-2">
+                  {checkResult.items.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs">
+                      {item.status === 'ok' ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                      ) : item.status === 'ontbreekt' ? (
+                        <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      )}
+                      <span className="text-gray-700">{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[11px] text-gray-400 pt-1">
+                  Dit is een hulpmiddel, geen beoordeling — pas je PV aan en controleer opnieuw zo vaak je wilt.
+                </p>
               </div>
             )}
           </div>

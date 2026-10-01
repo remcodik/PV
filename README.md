@@ -149,6 +149,33 @@ middleware.ts                     — coarse "logged in?" redirect (not a securi
 firestore.rules                   — database-level authorization (see above)
 ```
 
+## Interview realism & grading robustness
+
+`/api/chat` (the witness/suspect roleplay) has two added realism rules on
+top of the per-case cooperation style:
+
+- **Stays in character** against jailbreak-style attempts (being asked to
+  "ignore instructions" or confirm it's an AI) — reacts as the character
+  would (confused, uncomfortable), never breaks role.
+- **Reacts to the quality of the question itself**, not just its content:
+  a leading/suggestive question gets a more guarded answer than the base
+  cooperation level would otherwise give, a compound question only gets
+  part answered, an unclear question gets "I don't understand" instead of
+  a guessed answer. This rewards real interview technique rather than just
+  persistence.
+
+`/api/evaluate` (the graded assessment) retries once if the model's
+response fails to parse at all (previously: a hard failure, no evaluation
+for the student), coerces scores safely to numbers, and falls back
+gracefully if the feedback array comes back missing or malformed instead
+of letting that crash the results page.
+
+**`/api/check-pv`** — a separate, lightweight pre-submission helper in the
+PV editor ("Controleer mijn PV"). Deliberately **not** a mini-evaluate: no
+score, no grade, just a short list of concrete gaps ("cautie niet vermeld",
+"3 van de 7 W-vragen ontbreken") so a student can fix things before
+formally submitting. Can be run as many times as needed while writing.
+
 ## Per-student customization
 
 A teacher can set standing customization on a student's profile from
