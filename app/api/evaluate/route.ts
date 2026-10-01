@@ -192,7 +192,7 @@ ${keyDiscoveriesText}${cautieNote}${crimeElements}${teacherGuidance}
 
 ${transcriptText}`
 
-    const response = await client.messages.create({
+    const callModel = () => client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 8000,
       system: [
@@ -205,43 +205,70 @@ ${transcriptText}`
       messages: [{ role: 'user', content: userMessage }],
     })
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '{}'
-    // Extract JSON — try full match first, then repair truncated JSON
-    let result: Record<string, unknown> | null = null
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
+    const parseResponse = (text: string): Record<string, unknown> | null => {
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) return null
       try {
-        result = JSON.parse(jsonMatch[0])
+        return JSON.parse(jsonMatch[0])
       } catch {
         // Response was truncated — try to extract scores at minimum
         const scoresMatch = text.match(/"scores"\s*:\s*\{([^}]+)\}/)
         if (scoresMatch) {
-          const scoresObj = JSON.parse(`{${scoresMatch[0]}}`)
-          result = { scores: scoresObj.scores, feedback: [], generalFeedback: 'Beoordeling gedeeltelijk beschikbaar.' }
+          try {
+            const scoresObj = JSON.parse(`{${scoresMatch[0]}}`)
+            return { scores: scoresObj.scores, feedback: [], generalFeedback: 'Beoordeling gedeeltelijk beschikbaar.' }
+          } catch {
+            return null
+          }
         }
+        return null
       }
     }
+
+    let response = await callModel()
+    let text = response.content[0].type === 'text' ? response.content[0].text : '{}'
+    let result = parseResponse(text)
+
+    // Retry once if the model's response didn't parse at all (not just the
+    // truncated-but-salvageable case above) — a single malformed response
+    // shouldn't mean the student gets no evaluation at all.
+    if (!result?.scores) {
+      response = await callModel()
+      text = response.content[0].type === 'text' ? response.content[0].text : '{}'
+      result = parseResponse(text)
+    }
+
     if (!result?.scores) throw new Error('Geen geldige scores in AI-respons')
 
-    if (!result?.scores) throw new Error('Ongeldige AI-respons: scores ontbreken')
-
-    const rawScores = result.scores as Record<string, number>
+    const rawScores = result.scores as Record<string, unknown>
+    const toScore = (val: unknown, max: number) => {
+      const n = typeof val === 'number' ? val : Number(val)
+      return Number.isFinite(n) ? Math.min(max, Math.max(0, n)) : 0
+    }
     const scores: ScoreBreakdown = {
-      formalia: Math.min(15, Math.max(0, rawScores.formalia ?? 0)),
-      zeven_w: Math.min(25, Math.max(0, rawScores.zeven_w ?? 0)),
-      getuigenverklaring: Math.min(20, Math.max(0, rawScores.getuigenverklaring ?? 0)),
-      delictsomschrijving: Math.min(15, Math.max(0, rawScores.delictsomschrijving ?? 0)),
-      objectiviteit: Math.min(10, Math.max(0, rawScores.objectiviteit ?? 0)),
-      doorvragen: Math.min(15, Math.max(0, rawScores.doorvragen ?? 0)),
+      formalia: toScore(rawScores.formalia, 15),
+      zeven_w: toScore(rawScores.zeven_w, 25),
+      getuigenverklaring: toScore(rawScores.getuigenverklaring, 20),
+      delictsomschrijving: toScore(rawScores.delictsomschrijving, 15),
+      objectiviteit: toScore(rawScores.objectiviteit, 10),
+      doorvragen: toScore(rawScores.doorvragen, 15),
     }
 
     const totalScore = Object.values(scores).reduce((a, b) => a + b, 0)
     const cijfer = scoreToGrade(totalScore)
 
+    // Defensive: if the model's feedback array is missing or malformed,
+    // don't let that crash the results page — fall back to an empty array
+    // rather than passing through whatever shape came back.
+    const feedback = Array.isArray(result.feedback) ? (result.feedback as FeedbackItem[]) : []
+    const generalFeedback = typeof result.generalFeedback === 'string'
+      ? result.generalFeedback
+      : 'Beoordeling afgerond.'
+
     return NextResponse.json({
       scores,
-      feedback: result.feedback as FeedbackItem[],
-      generalFeedback: result.generalFeedback,
+      feedback,
+      generalFeedback,
       totalScore,
       cijfer,
     })
