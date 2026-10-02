@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import {
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged,
+  onIdTokenChanged,
   sendPasswordResetEmail,
   User,
 } from 'firebase/auth'
@@ -14,8 +14,15 @@ import { UserProfile } from '@/lib/types'
 
 const SESSION_COOKIE = 'pv_session'
 
-function setSessionCookie() {
-  document.cookie = `${SESSION_COOKIE}=1; path=/; max-age=86400; SameSite=Lax`
+// Holds the actual Firebase ID token (not just a presence flag), so
+// proxy.ts can verify it server-side with the Admin SDK and check the
+// role claim before allowing /teacher/* — previously this only checked
+// whether *some* cookie existed, which isn't a real security boundary.
+function setSessionCookie(idToken: string) {
+  // max-age slightly under the token's own ~1h lifetime; onIdTokenChanged
+  // below refreshes this automatically while the app stays open, and a
+  // fresh token is fetched again on next load otherwise.
+  document.cookie = `${SESSION_COOKIE}=${idToken}; path=/; max-age=3000; SameSite=Lax`
 }
 
 function clearSessionCookie() {
@@ -47,12 +54,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const timeout = setTimeout(() => setLoading(false), 3000)
     let unsub: (() => void) | undefined
     try {
-      unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      // onIdTokenChanged fires on sign-in, sign-out, AND whenever the SDK
+      // silently refreshes the token in the background — onAuthStateChanged
+      // only fires on sign-in/sign-out, which would leave the cookie's
+      // token stale (and eventually rejected by proxy.ts's verification)
+      // after about an hour.
+      unsub = onIdTokenChanged(auth, async (firebaseUser) => {
         clearTimeout(timeout)
         setUser(firebaseUser)
 
         if (firebaseUser) {
-          setSessionCookie()
+          try {
+            const idToken = await firebaseUser.getIdToken()
+            setSessionCookie(idToken)
+          } catch {
+            // Token fetch failed — treat as logged out for route-guard
+            // purposes rather than leaving a stale/invalid cookie behind.
+            clearSessionCookie()
+          }
           try {
             const snap = await getDoc(doc(db, 'profiles', firebaseUser.uid))
             setProfile(snap.exists() ? (snap.data() as UserProfile) : null)
@@ -87,6 +106,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('NO_PROFILE')
     }
 
+    // onIdTokenChanged above also fires on this sign-in and sets the
+    // cookie, but set it here too so proxy.ts sees a valid session
+    // immediately on the very next navigation, without a race.
+    const idToken = await cred.user.getIdToken()
+    setSessionCookie(idToken)
     setProfile(snap.data() as UserProfile)
   }
 
