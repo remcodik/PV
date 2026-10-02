@@ -61,17 +61,24 @@ Firestore profile is treated as unauthorized (not given a fallback role).
 
 Since there's no self-registration, a brand-new setup has zero accounts —
 including no teacher who could use `/teacher/users` to create one. Solved
-with a one-time, secret-gated endpoint:
+with a one-time, secret-gated endpoint, callable two ways:
 
+**Easiest — just open a URL** (e.g. on a phone, no terminal needed):
+```
+https://your-app.vercel.app/api/admin/bootstrap?token=<ADMIN_BOOTSTRAP_SECRET>&name=Your+Name&email=you@example.com
+```
+Shows a small page with a tappable link to set the password.
+
+**Or via curl**, for scripting:
 ```bash
 curl -X POST https://your-app.vercel.app/api/admin/bootstrap \
   -H "Content-Type: application/json" \
   -d '{"token":"<ADMIN_BOOTSTRAP_SECRET value>", "name":"Your Name", "email":"you@example.com"}'
 ```
 
-This returns a `resetLink` directly in the response (not just via email,
-since at this point there's no other admin to hand you one) — open it to
-set a password, then log in at `/admin` (see below).
+Either way, it returns a `resetLink` directly (not just via email, since
+at this point there's no other admin to hand you one) — open it to set a
+password, then log in at `/admin` (see below).
 
 This only ever works **once**: it refuses to run if any teacher profile
 already exists, so even if the secret leaks later it can't be used to
