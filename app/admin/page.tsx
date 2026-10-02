@@ -15,12 +15,28 @@ import { Button } from '@/app/components/ui/Button'
 // own chicken-and-egg solution, and wasn't asked for — just a clearly
 // separate entrance was.
 export default function AdminEntrance() {
-  const { user, profile, loading, login, logout } = useAuth()
+  const { user, profile, loading, login, logout, resetPassword } = useAuth()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [showForgot, setShowForgot] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotStatus, setForgotStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setForgotStatus('sending')
+    try {
+      await resetPassword(forgotEmail)
+    } catch {
+      // Always show success either way — avoids leaking which emails
+      // have accounts, same as on /login.
+    } finally {
+      setForgotStatus('sent')
+    }
+  }
 
   useEffect(() => {
     if (loading) return
@@ -92,7 +108,16 @@ export default function AdminEntrance() {
               />
             </div>
             <div>
-              <label className={labelClass}>Wachtwoord</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelClass}>Wachtwoord</label>
+                <button
+                  type="button"
+                  onClick={() => { setShowForgot(true); setForgotEmail(email); setForgotStatus('idle') }}
+                  className="text-xs text-ink-600 hover:text-ink-800 hover:underline"
+                >
+                  Vergeten?
+                </button>
+              </div>
               <input
                 type="password"
                 value={password}
@@ -115,6 +140,48 @@ export default function AdminEntrance() {
           Geen toegang? Alleen bestaande docentaccounts kunnen hier inloggen.
         </p>
       </div>
+
+      {showForgot && (
+        <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center px-4">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
+            {forgotStatus === 'sent' ? (
+              <>
+                <h3 className="font-semibold text-ink-950 mb-1">E-mail verstuurd</h3>
+                <p className="text-sm text-gray-500 mb-5">
+                  Als er een account bestaat bij <strong>{forgotEmail}</strong>, ontvang je een
+                  e-mail om een nieuw wachtwoord in te stellen.
+                </p>
+                <Button onClick={() => setShowForgot(false)} className="w-full">
+                  Sluiten
+                </Button>
+              </>
+            ) : (
+              <form onSubmit={handleForgotSubmit}>
+                <h3 className="font-semibold text-ink-950 mb-1">Wachtwoord vergeten</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Vul je e-mailadres in — je ontvangt een link om een nieuw wachtwoord in te stellen.
+                </p>
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  placeholder="naam@politie.nl"
+                  className={`${inputClass} mb-4`}
+                />
+                <div className="flex gap-3">
+                  <Button type="button" variant="secondary" onClick={() => setShowForgot(false)} className="flex-1">
+                    Annuleren
+                  </Button>
+                  <Button type="submit" disabled={forgotStatus === 'sending'} className="flex-1">
+                    {forgotStatus === 'sending' ? 'Bezig...' : 'Versturen'}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
