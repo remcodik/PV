@@ -17,14 +17,27 @@ import { LinkButton } from '@/app/components/ui/Button'
 import { Spinner } from '@/app/components/ui/Spinner'
 
 export default function StudentDashboard() {
-  const { profile, logout } = useAuth()
+  const { profile, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const [sessions, setSessions] = useState<Session[]>([])
   const [reports, setReports] = useState<PVReport[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
 
   useEffect(() => {
-    if (!profile) return
+    // Previously this only checked `if (!profile) return`, with no
+    // dependency on auth's own loading state. If `profile` never resolved
+    // to a real value for any reason (a Firestore permission error, rules
+    // not yet deployed, a race on first load), this effect would never
+    // run fetchData — and since setLoading(false) only happens inside
+    // fetchData, the page's own `loading` stayed true forever: an
+    // infinite spinner with no error shown. Now it only waits for auth to
+    // actually finish resolving, not for profile to exist specifically.
+    if (authLoading) return
+    if (!profile) {
+      setLoading(false)
+      return
+    }
     const fetchData = async () => {
       try {
         const [sessSnap, repSnap] = await Promise.all([
@@ -38,12 +51,13 @@ export default function StudentDashboard() {
         setReports(repSnap.docs.map(d => ({ id: d.id, ...d.data() }) as PVReport))
       } catch (err) {
         console.error('Dashboard fetch error:', err)
+        setFetchError(true)
       } finally {
         setLoading(false)
       }
     }
     fetchData()
-  }, [profile])
+  }, [authLoading, profile])
 
   const avgGrade = reports.length > 0
     ? (reports.reduce((s, r) => s + r.cijfer, 0) / reports.length).toFixed(1)
@@ -95,6 +109,16 @@ export default function StudentDashboard() {
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Spinner />
+          </div>
+        ) : fetchError ? (
+          <div className="text-center py-16">
+            <p className="text-sm text-red-600 font-medium">Laden van je oefeningen is mislukt.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-xs text-ink-700 underline"
+            >
+              Probeer opnieuw
+            </button>
           </div>
         ) : sessions.length === 0 ? (
           <EmptyState icon={BookOpen} title="Nog geen oefeningen" description="Start je eerste sessie om hier je voortgang te zien." />
