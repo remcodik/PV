@@ -96,9 +96,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string) => {
+    // Deliberately NOT wrapped in try/catch here — a wrong email/password
+    // should surface as whatever signInWithEmailAndPassword throws
+    // (caller maps that to a generic "invalid credentials" message).
     const cred = await signInWithEmailAndPassword(auth, email, password)
 
-    const snap = await getDoc(doc(db, 'profiles', cred.user.uid))
+    // This IS wrapped: if auth succeeded but reading the profile fails
+    // (e.g. Firestore rules not deployed / misconfigured, network issue),
+    // that is a fundamentally different problem from a wrong password —
+    // the credentials were correct. Surfacing it as a distinct error code
+    // means the login page can show something more useful than "invalid
+    // email or password" when the password was never the issue.
+    let snap
+    try {
+      snap = await getDoc(doc(db, 'profiles', cred.user.uid))
+    } catch (err) {
+      console.error('Profile fetch failed after successful auth:', err)
+      throw new Error('PROFILE_FETCH_FAILED')
+    }
+
     if (!snap.exists()) {
       // Authenticated in Firebase Auth but no admin-provisioned profile —
       // reject the login. Don't fall back to any client-side guess.

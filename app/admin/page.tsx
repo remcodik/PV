@@ -51,8 +51,15 @@ export default function AdminEntrance() {
     setSubmitting(true)
     try {
       await login(email, password)
-    } catch {
-      setError('Ongeldig e-mailadres of wachtwoord.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg === 'NO_PROFILE') {
+        setError('Dit account bestaat wel in Firebase Auth, maar heeft geen profiel.')
+      } else if (msg === 'PROFILE_FETCH_FAILED') {
+        setError('Inloggen is gelukt, maar je profiel kon niet worden opgehaald (serverfout). Probeer het zo opnieuw, of meld dit.')
+      } else {
+        setError('Ongeldig e-mailadres of wachtwoord.')
+      }
     } finally {
       setSubmitting(false)
     }
