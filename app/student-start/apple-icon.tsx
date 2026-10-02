@@ -3,18 +3,20 @@ import { ImageResponse } from 'next/og'
 export const size = { width: 180, height: 180 }
 export const contentType = 'image/png'
 
+// Student-identiteit: warme amber achtergrond — bewust het tegenovergestelde
+// van de koele ink/goud-combinatie van docent/beheer, zodat het verschil
+// ook op een klein startscherm-icoon meteen opvalt (kleur draagt verder
+// dan een lettertype-detail op dat formaat).
 export default function AppleIcon() {
   return new ImageResponse(
     <div
       style={{
-        background: '#101d2e',
+        background: '#c17a2e',
         width: '100%',
         height: '100%',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
       }}
     >
       <div
@@ -22,17 +24,14 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'rgba(255,255,255,0.2)',
-          borderRadius: '20px',
-          width: 90,
-          height: 90,
+          background: '#0a1420',
+          borderRadius: '28px',
+          width: 108,
+          height: 108,
         }}
       >
-        <span style={{ color: 'white', fontSize: 42, fontWeight: 800, letterSpacing: '-1px' }}>PV</span>
+        <span style={{ color: 'white', fontSize: 58, fontWeight: 800 }}>S</span>
       </div>
-      <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 20, fontWeight: 600, letterSpacing: '1px' }}>
-        STUDENT
-      </span>
     </div>,
     { ...size }
   )
