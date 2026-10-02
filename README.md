@@ -76,6 +76,16 @@ curl -X POST https://your-app.vercel.app/api/admin/bootstrap \
   -d '{"token":"<ADMIN_BOOTSTRAP_SECRET value>", "name":"Your Name", "email":"you@example.com"}'
 ```
 
+## If a reset email never arrives (any account, not just the first one)
+
+`/api/admin/reset-link?token=<ADMIN_BOOTSTRAP_SECRET>&email=...` generates
+a fresh reset link directly for an existing account, same secret as
+bootstrap. Exists because the normal fix — "ask a teacher to use
+`/teacher/users`" — doesn't work when it's the teacher's *own* reset
+email that never arrived and there's no other teacher yet to help.
+Unlike bootstrap, this isn't self-disabling — it's a standing recovery
+tool, so keep `ADMIN_BOOTSTRAP_SECRET` private.
+
 Either way, it returns a `resetLink` directly (not just via email, since
 at this point there's no other admin to hand you one) — open it to set a
 password, then log in at `/admin` (see below).
