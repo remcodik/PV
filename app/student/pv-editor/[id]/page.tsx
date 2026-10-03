@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { doc, getDoc, addDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -9,6 +9,24 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft, Sparkles, CheckCircle2, AlertCircle, Circle } from 'lucide-react'
+
+// Live heuristic checklist for the 7 W's — NOT an AI check, just a quick
+// signal while typing. The first four map cleanly onto a template
+// placeholder that either has or hasn't been filled in (a reliable
+// yes/no). The last three (waarmee/waarom/hoe) aren't separately
+// templated in the free-text body, so they're approximated by keyword
+// presence — genuinely fuzzy, which is why the UI labels this an
+// "automatische hint" rather than a real check. "Controleer mijn PV"
+// (the AI-backed check) remains the actual authority on completeness.
+const W_CHECKS: { key: string; label: string; test: (content: string) => boolean }[] = [
+  { key: 'wie', label: 'Wie (naam/gegevens ingevuld)', test: c => !c.includes('[naam getuige]') && !c.includes('[geboortedatum]') },
+  { key: 'wat', label: 'Wat (gebeurtenis beschreven)', test: c => !c.includes('[Beschrijf hier wat er is gebeurd') },
+  { key: 'waar', label: 'Waar (locatie ingevuld)', test: c => !c.includes('[Exacte locatie]') },
+  { key: 'wanneer', label: 'Wanneer (datum/tijdstip ingevuld)', test: c => !c.includes('[Datum en tijdstip incident]') },
+  { key: 'waarmee', label: 'Waarmee (middel genoemd)', test: c => /\b(met|wapen|voertuig|mes|vuist|hand(en)?)\b/i.test(c) },
+  { key: 'waarom', label: 'Waarom (motief genoemd)', test: c => /\b(omdat|reden|motief|vanwege|aanleiding)\b/i.test(c) },
+  { key: 'hoe', label: 'Hoe (werkwijze beschreven)', test: c => /\b(waarna|vervolgens|werkwijze|manier)\b/i.test(c) },
+]
 import AttentionNoteBanner from '@/app/student/components/AttentionNoteBanner'
 import { Spinner, PageSpinner } from '@/app/components/ui/Spinner'
 
@@ -76,6 +94,7 @@ export default function PVEditorPage() {
   const [session, setSession] = useState<Session | null>(null)
   const [caseData, setCaseData] = useState<Case | null>(null)
   const [pvContent, setPvContent] = useState(PV_TEMPLATE)
+  const wChecks = useMemo(() => W_CHECKS.map(c => ({ ...c, done: c.test(pvContent) })), [pvContent])
   const [showTranscript, setShowTranscript] = useState(true)
   const [showGuide, setShowGuide] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -404,15 +423,19 @@ export default function PVEditorPage() {
                   </ul>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-700 mb-1">Zeven W-vragen (25 pt)</p>
-                  <ul className="space-y-0.5 list-disc pl-4">
-                    <li>Wie (verdachte/slachtoffer)</li>
-                    <li>Wat (wat is er gebeurd)</li>
-                    <li>Waar (exacte locatie)</li>
-                    <li>Wanneer (datum/tijdstip)</li>
-                    <li>Waarmee (middelen)</li>
-                    <li>Waarom (motief)</li>
-                    <li>Hoe (werkwijze)</li>
+                  <p className="font-semibold text-gray-700 mb-0.5">Zeven W-vragen (25 pt)</p>
+                  <p className="text-[10px] text-gray-400 mb-1">Automatische hint terwijl je typt — geen echte check, gebruik &apos;Controleer mijn PV&apos; daarvoor.</p>
+                  <ul className="space-y-1">
+                    {wChecks.map(c => (
+                      <li key={c.key} className="flex items-center gap-1.5">
+                        {c.done ? (
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                        ) : (
+                          <Circle className="w-3 h-3 text-gray-300 flex-shrink-0" />
+                        )}
+                        <span className={c.done ? 'text-gray-500' : 'text-gray-600'}>{c.label}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
                 <div>
