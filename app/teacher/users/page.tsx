@@ -168,8 +168,14 @@ export default function UsersPage() {
     router.replace('/login')
   }
 
-  const students = users.filter(u => u.role === 'student')
+  const allStudents = users.filter(u => u.role === 'student')
   const teachers = users.filter(u => u.role === 'teacher')
+
+  const availableClasses = Array.from(
+    new Set(allStudents.map(s => s.classGroup).filter((c): c is string => !!c))
+  ).sort()
+  const [classFilter, setClassFilter] = useState<string>('all')
+  const students = classFilter === 'all' ? allStudents : allStudents.filter(s => s.classGroup === classFilter)
 
   return (
     <div className="min-h-screen bg-paper">
@@ -385,6 +391,30 @@ export default function UsersPage() {
           </div>
         ) : (
           <>
+            {availableClasses.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="text-xs text-gray-400">Klas:</span>
+                <button
+                  onClick={() => setClassFilter('all')}
+                  className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                    classFilter === 'all' ? 'bg-ink-800 text-white border-ink-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Alle ({allStudents.length})
+                </button>
+                {availableClasses.map(cls => (
+                  <button
+                    key={cls}
+                    onClick={() => setClassFilter(cls)}
+                    className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                      classFilter === cls ? 'bg-ink-800 text-white border-ink-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {cls} ({allStudents.filter(s => s.classGroup === cls).length})
+                  </button>
+                ))}
+              </div>
+            )}
             <UserSection
               title="Studenten"
               users={students}
