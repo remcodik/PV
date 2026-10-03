@@ -1,12 +1,18 @@
 'use client'
 
-import { Shield, LogOut } from 'lucide-react'
+import { Shield, GraduationCap, LogOut } from 'lucide-react'
 
 /**
- * Shared top bar for every signed-in screen — one identity (dark navy,
- * badge mark) for teacher and student alike. Role/user shown as a small
- * uppercase label under the app name, like an ID badge, rather than a
- * separate color scheme per role.
+ * Shared top bar for every signed-in screen. The bar itself stays one
+ * shared dark-navy "official" chrome across both apps — but the badge
+ * icon and its accent color DO differ per role (amber for student, gold
+ * for teacher), matching the identity already used on /student-start,
+ * /docent-start, and the home-screen icons. A previous version of this
+ * component used the exact same icon/color for both roles everywhere
+ * inside the app once logged in — the only place the role distinction
+ * showed up was the entry pages and the home-screen icon, not the actual
+ * app itself, which looked identical regardless of role. This fixes
+ * that for every screen using this shared header.
  */
 export default function AppHeader({
   roleLabel,
@@ -19,12 +25,16 @@ export default function AppHeader({
   onLogout?: () => void
   actions?: React.ReactNode
 }) {
+  const isStudent = roleLabel.toLowerCase() === 'student'
+  const Icon = isStudent ? GraduationCap : Shield
+  const badgeClass = isStudent ? 'bg-amber-600' : 'bg-gold-600'
+
   return (
     <header className="sticky top-0 z-20 bg-ink-900 text-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-md bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
-            <Shield className="w-5 h-5 text-white" strokeWidth={2} />
+          <div className={`w-9 h-9 rounded-md ${badgeClass} flex items-center justify-center flex-shrink-0`}>
+            <Icon className="w-5 h-5 text-ink-950" strokeWidth={2} />
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-sm tracking-wide leading-tight truncate">PV Trainer</p>

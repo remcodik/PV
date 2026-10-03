@@ -149,8 +149,8 @@ export default function ResultsPage() {
           <Link href="/student/dashboard" className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="w-9 h-9 rounded-md bg-white/10 border border-white/15 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-md bg-amber-600 flex items-center justify-center">
+            <Shield className="w-5 h-5 text-ink-950" />
           </div>
           <div>
             <h1 className="font-semibold">Beoordeling</h1>
