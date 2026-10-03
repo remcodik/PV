@@ -9,6 +9,7 @@ const VARIANTS = {
   ghost: 'text-gray-500 hover:text-gray-700 hover:bg-gray-100',
   danger: 'text-red-600 hover:bg-red-50',
   gold: 'bg-gold-600 text-white hover:bg-gold-700 shadow-sm',
+  amber: 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm',
 } as const
 
 const SIZES = {
