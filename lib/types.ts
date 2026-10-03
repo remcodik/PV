@@ -109,6 +109,12 @@ export interface Session {
   caseTitle: string
   studentId: string
   studentName: string
+  // True when this session was created by a teacher practicing a case
+  // themselves (via "Oefen zelf een case" on the teacher dashboard),
+  // not a real student attempt — lets teacher-facing views distinguish
+  // the two rather than showing a teacher's own practice run as if it
+  // were a student's work.
+  isPractice?: boolean
   assignedBy?: string
   status: SessionStatus
   transcript: TranscriptMessage[]
