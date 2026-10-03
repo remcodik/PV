@@ -279,8 +279,8 @@ export default function PVEditorPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 rounded-md bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
-              <Shield className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-md bg-amber-600 flex items-center justify-center flex-shrink-0">
+              <Shield className="w-4 h-4 text-ink-950" />
             </div>
             <div className="min-w-0">
               <h1 className="font-semibold text-sm truncate">{caseData.title}</h1>
