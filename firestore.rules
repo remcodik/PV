@@ -56,7 +56,12 @@ match /databases/{database}/documents {
   // transcript/PV directly.
   match /sessions/{sessionId} {
     allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
-    allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+    // A student creates their own session when starting a case (studentId
+    // matches their own uid). A teacher can ALSO create one on a
+    // student's behalf — this is the bulk-assign-to-class feature —
+    // which is why isTeacher() is allowed here even though studentId
+    // then belongs to someone else.
+    allow create: if isTeacher() || (isSignedIn() && request.resource.data.studentId == request.auth.uid);
     allow update: if isSignedIn() && resource.data.studentId == request.auth.uid;
     allow delete: if isTeacher();
   }

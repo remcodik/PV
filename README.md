@@ -189,6 +189,20 @@ to leak in the first place. Reacts to patterns like "mostly closed
 questions" or "compound question", same categories already used in
 `/api/chat` (PR #9) and the teacher-facing technique analysis.
 
+## Bulk-assign a case to a class
+
+From `/teacher/cases/[id]`, a teacher can assign the case to every
+student in a chosen class at once — creates one `sessions` document per
+student with `status: 'assigned'` (a status that already existed in the
+type/label system but was never actually used until now). Needed no
+student-side changes at all: the dashboard already routes any
+non-`writing_pv`/`evaluated` session straight to the interview page, and
+the interview page already flips status to `'interviewing'` the moment
+the student sends their first message — `'assigned'` just slots into
+that existing flow as the starting state. `firestore.rules` updated so a
+teacher can create a session on a student's behalf (previously only the
+student themselves could, matching `studentId == request.auth.uid`).
+
 ## AI usage cap
 
 `DAILY_AI_CALL_LIMIT` (optional env var) — a soft, app-wide daily cap per
