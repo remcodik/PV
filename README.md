@@ -166,6 +166,18 @@ middleware.ts                     — coarse "logged in?" redirect (not a securi
 firestore.rules                   — database-level authorization (see above)
 ```
 
+## Teacher learning tool — interview technique analysis
+
+`/api/analyze-interview-technique` — a review-time (not live) analysis a
+teacher can run from `/teacher/students/[id]` on any session's
+transcript. Labels each of the student's questions (open / gesloten /
+suggestief / samengesteld / neutraal) so a teacher reviewing a PV can see
+the pattern in how the student interviewed, not just judge "by feel" —
+and learn to recognize what each pattern looks like concretely. Reuses
+the same question-quality categories already used to make `/api/chat`
+react realistically to interview technique. Deliberately no score, no
+number — labels only, run on demand.
+
 ## Interview realism & grading robustness
 
 `/api/chat` (the witness/suspect roleplay) has two added realism rules on
