@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { Session, UserProfile } from '@/lib/types'
-import { Shield, ArrowLeft, ClipboardList } from 'lucide-react'
+import { Shield, ArrowLeft, ClipboardList, Lightbulb } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import { Card, EmptyState } from '@/app/components/ui/Card'
@@ -81,7 +81,15 @@ export default function AllSessionsPage() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{s.caseTitle}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium text-gray-900 truncate">{s.caseTitle}</p>
+                      {(student?.attentionNote || (student?.focusAreas?.length ?? 0) > 0) && (
+                        <Lightbulb
+                          className="w-3.5 h-3.5 text-amber-500 flex-shrink-0"
+                          aria-label="Student heeft een actief aandachtspunt"
+                        />
+                      )}
+                    </div>
                     <p className="text-xs text-gray-400">{student?.name ?? s.studentId} · {formatDate(s.createdAt)}</p>
                   </div>
                   <Badge tone={statusTone(s.status)} className="flex-shrink-0 rounded-full">

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { PVReport, UserProfile, Session } from '@/lib/types'
-import { Shield, ArrowLeft, FileText } from 'lucide-react'
+import { Shield, ArrowLeft, FileText, Lightbulb } from 'lucide-react'
 import { formatDate, gradeColor } from '@/lib/utils'
 import Link from 'next/link'
 import { Card, EmptyState } from '@/app/components/ui/Card'
@@ -82,7 +82,15 @@ export default function AllPVReportsPage() {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{session?.caseTitle ?? 'Onbekende case'}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-gray-900 truncate">{session?.caseTitle ?? 'Onbekende case'}</p>
+                        {(student?.attentionNote || (student?.focusAreas?.length ?? 0) > 0) && (
+                          <Lightbulb
+                            className="w-3.5 h-3.5 text-amber-500 flex-shrink-0"
+                            aria-label="Student heeft een actief aandachtspunt"
+                          />
+                        )}
+                      </div>
                       <p className="text-xs text-gray-400">{student?.name ?? r.studentId} · {formatDate(r.submittedAt)}</p>
                     </div>
                     <span className={`text-xl font-bold flex-shrink-0 ${gradeColor(r.cijfer)}`}>
