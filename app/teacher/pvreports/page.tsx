@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { PVReport, UserProfile, Session } from '@/lib/types'
-import { Shield, ArrowLeft, FileText, Lightbulb } from 'lucide-react'
+import { Shield, ArrowLeft, FileText, Lightbulb, Download } from 'lucide-react'
 import { formatDate, gradeColor } from '@/lib/utils'
 import Link from 'next/link'
 import { Card, EmptyState } from '@/app/components/ui/Card'
@@ -40,6 +40,36 @@ export default function AllPVReportsPage() {
     fetchData()
   }, [])
 
+  // Client-side CSV generation — all the data is already loaded, no
+  // need for a server round-trip. Quotes every field so student names
+  // or case titles containing a comma don't break the column layout.
+  const exportCsv = () => {
+    const csvQuote = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`
+    const header = ['Student', 'Klas', 'Case', 'Datum', 'Cijfer', 'Formalia', "7 W's", 'Verklaring', 'Delict', 'Objectiviteit', 'Doorvragen']
+    const rows = reports.map(r => {
+      const student = profiles[r.studentId]
+      const session = sessions[r.sessionId]
+      const sb = r.scoresBreakdown
+      return [
+        student?.name ?? r.studentId,
+        student?.classGroup ?? '',
+        session?.caseTitle ?? '',
+        formatDate(r.submittedAt),
+        r.cijfer.toFixed(1),
+        sb?.formalia ?? '', sb?.zeven_w ?? '', sb?.getuigenverklaring ?? '',
+        sb?.delictsomschrijving ?? '', sb?.objectiviteit ?? '', sb?.doorvragen ?? '',
+      ].map(csvQuote).join(',')
+    })
+    const csv = [header.map(csvQuote).join(','), ...rows].join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }) // BOM for Excel
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `pv-cijfers-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="min-h-screen bg-paper">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
@@ -50,10 +80,19 @@ export default function AllPVReportsPage() {
           <div className="w-9 h-9 bg-ink-800 rounded-md flex items-center justify-center">
             <Shield className="w-5 h-5 text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="font-semibold text-gray-900">Alle PV&apos;s</h1>
             <p className="text-xs text-gray-500">{reports.length} PV&apos;s totaal</p>
           </div>
+          {reports.length > 0 && (
+            <button
+              onClick={exportCsv}
+              className="inline-flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-md px-2.5 py-1.5 hover:bg-gray-50 transition-colors flex-shrink-0"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Exporteer CSV
+            </button>
+          )}
         </div>
       </header>
 
