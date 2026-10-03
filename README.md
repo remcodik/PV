@@ -166,6 +166,18 @@ middleware.ts                     — coarse "logged in?" redirect (not a securi
 firestore.rules                   — database-level authorization (see above)
 ```
 
+## Student learning tool — interview tip button
+
+A lightbulb button next to the interview input (`/api/interview-tip`).
+Student-wens #7. Gives one short technique tip on request — never
+automatic, never scored. Structurally can't leak case facts: the route
+only ever receives the student's own questions from the transcript, never
+the witness/suspect's answers or any case data (`keyDiscoveries`,
+`witnessKnows`, etc.) — so there's nothing content-specific in the prompt
+to leak in the first place. Reacts to patterns like "mostly closed
+questions" or "compound question", same categories already used in
+`/api/chat` (PR #9) and the teacher-facing technique analysis.
+
 ## AI usage cap
 
 `DAILY_AI_CALL_LIMIT` (optional env var) — a soft, app-wide daily cap per

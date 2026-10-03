@@ -8,7 +8,7 @@ import { authFetch } from '@/lib/api-client'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight, ArrowLeft, Cpu } from 'lucide-react'
+import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight, ArrowLeft, Cpu, Lightbulb } from 'lucide-react'
 import AttentionNoteBanner from '@/app/student/components/AttentionNoteBanner'
 import { Button } from '@/app/components/ui/Button'
 import { PageSpinner } from '@/app/components/ui/Spinner'
@@ -58,6 +58,8 @@ export default function InterviewPage() {
   const [isEnding, setIsEnding] = useState(false)
   const [speechSupported, setSpeechSupported] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [tip, setTip] = useState<string | null>(null)
+  const [tipLoading, setTipLoading] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [ttsError, setTtsError] = useState<string | null>(null)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
@@ -248,6 +250,25 @@ export default function InterviewPage() {
       return next
     })
   }, [])
+
+  const fetchTip = useCallback(async () => {
+    setTipLoading(true)
+    setTip(null)
+    try {
+      const res = await authFetch('/api/interview-tip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Tip ophalen mislukt')
+      setTip(data.tip)
+    } catch {
+      setTip('Tip ophalen mislukt, probeer het nog eens.')
+    } finally {
+      setTipLoading(false)
+    }
+  }, [transcript])
 
   const sendMessage = useCallback(async (message: string) => {
     if (!message.trim() || !caseData || isLoading) return
@@ -600,7 +621,26 @@ export default function InterviewPage() {
       {/* Input */}
       <div className="bg-white border-t border-gray-200 px-4 sm:px-6 py-4 flex-shrink-0">
         <div className="max-w-3xl mx-auto">
+          {tip && (
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-2.5 text-xs text-amber-800">
+              <Lightbulb className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="flex-1">{tip}</p>
+              <button onClick={() => setTip(null)} className="text-amber-400 hover:text-amber-600 flex-shrink-0">×</button>
+            </div>
+          )}
           <div className="flex items-center gap-3">
+            <button
+              onClick={fetchTip}
+              disabled={tipLoading}
+              title="Tip over verhoortechniek (geen cijfer, geen inhoud)"
+              className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 border border-amber-200 text-amber-600 hover:bg-amber-50 disabled:opacity-40 transition-colors"
+            >
+              {tipLoading ? (
+                <div className="w-3.5 h-3.5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Lightbulb className="w-4 h-4" />
+              )}
+            </button>
             {isSpeaking && (
               <div className="flex items-center gap-1.5 text-sm text-ink-700 bg-ink-100 px-3 py-1.5 rounded-md">
                 <Volume2 className="w-4 h-4 animate-pulse" />
