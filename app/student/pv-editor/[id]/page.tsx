@@ -8,7 +8,7 @@ import { authFetch } from '@/lib/api-client'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft, Sparkles, CheckCircle2, AlertCircle, Circle } from 'lucide-react'
+import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft, Sparkles, CheckCircle2, AlertCircle, Circle, Star } from 'lucide-react'
 
 // Live heuristic checklist for the 7 W's — NOT an AI check, just a quick
 // signal while typing. The first four map cleanly onto a template
@@ -95,6 +95,27 @@ export default function PVEditorPage() {
   const [caseData, setCaseData] = useState<Case | null>(null)
   const [pvContent, setPvContent] = useState(PV_TEMPLATE)
   const wChecks = useMemo(() => W_CHECKS.map(c => ({ ...c, done: c.test(pvContent) })), [pvContent])
+  // Which transcript lines the student has marked as "wil ik gebruiken in
+  // mijn PV". Purely a personal drafting aid, not graded — persisted in
+  // localStorage (keyed per session) rather than Firestore, since it's
+  // throwaway scratch state, not something worth a schema/rules change for.
+  const [markedLines, setMarkedLines] = useState<Set<number>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const raw = localStorage.getItem(`marked_${id}`)
+      return raw ? new Set(JSON.parse(raw)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
+  const toggleMark = (i: number) => {
+    setMarkedLines(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i); else next.add(i)
+      try { localStorage.setItem(`marked_${id}`, JSON.stringify([...next])) } catch { /* best effort */ }
+      return next
+    })
+  }
   const [showTranscript, setShowTranscript] = useState(true)
   const [showGuide, setShowGuide] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -343,17 +364,45 @@ export default function PVEditorPage() {
             </button>
             {showTranscript && (
               <div className="border-t border-gray-100 p-4 max-h-96 overflow-y-auto space-y-3">
-                {session.transcript.map((msg, i) => (
-                  <div key={i}>
-                    <p className="text-xs font-semibold text-gray-500 mb-0.5">
-                      {msg.role === 'student' ? 'Agent' : `Getuige (${caseData.witnessName})`}
-                    </p>
-                    <p className="text-xs text-gray-700 bg-gray-50 rounded-lg p-2">{msg.content}</p>
-                  </div>
-                ))}
+                {session.transcript.map((msg, i) => {
+                  const marked = markedLines.has(i)
+                  return (
+                    <div key={i} className="group flex items-start gap-1.5">
+                      <button
+                        onClick={() => toggleMark(i)}
+                        title="Markeer om te gebruiken in je PV"
+                        className="flex-shrink-0 mt-4 p-0.5 opacity-40 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Star className={`w-3.5 h-3.5 ${marked ? 'fill-amber-400 text-amber-500' : 'text-gray-300'}`} />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-500 mb-0.5">
+                          {msg.role === 'student' ? 'Agent' : `Getuige (${caseData.witnessName})`}
+                        </p>
+                        <p className={`text-xs text-gray-700 rounded-lg p-2 ${marked ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-gray-50'}`}>
+                          {msg.content}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
+
+          {/* Gemarkeerde fragmenten — snel overzicht, geen scrollen door het
+              hele transcript nodig terwijl je verder schrijft */}
+          {markedLines.size > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1.5">
+              <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide flex items-center gap-1">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                Gemarkeerd om te gebruiken ({markedLines.size})
+              </p>
+              {[...markedLines].sort((a, b) => a - b).map(i => (
+                <p key={i} className="text-xs text-amber-900 leading-relaxed">{session.transcript[i]?.content}</p>
+              ))}
+            </div>
+          )}
 
           {/* Controleer mijn PV — pre-check, geen cijfer */}
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
