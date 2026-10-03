@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { Case, TranscriptMessage, ScoreBreakdown, FeedbackItem, SCORE_CATEGORY_LABELS } from '@/lib/types'
 import { scoreToGrade } from '@/lib/utils'
-import { requireAuth, AuthError, adminDb } from '@/lib/firebase-admin'
+import { requireAuth, AuthError, adminDb, checkAiUsageCap } from '@/lib/firebase-admin'
 
 const CRIME_ELEMENTS: Record<string, string> = {
   vernieling: 'Bestanddelen art. 350 Sr: opzet + beschadigen/vernielen/onbruikbaar maken + goed toebehorend aan ander.',
@@ -134,6 +134,7 @@ Geef je beoordeling UITSLUITEND als geldig JSON, zonder markdown-opmaak of extra
 export async function POST(req: NextRequest) {
   try {
     const { uid } = await requireAuth(req)
+    await checkAiUsageCap('evaluate')
     const { pvContent, caseData, transcript }: {
       pvContent: string
       caseData: Case

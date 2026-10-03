@@ -98,3 +98,41 @@ export async function requireTeacher(req: Request): Promise<{ uid: string; role:
   }
   return result
 }
+
+/**
+ * Soft daily cap on how many times a given AI-calling endpoint can be
+ * hit, app-wide (not per-user) — a basic cost-control backstop, not a
+ * precise budget tool. Counts live in Firestore (usage_counters/{date}),
+ * incremented via a transaction so concurrent requests don't race past
+ * the limit. Call this AFTER requireAuth/requireTeacher, before the
+ * actual AI call, in every route that spends Anthropic/OpenAI credits.
+ *
+ * Configured via DAILY_AI_CALL_LIMIT (per endpoint, per day). Unset or
+ * non-numeric means no cap is enforced — opt-in, not a surprise 429 for
+ * a deployment that never configured it.
+ */
+export async function checkAiUsageCap(endpoint: string): Promise<void> {
+  const limit = Number(process.env.DAILY_AI_CALL_LIMIT)
+  if (!Number.isFinite(limit) || limit <= 0) return // not configured — no cap
+
+  const db = adminDb()
+  if (!db) return // can't enforce without Firestore; fail open rather than block everything
+
+  const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD, UTC
+  const ref = db.collection('usage_counters').doc(today)
+
+  const overLimit = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref)
+    const current = (snap.exists ? snap.data()?.[endpoint] : 0) ?? 0
+    if (current >= limit) return true
+    tx.set(ref, { [endpoint]: current + 1 }, { merge: true })
+    return false
+  })
+
+  if (overLimit) {
+    throw new AuthError(
+      `Het dagelijkse limiet voor deze AI-functie is bereikt. Probeer het morgen opnieuw, of vraag een beheerder het limiet (DAILY_AI_CALL_LIMIT) te verhogen.`,
+      429,
+    )
+  }
+}

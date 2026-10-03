@@ -3,7 +3,7 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { Case, TranscriptMessage } from '@/lib/types'
-import { requireAuth, AuthError } from '@/lib/firebase-admin'
+import { requireAuth, AuthError, checkAiUsageCap } from '@/lib/firebase-admin'
 
 const client = new Anthropic()
 
@@ -49,6 +49,7 @@ const SUSPECT_STYLE: Record<number, string> = {
 export async function POST(req: NextRequest) {
   try {
     await requireAuth(req)
+    await checkAiUsageCap('chat')
     const { message, caseData, transcript }: {
       message: string
       caseData: Case

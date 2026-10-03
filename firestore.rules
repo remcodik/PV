@@ -71,6 +71,14 @@ match /databases/{database}/documents {
     allow delete: if isTeacher();
   }
 
+  // usage_counters/{date} — daily AI-call counts used for the soft cost
+  // cap (lib/firebase-admin.ts checkAiUsageCap). Only ever written by
+  // the Admin SDK (which bypasses these rules) — no client access at
+  // all, in either direction.
+  match /usage_counters/{date} {
+    allow read, write: if false;
+  }
+
   // calibrations/{entryId} — a teacher's own calibration-trainer attempts
   // (their blind score vs. the AI score, per PV report + category). Not
   // visible to students, and one teacher never sees another teacher's
