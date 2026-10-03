@@ -166,6 +166,17 @@ middleware.ts                     — coarse "logged in?" redirect (not a securi
 firestore.rules                   — database-level authorization (see above)
 ```
 
+## Student learning tool — own technique summary
+
+`/api/interview-technique-summary` — student-wens #10. A button in the PV
+editor ("Hoe was mijn verhoortechniek?"), run once per session on
+request. One short, encouraging paragraph reflecting on the student's own
+question pattern during the interview they just finished — distinct from
+the teacher-facing `/api/analyze-interview-technique` (which labels every
+line for a teacher reviewing someone else's session); this one is a
+private self-reflection for the student, not graded, not shown to the
+teacher.
+
 ## Student learning tool — interview tip button
 
 A lightbulb button next to the interview input (`/api/interview-tip`).

@@ -124,6 +124,9 @@ export default function PVEditorPage() {
   const [checking, setChecking] = useState(false)
   const [checkError, setCheckError] = useState<string | null>(null)
   const [checkResult, setCheckResult] = useState<{ items: { status: string; text: string }[]; summary: string } | null>(null)
+  const [techniqueSummary, setTechniqueSummary] = useState<string | null>(null)
+  const [techniqueLoading, setTechniqueLoading] = useState(false)
+  const [techniqueError, setTechniqueError] = useState<string | null>(null)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sessionRef = useRef<Session | null>(null)
 
@@ -215,6 +218,26 @@ export default function PVEditorPage() {
       setCheckError(err instanceof Error ? err.message : 'Check mislukt')
     } finally {
       setChecking(false)
+    }
+  }
+
+  const handleTechniqueSummary = async () => {
+    if (!session) return
+    setTechniqueLoading(true)
+    setTechniqueError(null)
+    try {
+      const res = await authFetch('/api/interview-technique-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: session.transcript }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Samenvatting mislukt')
+      setTechniqueSummary(data.summary)
+    } catch (err) {
+      setTechniqueError(err instanceof Error ? err.message : 'Samenvatting mislukt')
+    } finally {
+      setTechniqueLoading(false)
     }
   }
 
@@ -403,6 +426,30 @@ export default function PVEditorPage() {
               ))}
             </div>
           )}
+
+          {/* Jouw verhoortechniek — zelfreflectie, los van de PV-inhoud */}
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <button
+              onClick={handleTechniqueSummary}
+              disabled={techniqueLoading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 font-medium text-sm text-amber-700 hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {techniqueLoading ? (
+                <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Star className="w-4 h-4" />
+              )}
+              {techniqueLoading ? 'Bezig...' : 'Hoe was mijn verhoortechniek?'}
+            </button>
+            {techniqueError && (
+              <div className="border-t border-gray-100 px-4 py-3 text-xs text-red-600">{techniqueError}</div>
+            )}
+            {techniqueSummary && (
+              <div className="border-t border-gray-100 px-4 py-3">
+                <p className="text-sm text-gray-700 leading-relaxed">{techniqueSummary}</p>
+              </div>
+            )}
+          </div>
 
           {/* Controleer mijn PV — pre-check, geen cijfer */}
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
