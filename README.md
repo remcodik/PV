@@ -166,6 +166,17 @@ middleware.ts                     — coarse "logged in?" redirect (not a securi
 firestore.rules                   — database-level authorization (see above)
 ```
 
+## Teacher learning tool — calibration trainer
+
+`/teacher/calibration` — a teacher picks a submitted PV, scores it
+**blind** (no AI score shown), then reveals the AI's actual scores
+side-by-side per category. Every attempt is saved
+(`calibrations` Firestore collection, one teacher's own entries only —
+see `firestore.rules`), building a personal calibration profile over
+time: "Je beoordeelt Objectiviteit gemiddeld 2 pt strenger dan de AI."
+This is meant to train the teacher's own grading intuition against the
+rubric, not just show a one-off comparison.
+
 ## Teacher learning tool — interview technique analysis
 
 `/api/analyze-interview-technique` — a review-time (not live) analysis a

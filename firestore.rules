@@ -70,4 +70,15 @@ match /databases/{database}/documents {
     allow update: if isTeacher();
     allow delete: if isTeacher();
   }
+
+  // calibrations/{entryId} — a teacher's own calibration-trainer attempts
+  // (their blind score vs. the AI score, per PV report + category). Not
+  // visible to students, and one teacher never sees another teacher's
+  // calibration history — this is a personal self-assessment tool, not a
+  // shared or graded record.
+  match /calibrations/{entryId} {
+    allow read: if isTeacher() && resource.data.teacherId == request.auth.uid;
+    allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
+    allow update, delete: if false;
+  }
 }

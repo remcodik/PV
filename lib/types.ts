@@ -161,6 +161,23 @@ export interface PVReport {
   evaluatedAt?: string
 }
 
+// One blind-scoring attempt in the teacher calibration trainer: the
+// teacher's own score for one category of one PV report, set BEFORE
+// seeing the AI's score, compared afterward. Used to build up a personal
+// profile of how a teacher's grading tends to differ from the rubric,
+// category by category.
+export interface CalibrationEntry {
+  id: string
+  teacherId: string
+  reportId: string
+  sessionId: string
+  category: ScoreCategory
+  teacherScore: number
+  aiScore: number
+  maxScore: number
+  createdAt: string
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
