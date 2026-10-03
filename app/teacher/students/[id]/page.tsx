@@ -8,7 +8,7 @@ import { Session, PVReport, UserProfile, Case, ScoreCategory, SCORE_CATEGORY_LAB
 import { BUILTIN_CASES } from '@/lib/cases'
 import { authFetch } from '@/lib/api-client'
 import { gradeColor, formatDate, statusLabel, crimeTypeLabel } from '@/lib/utils'
-import { Shield, ArrowLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, FileText, TrendingUp, Save } from 'lucide-react'
+import { Shield, ArrowLeft, ChevronDown, ChevronUp, AlertCircle, BookOpen, FileText, TrendingUp, Save, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Card, EmptyState } from '@/app/components/ui/Card'
 import { StatCard } from '@/app/components/ui/StatCard'
@@ -22,6 +22,14 @@ const MEMORY_CASES: Case[] = BUILTIN_CASES.map((c, i) => ({
   createdAt: now,
   updatedAt: now,
 }))
+
+const TECHNIQUE_LABEL_STYLE: Record<string, string> = {
+  open: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  gesloten: 'bg-gray-50 text-gray-500 border-gray-200',
+  suggestief: 'bg-red-50 text-red-700 border-red-200',
+  samengesteld: 'bg-amber-50 text-amber-700 border-amber-200',
+  neutraal: 'bg-gray-50 text-gray-400 border-gray-200',
+}
 
 const SCORE_CATS = [
   { key: 'formalia', label: 'Formalia', max: 15 },
@@ -45,6 +53,11 @@ export default function StudentDetailPage() {
   const [focusAreas, setFocusAreas] = useState<ScoreCategory[]>([])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  // Keyed by session id, since a teacher may expand/analyze several
+  // sessions for the same student across one visit to this page.
+  const [techniqueAnalysis, setTechniqueAnalysis] = useState<Record<string, { labels: (string | null)[]; summary: string }>>({})
+  const [analyzing, setAnalyzing] = useState<string | null>(null)
+  const [analyzeError, setAnalyzeError] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const fetchData = async () => {
@@ -95,6 +108,25 @@ export default function StudentDetailPage() {
   const avgGrade = reports.length > 0
     ? (reports.reduce((s, r) => s + r.cijfer, 0) / reports.length).toFixed(1)
     : null
+
+  const analyzeInterviewTechnique = async (session: Session) => {
+    setAnalyzing(session.id)
+    setAnalyzeError(prev => ({ ...prev, [session.id]: '' }))
+    try {
+      const res = await authFetch('/api/analyze-interview-technique', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: session.transcript }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Analyse mislukt')
+      setTechniqueAnalysis(prev => ({ ...prev, [session.id]: { labels: data.labels, summary: data.summary } }))
+    } catch (err) {
+      setAnalyzeError(prev => ({ ...prev, [session.id]: err instanceof Error ? err.message : 'Analyse mislukt' }))
+    } finally {
+      setAnalyzing(null)
+    }
+  }
 
   const toggleFocusArea = (cat: ScoreCategory) => {
     setFocusAreas(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])
@@ -323,28 +355,60 @@ export default function StudentDetailPage() {
 
                       {/* Transcript */}
                       <div className="px-4 pb-3">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
-                          Interview — {session.transcript.length} berichten
-                        </p>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                            Interview — {session.transcript.length} berichten
+                          </p>
+                          {session.transcript.length > 0 && (
+                            <button
+                              onClick={() => analyzeInterviewTechnique(session)}
+                              disabled={analyzing === session.id}
+                              className="inline-flex items-center gap-1 text-xs text-amber-700 hover:underline disabled:opacity-40"
+                            >
+                              {analyzing === session.id ? (
+                                <div className="w-3 h-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Sparkles className="w-3 h-3" />
+                              )}
+                              Analyseer verhoortechniek
+                            </button>
+                          )}
+                        </div>
+                        {analyzeError[session.id] && (
+                          <p className="text-xs text-red-600 mb-1.5">{analyzeError[session.id]}</p>
+                        )}
+                        {techniqueAnalysis[session.id]?.summary && (
+                          <p className="text-xs text-gray-500 italic mb-1.5">{techniqueAnalysis[session.id].summary}</p>
+                        )}
                         <div className="bg-white border border-gray-100 rounded-md p-3 max-h-52 overflow-y-auto space-y-2.5">
                           {session.transcript.length === 0 ? (
                             <p className="text-xs text-gray-400">Geen transcript beschikbaar.</p>
-                          ) : session.transcript.map((msg, i) => (
-                            <div key={i} className={`flex gap-2 ${msg.role === 'student' ? '' : 'flex-row-reverse'}`}>
-                              <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                                msg.role === 'student' ? 'bg-ink-100 text-ink-700' : 'bg-gray-100 text-gray-500'
-                              }`}>
-                                {msg.role === 'student' ? 'A' : 'G'}
+                          ) : session.transcript.map((msg, i) => {
+                            const label = techniqueAnalysis[session.id]?.labels[i]
+                            return (
+                              <div key={i} className={`flex gap-2 ${msg.role === 'student' ? '' : 'flex-row-reverse'}`}>
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                                  msg.role === 'student' ? 'bg-ink-100 text-ink-700' : 'bg-gray-100 text-gray-500'
+                                }`}>
+                                  {msg.role === 'student' ? 'A' : 'G'}
+                                </div>
+                                <div className={`max-w-xs ${msg.role === 'student' ? '' : 'text-right'}`}>
+                                  <p className={`text-xs rounded-md px-2.5 py-1.5 ${
+                                    msg.role === 'student'
+                                      ? 'bg-ink-50 text-ink-900'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {msg.content}
+                                  </p>
+                                  {label && (
+                                    <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded border ${TECHNIQUE_LABEL_STYLE[label] ?? 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                                      {label}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <p className={`text-xs rounded-md px-2.5 py-1.5 max-w-xs ${
-                                msg.role === 'student'
-                                  ? 'bg-ink-50 text-ink-900'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {msg.content}
-                              </p>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       </div>
 
