@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, PVReport, UserProfile } from '@/lib/types'
 import { gradeColor } from '@/lib/utils'
-import { Users, FileText, ChevronRight, TrendingUp, ClipboardList } from 'lucide-react'
+import { Users, FileText, ChevronRight, TrendingUp, ClipboardList, GraduationCap } from 'lucide-react'
 import Link from 'next/link'
 import TeacherNav from '@/app/teacher/components/TeacherNav'
 import AppHeader from '@/app/components/ui/AppHeader'
@@ -84,6 +84,24 @@ export default function TeacherDashboard() {
             valueClassName={avgGrade ? gradeColor(parseFloat(avgGrade)) : 'text-gray-300'}
           />
         </div>
+
+        {/* Practice mode — a teacher can run through a case themselves
+            exactly like a student (interview + PV editor), to experience
+            the student side and test new cases. The resulting session is
+            saved with isPractice: true so it doesn't show up as if it
+            were a real student's work. */}
+        <Link
+          href="/student/cases"
+          className="flex items-center gap-3 bg-white border border-gold-100 rounded-lg px-4 py-3.5 mb-6 sm:mb-8 hover:bg-gold-100/40 transition-colors"
+        >
+          <div className="w-9 h-9 rounded-md bg-gold-600 flex items-center justify-center flex-shrink-0">
+            <GraduationCap className="w-5 h-5 text-ink-950" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-900">Oefen zelf een case</p>
+            <p className="text-xs text-gray-500">Doorloop een interview en schrijf een PV zoals een student dat zou doen</p>
+          </div>
+        </Link>
 
         {/* Students */}
         <SectionLabel>Studenten</SectionLabel>

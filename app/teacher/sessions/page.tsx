@@ -89,6 +89,11 @@ export default function AllSessionsPage() {
                           aria-label="Student heeft een actief aandachtspunt"
                         />
                       )}
+                      {s.isPractice && (
+                        <span className="text-[10px] bg-gold-100 text-gold-700 px-1.5 py-0.5 rounded-md font-medium flex-shrink-0">
+                          Oefensessie
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-gray-400">{student?.name ?? s.studentId} · {formatDate(s.createdAt)}</p>
                   </div>
