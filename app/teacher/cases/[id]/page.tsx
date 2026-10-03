@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, collection, getDocs, query, where, addDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { Case, CrimeType, CooperationLevel, IntervieweeType, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS, SUSPECT_COOPERATION_LABELS, SUSPECT_COOPERATION_DESCRIPTIONS, KeyDiscovery } from '@/lib/types'
-import { Shield, ArrowLeft, Save, Plus, Trash2 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { Case, CrimeType, CooperationLevel, IntervieweeType, COOPERATION_LABELS, COOPERATION_DESCRIPTIONS, SUSPECT_COOPERATION_LABELS, SUSPECT_COOPERATION_DESCRIPTIONS, KeyDiscovery, UserProfile } from '@/lib/types'
+import { Shield, ArrowLeft, Save, Plus, Trash2, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Card } from '@/app/components/ui/Card'
 import { Button } from '@/app/components/ui/Button'
@@ -32,14 +33,57 @@ const CRIME_TYPES: { value: CrimeType; label: string; article: string }[] = [
 export default function EditCasePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { profile } = useAuth()
   const [caseData, setCaseData] = useState<Case | null>(null)
   const [saving, setSaving] = useState(false)
+
+  // Bulk-assign-to-class state. Kept deliberately simple: a session per
+  // student in the chosen class, status 'assigned' — the student side
+  // already handles that status correctly with zero changes needed (it
+  // auto-flips to 'interviewing' the moment they send their first
+  // message, and the dashboard already routes any non-writing_pv/
+  // evaluated session straight to the interview page).
+  const [students, setStudents] = useState<UserProfile[]>([])
+  const [selectedClass, setSelectedClass] = useState('')
+  const [assigning, setAssigning] = useState(false)
+  const [assignResult, setAssignResult] = useState<string | null>(null)
 
   useEffect(() => {
     getDoc(doc(db, 'cases', id)).then(snap => {
       if (snap.exists()) setCaseData({ id: snap.id, ...snap.data() } as Case)
     })
+    getDocs(query(collection(db, 'profiles'), where('role', '==', 'student'))).then(snap => {
+      setStudents(snap.docs.map(d => d.data() as UserProfile))
+    })
   }, [id])
+
+  const availableClasses = Array.from(
+    new Set(students.map(s => s.classGroup).filter((c): c is string => !!c))
+  ).sort()
+
+  const assignToClass = async () => {
+    if (!caseData || !selectedClass || !profile) return
+    setAssigning(true)
+    setAssignResult(null)
+    try {
+      const classStudents = students.filter(s => s.classGroup === selectedClass)
+      await Promise.all(classStudents.map(s => addDoc(collection(db, 'sessions'), {
+        caseId: id,
+        caseTitle: caseData.title,
+        studentId: s.uid,
+        studentName: s.name,
+        assignedBy: profile.uid,
+        status: 'assigned',
+        transcript: [],
+        createdAt: new Date().toISOString(),
+      })))
+      setAssignResult(`Toegewezen aan ${classStudents.length} student${classStudents.length === 1 ? '' : 'en'} in ${selectedClass}.`)
+    } catch {
+      setAssignResult('Toewijzen mislukt, probeer het opnieuw.')
+    } finally {
+      setAssigning(false)
+    }
+  }
 
   const setField = (key: string, value: unknown) => {
     setCaseData(prev => prev ? { ...prev, [key]: value } : prev)
@@ -112,6 +156,29 @@ export default function EditCasePage() {
           </Button>
         </div>
       </header>
+
+      {availableClasses.length > 0 && (
+        <div className="max-w-3xl mx-auto px-6 pt-6">
+          <Card className="p-4 flex flex-wrap items-center gap-3">
+            <Users className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span className="text-sm text-gray-700">Wijs deze case toe aan een hele klas:</span>
+            <select
+              value={selectedClass}
+              onChange={e => setSelectedClass(e.target.value)}
+              className="border border-gray-200 rounded-md px-2.5 py-1.5 text-sm"
+            >
+              <option value="">Kies een klas...</option>
+              {availableClasses.map(c => (
+                <option key={c} value={c}>{c} ({students.filter(s => s.classGroup === c).length})</option>
+              ))}
+            </select>
+            <Button onClick={assignToClass} disabled={!selectedClass || assigning} variant="amber">
+              {assigning ? 'Bezig...' : 'Wijs toe'}
+            </Button>
+            {assignResult && <p className="text-xs text-gray-500 w-full">{assignResult}</p>}
+          </Card>
+        </div>
+      )}
 
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-4">
         {/* Type interview */}
