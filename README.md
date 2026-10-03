@@ -166,6 +166,17 @@ middleware.ts                     — coarse "logged in?" redirect (not a securi
 firestore.rules                   — database-level authorization (see above)
 ```
 
+## AI usage cap
+
+`DAILY_AI_CALL_LIMIT` (optional env var) — a soft, app-wide daily cap per
+AI-calling endpoint (chat, evaluate, generate-case, check-pv,
+analyze-interview-technique, tts), enforced via
+`lib/firebase-admin.ts` `checkAiUsageCap()`. Counts live in Firestore
+(`usage_counters/{date}`, Admin-SDK-only — no client access, see
+`firestore.rules`). Unset means no cap — nothing changes unless you
+configure it. A basic cost-control backstop, not a precise per-user
+budget tool.
+
 ## Teacher learning tool — calibration trainer
 
 `/teacher/calibration` — a teacher picks a submitted PV, scores it

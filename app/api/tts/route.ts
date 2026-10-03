@@ -2,7 +2,7 @@ export const maxDuration = 30
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, AuthError } from '@/lib/firebase-admin'
+import { requireAuth, AuthError, checkAiUsageCap } from '@/lib/firebase-admin'
 
 const VOICE_MAP = {
   man: 'onyx',
@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await requireAuth(req)
+    await checkAiUsageCap('tts')
     const { text, gender, voiceId }: { text: string; gender: 'man' | 'vrouw'; voiceId?: string } = await req.json()
     // Prefer the case's own assigned voice (consistent per witness); fall
     // back to a fixed default per gender for older cases with no voiceId.

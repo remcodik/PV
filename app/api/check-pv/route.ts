@@ -3,7 +3,7 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { Case, TranscriptMessage } from '@/lib/types'
-import { requireAuth, AuthError } from '@/lib/firebase-admin'
+import { requireAuth, AuthError, checkAiUsageCap } from '@/lib/firebase-admin'
 
 const client = new Anthropic()
 
@@ -30,6 +30,7 @@ Geef 4-8 items. Noem ALLEEN concrete, specifieke punten (geen vage tips als "wee
 export async function POST(req: NextRequest) {
   try {
     await requireAuth(req)
+    await checkAiUsageCap('check-pv')
     const { pvContent, caseData, transcript }: {
       pvContent: string
       caseData: Case

@@ -3,7 +3,7 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { TranscriptMessage } from '@/lib/types'
-import { requireTeacher, AuthError } from '@/lib/firebase-admin'
+import { requireTeacher, AuthError, checkAiUsageCap } from '@/lib/firebase-admin'
 
 const client = new Anthropic()
 
@@ -33,6 +33,7 @@ Het aantal items in "labels" moet exact gelijk zijn aan het aantal agent-bericht
 export async function POST(req: NextRequest) {
   try {
     await requireTeacher(req)
+    await checkAiUsageCap('analyze-interview-technique')
     const { transcript }: { transcript: TranscriptMessage[] } = await req.json()
 
     const studentMessages = transcript.filter(m => m.role === 'student')
