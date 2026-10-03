@@ -58,6 +58,9 @@ export default function StudentDetailPage() {
   const [techniqueAnalysis, setTechniqueAnalysis] = useState<Record<string, { labels: (string | null)[]; summary: string }>>({})
   const [analyzing, setAnalyzing] = useState<string | null>(null)
   const [analyzeError, setAnalyzeError] = useState<Record<string, string>>({})
+  // Which category cell is expanded, keyed "sessionId:categoryKey" so
+  // multiple reports' expansions don't collide.
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -328,22 +331,53 @@ export default function StudentDetailPage() {
                   {/* Expanded detail */}
                   {isExpanded && report && (
                     <div className="border-t border-gray-100 bg-gray-50/50">
-                      {/* Score grid */}
+                      {/* Score grid — click a category for "waarom deze score?" */}
                       <div className="p-4 grid grid-cols-3 sm:grid-cols-6 gap-2">
                         {SCORE_CATS.map(cat => {
                           const score = report.scoresBreakdown[cat.key as keyof typeof report.scoresBreakdown] ?? 0
                           const pct = (score / cat.max) * 100
                           const color = pct >= 70 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600'
                           const bg = pct >= 70 ? 'bg-emerald-50 border-emerald-100' : pct >= 50 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'
+                          const cellKey = `${session.id}:${cat.key}`
+                          const detail = report.feedback?.find(f => f.category === cat.key)
                           return (
-                            <div key={cat.key} className={`rounded-md border ${bg} p-2.5 text-center`}>
+                            <button
+                              key={cat.key}
+                              onClick={() => detail && setExpandedCategory(expandedCategory === cellKey ? null : cellKey)}
+                              className={`rounded-md border ${bg} p-2.5 text-center ${detail ? 'cursor-pointer hover:brightness-95' : 'cursor-default'} transition-[filter]`}
+                            >
                               <p className="text-xs text-gray-500 leading-tight mb-1">{cat.label}</p>
                               <p className={`text-base font-bold font-mono ${color}`}>{score}</p>
                               <p className="text-xs text-gray-400">/{cat.max}</p>
-                            </div>
+                            </button>
                           )
                         })}
                       </div>
+
+                      {/* "Waarom deze score?" detail for the clicked category */}
+                      {SCORE_CATS.map(cat => {
+                        const cellKey = `${session.id}:${cat.key}`
+                        if (expandedCategory !== cellKey) return null
+                        const detail = report.feedback?.find(f => f.category === cat.key)
+                        if (!detail) return null
+                        return (
+                          <div key={cat.key} className="px-4 pb-3">
+                            <div className="bg-white border border-gray-100 rounded-md px-3.5 py-3">
+                              <p className="text-xs font-semibold text-gray-700 mb-1">Waarom deze score — {cat.label}</p>
+                              <p className="text-sm text-gray-700 leading-relaxed">{detail.feedback}</p>
+                              {detail.suggestions?.length > 0 && (
+                                <ul className="mt-2 space-y-1">
+                                  {detail.suggestions.map((s, i) => (
+                                    <li key={i} className="text-xs text-gray-500 flex gap-1.5">
+                                      <span className="text-amber-500">→</span>{s}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
 
                       {/* General feedback */}
                       <div className="px-4 pb-3">
