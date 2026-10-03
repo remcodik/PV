@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
     const placeholderPassword = crypto.randomUUID() + crypto.randomUUID()
 
     let uid: string
+    let isNewAuthUser = true
     try {
       const userRecord = await auth.createUser({
         email,
@@ -75,20 +76,47 @@ export async function POST(req: NextRequest) {
       uid = userRecord.uid
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code || ''
-      const msg =
-        code === 'auth/email-already-exists' ? 'Dit e-mailadres is al in gebruik.' :
-        code === 'auth/invalid-email' ? 'Ongeldig e-mailadres.' :
-        'Aanmaken mislukt.'
-      return NextResponse.json({ error: msg }, { status: 400 })
+      if (code === 'auth/email-already-exists') {
+        // This can legitimately mean "someone already has this account" —
+        // but it can ALSO mean a previous attempt created the Auth user
+        // and then failed before writing the Firestore profile (e.g. a
+        // transient error on the next line), leaving an orphan: visible
+        // nowhere in the UI (which reads from `profiles`), yet permanently
+        // blocking this email from ever being (re)created normally. Rather
+        // than fail with a message that doesn't explain any of that,
+        // check for exactly this case and self-heal it.
+        const existing = await auth.getUserByEmail(email)
+        const existingProfile = await db.collection('profiles').doc(existing.uid).get()
+        if (existingProfile.exists) {
+          return NextResponse.json({ error: 'Dit e-mailadres is al in gebruik.' }, { status: 400 })
+        }
+        uid = existing.uid
+        isNewAuthUser = false
+      } else {
+        const msg = code === 'auth/invalid-email' ? 'Ongeldig e-mailadres.' : 'Aanmaken mislukt.'
+        return NextResponse.json({ error: msg }, { status: 400 })
+      }
     }
 
     // Custom claim carries role for fast/cheap verification (no Firestore
     // read needed on every request) — kept in sync with the Firestore
     // profile document below.
-    await auth.setCustomUserClaims(uid, { role })
-
     const profileData = { uid, email, name, role, createdAt: new Date().toISOString() }
-    await db.collection('profiles').doc(uid).set(profileData)
+    try {
+      await auth.setCustomUserClaims(uid, { role })
+      await db.collection('profiles').doc(uid).set(profileData)
+    } catch (err) {
+      // If this is a genuinely new Auth user and setup after creation
+      // failed, roll it back — otherwise this leaves exactly the orphaned
+      // state described above, permanently blocking a clean retry. An
+      // existing (self-heal) user is left alone even on failure here;
+      // retrying the request will attempt the self-heal again.
+      if (isNewAuthUser) {
+        try { await auth.deleteUser(uid) } catch { /* best effort */ }
+      }
+      console.error('Profile setup failed after auth user ready:', err)
+      return NextResponse.json({ error: 'Aanmaken mislukt — probeer het opnieuw.' }, { status: 500 })
+    }
 
     // Generate the actual reset link via the Admin SDK — this works
     // regardless of whether the email address can actually receive mail
