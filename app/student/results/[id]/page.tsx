@@ -227,7 +227,7 @@ export default function ResultsPage() {
                   <button
                     onClick={() => setExpanded(prev => {
                       const s = new Set(prev)
-                      s.has(i) ? s.delete(i) : s.add(i)
+                      if (s.has(i)) { s.delete(i) } else { s.add(i) }
                       return s
                     })}
                     className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-gray-50 transition-colors"
