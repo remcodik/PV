@@ -6,7 +6,7 @@ import { doc, getDoc, addDoc, updateDoc, collection, query, where, getDocs } fro
 import { db } from '@/lib/firebase'
 import { authFetch } from '@/lib/api-client'
 import { useAuth } from '@/contexts/AuthContext'
-import { Session, Case, TranscriptMessage } from '@/lib/types'
+import { Session, Case } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
 import { Shield, FileText, ChevronDown, ChevronUp, Send, Eye, EyeOff, ArrowLeft, Sparkles, CheckCircle2, AlertCircle, Circle, Star } from 'lucide-react'
 

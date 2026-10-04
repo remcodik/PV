@@ -72,6 +72,7 @@ export default function StudentCasesPage() {
       let caseId = c.id
       if (c.id.startsWith('builtin_')) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars -- intentional: strip id out of caseData before writing (Firestore doc id shouldn't be duplicated as a field)
           const { id, ...caseData } = c
           const caseRef = await addDoc(collection(db, 'cases'), caseData)
           caseId = caseRef.id
@@ -94,7 +95,7 @@ export default function StudentCasesPage() {
         })
         sessionId = sessionRef.id
       } catch {
-        sessionId = `local_${Date.now()}`
+        sessionId = `local_${crypto.randomUUID()}`
         const sessionData = {
           id: sessionId,
           caseId,

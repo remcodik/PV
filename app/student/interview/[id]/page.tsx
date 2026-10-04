@@ -8,7 +8,7 @@ import { authFetch } from '@/lib/api-client'
 import { useAuth } from '@/contexts/AuthContext'
 import { Session, Case, TranscriptMessage } from '@/lib/types'
 import { BUILTIN_CASES } from '@/lib/cases'
-import { Mic, MicOff, Send, StopCircle, Volume2, Shield, User, ArrowRight, ArrowLeft, Cpu, Lightbulb } from 'lucide-react'
+import { Mic, Send, StopCircle, Volume2, Shield, User, ArrowRight, ArrowLeft, Cpu, Lightbulb } from 'lucide-react'
 import AttentionNoteBanner from '@/app/student/components/AttentionNoteBanner'
 import { Button } from '@/app/components/ui/Button'
 import { PageSpinner } from '@/app/components/ui/Spinner'
@@ -69,7 +69,6 @@ export default function InterviewPage() {
     }
     return 'browser'
   })
-  const audioRef = useRef<HTMLAudioElement | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const isLocal = id.startsWith('local_')
 
@@ -494,6 +493,13 @@ export default function InterviewPage() {
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <div className="relative flex-shrink-0">
             {caseData.witnessPhoto ? (
+              // Deliberately a plain <img>, not next/image: witnessPhoto is
+              // a dynamic, per-case URL with no fixed set of domains, and
+              // next.config.ts has no remotePatterns configured — swapping
+              // to next/image without that config would block the image
+              // from loading entirely rather than just losing the
+              // optimization next/image would otherwise add.
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={caseData.witnessPhoto}
                 alt={caseData.witnessName}

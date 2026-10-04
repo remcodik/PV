@@ -89,8 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false)
       })
     } catch {
+      // Deferred rather than called synchronously here — calling setState
+      // directly within the effect body (not inside the async callback
+      // above) causes a cascading render within the same commit. This
+      // only runs if onIdTokenChanged itself throws synchronously (e.g.
+      // auth misconfigured at startup), which is rare.
       clearTimeout(timeout)
-      setLoading(false)
+      queueMicrotask(() => setLoading(false))
     }
     return () => { clearTimeout(timeout); unsub?.() }
   }, [])
