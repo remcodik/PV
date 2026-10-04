@@ -15,83 +15,85 @@ rules_version = '2';
 // profile document and the matching custom claim together. A user with
 // no profile document and/or no role claim gets no access below.
 
-function isSignedIn() {
-  return request.auth != null;
-}
+service cloud.firestore {
+  match /databases/{database}/documents {
 
-function role() {
-  return request.auth.token.role;
-}
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-function isTeacher() {
-  return isSignedIn() && role() == 'teacher';
-}
+    function role() {
+      return request.auth.token.role;
+    }
 
-function isOwner(uid) {
-  return isSignedIn() && request.auth.uid == uid;
-}
+    function isTeacher() {
+      return isSignedIn() && role() == 'teacher';
+    }
 
-match /databases/{database}/documents {
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
 
-  // profiles/{uid} — a user's own profile, or any profile if you're a
-  // teacher. Only the API (Admin SDK, which bypasses these rules) may
-  // write profiles — no client writes at all, including by the owner,
-  // since role/name changes must go through the audited API path.
-  match /profiles/{uid} {
-    allow read: if isOwner(uid) || isTeacher();
-    allow write: if false;
-  }
+    // profiles/{uid} — a user's own profile, or any profile if you're a
+    // teacher. Only the API (Admin SDK, which bypasses these rules) may
+    // write profiles — no client writes at all, including by the owner,
+    // since role/name changes must go through the audited API path.
+    match /profiles/{uid} {
+      allow read: if isOwner(uid) || isTeacher();
+      allow write: if false;
+    }
 
-  // cases/{caseId} — any signed-in user can read published cases (needed
-  // for students to run an interview); only teachers can read drafts or
-  // write/create/delete cases.
-  match /cases/{caseId} {
-    allow read: if isSignedIn() &&
-      (resource.data.status == 'published' || isTeacher());
-    allow create, update, delete: if isTeacher();
-  }
+    // cases/{caseId} — any signed-in user can read published cases (needed
+    // for students to run an interview); only teachers can read drafts or
+    // write/create/delete cases.
+    match /cases/{caseId} {
+      allow read: if isSignedIn() &&
+        (resource.data.status == 'published' || isTeacher());
+      allow create, update, delete: if isTeacher();
+    }
 
-  // sessions/{sessionId} — a student may read/write only their own
-  // session; teachers can read all (for review) but not edit a student's
-  // transcript/PV directly.
-  match /sessions/{sessionId} {
-    allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
-    // A student creates their own session when starting a case (studentId
-    // matches their own uid). A teacher can ALSO create one on a
-    // student's behalf — this is the bulk-assign-to-class feature —
-    // which is why isTeacher() is allowed here even though studentId
-    // then belongs to someone else.
-    allow create: if isTeacher() || (isSignedIn() && request.resource.data.studentId == request.auth.uid);
-    allow update: if isSignedIn() && resource.data.studentId == request.auth.uid;
-    allow delete: if isTeacher();
-  }
+    // sessions/{sessionId} — a student may read/write only their own
+    // session; teachers can read all (for review) but not edit a student's
+    // transcript/PV directly.
+    match /sessions/{sessionId} {
+      allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      // A student creates their own session when starting a case (studentId
+      // matches their own uid). A teacher can ALSO create one on a
+      // student's behalf — this is the bulk-assign-to-class feature —
+      // which is why isTeacher() is allowed here even though studentId
+      // then belongs to someone else.
+      allow create: if isTeacher() || (isSignedIn() && request.resource.data.studentId == request.auth.uid);
+      allow update: if isSignedIn() && resource.data.studentId == request.auth.uid;
+      allow delete: if isTeacher();
+    }
 
-  // pvreports/{reportId} — a student can read/create their own report;
-  // only teachers (via the graded evaluate flow) should ever update one,
-  // and only teachers can delete.
-  match /pvreports/{reportId} {
-    allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
-    allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
-    allow update: if isTeacher();
-    allow delete: if isTeacher();
-  }
+    // pvreports/{reportId} — a student can read/create their own report;
+    // only teachers (via the graded evaluate flow) should ever update one,
+    // and only teachers can delete.
+    match /pvreports/{reportId} {
+      allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow update: if isTeacher();
+      allow delete: if isTeacher();
+    }
 
-  // usage_counters/{date} — daily AI-call counts used for the soft cost
-  // cap (lib/firebase-admin.ts checkAiUsageCap). Only ever written by
-  // the Admin SDK (which bypasses these rules) — no client access at
-  // all, in either direction.
-  match /usage_counters/{date} {
-    allow read, write: if false;
-  }
+    // usage_counters/{date} — daily AI-call counts used for the soft cost
+    // cap (lib/firebase-admin.ts checkAiUsageCap). Only ever written by
+    // the Admin SDK (which bypasses these rules) — no client access at
+    // all, in either direction.
+    match /usage_counters/{date} {
+      allow read, write: if false;
+    }
 
-  // calibrations/{entryId} — a teacher's own calibration-trainer attempts
-  // (their blind score vs. the AI score, per PV report + category). Not
-  // visible to students, and one teacher never sees another teacher's
-  // calibration history — this is a personal self-assessment tool, not a
-  // shared or graded record.
-  match /calibrations/{entryId} {
-    allow read: if isTeacher() && resource.data.teacherId == request.auth.uid;
-    allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
-    allow update, delete: if false;
+    // calibrations/{entryId} — a teacher's own calibration-trainer attempts
+    // (their blind score vs. the AI score, per PV report + category). Not
+    // visible to students, and one teacher never sees another teacher's
+    // calibration history — this is a personal self-assessment tool, not a
+    // shared or graded record.
+    match /calibrations/{entryId} {
+      allow read: if isTeacher() && resource.data.teacherId == request.auth.uid;
+      allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
+      allow update, delete: if false;
+    }
   }
 }
