@@ -32,7 +32,6 @@ npm run dev
 | `FIREBASE_ADMIN_PROJECT_ID` | **Yes** | Firebase Admin SDK — see below |
 | `FIREBASE_ADMIN_CLIENT_EMAIL` | **Yes** | Firebase Admin SDK |
 | `FIREBASE_ADMIN_PRIVATE_KEY` | **Yes** | Firebase Admin SDK — paste the raw PEM value, `\n`-escaped, **without** surrounding quote characters |
-| `SEED_SECRET` | No | Token required to call `/api/seed` (built-in case seeding) |
 
 **The Firebase Admin SDK is mandatory**, not optional. It's used to verify
 every authenticated request server-side (`lib/firebase-admin.ts`

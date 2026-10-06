@@ -8,8 +8,7 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin'
  * problem for a brand new setup with zero accounts.
  *
  * Protected two ways:
- * 1. A shared secret (ADMIN_BOOTSTRAP_SECRET) — same pattern as the
- *    existing /api/seed route.
+ * 1. A shared secret (ADMIN_BOOTSTRAP_SECRET).
  * 2. Self-disabling: refuses to run if any teacher profile already
  *    exists, so even if the secret leaks later it can never be used to
  *    mint additional admin accounts. Use /teacher/users for that once
