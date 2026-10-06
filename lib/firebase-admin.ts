@@ -40,6 +40,21 @@ export function hasAdminCredentials(): boolean {
   )
 }
 
+/**
+ * True if at least one teacher profile exists. Used to self-disable the
+ * ADMIN_BOOTSTRAP_SECRET-gated recovery routes once the app has a working
+ * teacher: from then on, account repair and reset links go through
+ * /teacher/users (authenticated) or the self-service reset on /login.
+ * Fails closed: if Firestore is unavailable, report "exists" so the
+ * secret-gated routes stay locked.
+ */
+export async function teacherExists(): Promise<boolean> {
+  const db = adminDb()
+  if (!db) return true
+  const snap = await db.collection('profiles').where('role', '==', 'teacher').limit(1).get()
+  return !snap.empty
+}
+
 export class AuthError extends Error {
   status: number
   constructor(message: string, status: number) {

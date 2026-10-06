@@ -6,6 +6,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { Case, TranscriptMessage, ScoreBreakdown, FeedbackItem, SCORE_CATEGORY_LABELS } from '@/lib/types'
 import { scoreToGrade } from '@/lib/utils'
 import { requireAuth, AuthError, adminDb, checkAiUsageCap } from '@/lib/firebase-admin'
+import { BUILTIN_CASES } from '@/lib/cases'
 
 const CRIME_ELEMENTS: Record<string, string> = {
   vernieling: 'Bestanddelen art. 350 Sr: opzet + beschadigen/vernielen/onbruikbaar maken + goed toebehorend aan ander.',
@@ -135,11 +136,57 @@ export async function POST(req: NextRequest) {
   try {
     const { uid } = await requireAuth(req)
     await checkAiUsageCap('evaluate')
-    const { pvContent, caseData, transcript }: {
+    const body: {
+      sessionId?: string
       pvContent: string
-      caseData: Case
-      transcript: TranscriptMessage[]
+      caseData?: Case
+      transcript?: TranscriptMessage[]
     } = await req.json()
+    const { pvContent } = body
+
+    // Case and transcript are loaded server-side from the student's own
+    // session — never trusted from the client — and the resulting report
+    // is written here with the Admin SDK. Students can no longer create
+    // pvreports directly (see firestore.rules), so a grade can't be forged
+    // by writing scores from the browser or by sending an easier caseData.
+    //
+    // Exception: local_ sessions (offline fallback, never stored in
+    // Firestore) still send caseData/transcript; their result is returned
+    // but not persisted, so it never reaches a teacher view.
+    let caseData: Case
+    let transcript: TranscriptMessage[]
+    let persistSessionId: string | null = null
+
+    if (body.sessionId && !body.sessionId.startsWith('local_')) {
+      const db = adminDb()!
+      const sessSnap = await db.collection('sessions').doc(body.sessionId).get()
+      if (!sessSnap.exists) {
+        return NextResponse.json({ error: 'Sessie niet gevonden.' }, { status: 404 })
+      }
+      const sess = sessSnap.data()!
+      if (sess.studentId !== uid) {
+        return NextResponse.json({ error: 'Deze sessie is niet van jouw account.' }, { status: 403 })
+      }
+      const caseId = sess.caseId as string
+      if (caseId.startsWith('builtin_')) {
+        const idx = Number(caseId.slice('builtin_'.length))
+        const builtin = BUILTIN_CASES[idx]
+        if (!builtin) return NextResponse.json({ error: 'Case niet gevonden.' }, { status: 404 })
+        caseData = { ...builtin, id: caseId } as Case
+      } else {
+        const caseSnap = await db.collection('cases').doc(caseId).get()
+        if (!caseSnap.exists) return NextResponse.json({ error: 'Case niet gevonden.' }, { status: 404 })
+        caseData = { ...caseSnap.data(), id: caseSnap.id } as Case
+      }
+      transcript = (sess.transcript as TranscriptMessage[]) ?? []
+      persistSessionId = body.sessionId
+    } else {
+      if (!body.caseData || !body.transcript) {
+        return NextResponse.json({ error: 'sessionId ontbreekt.' }, { status: 400 })
+      }
+      caseData = body.caseData
+      transcript = body.transcript
+    }
 
     // Teacher-set attention note/focus areas are read server-side by the
     // authenticated uid — never trusted from the client — so a student
@@ -266,12 +313,40 @@ ${transcriptText}`
       ? result.generalFeedback
       : 'Beoordeling afgerond.'
 
+    let reportId: string | null = null
+    if (persistSessionId) {
+      const db = adminDb()!
+      const now = new Date().toISOString()
+      const reportData = {
+        sessionId: persistSessionId,
+        caseId: caseData.id,
+        studentId: uid,
+        content: pvContent,
+        totalScore,
+        cijfer,
+        scoresBreakdown: scores,
+        feedback,
+        generalFeedback,
+        submittedAt: now,
+        evaluatedAt: now,
+      }
+      const existing = await db.collection('pvreports').where('sessionId', '==', persistSessionId).limit(1).get()
+      if (!existing.empty) {
+        await existing.docs[0].ref.set(reportData)
+        reportId = existing.docs[0].id
+      } else {
+        reportId = (await db.collection('pvreports').add(reportData)).id
+      }
+      await db.collection('sessions').doc(persistSessionId).update({ status: 'evaluated', pvContent })
+    }
+
     return NextResponse.json({
       scores,
       feedback,
       generalFeedback,
       totalScore,
       cijfer,
+      reportId,
     })
   } catch (error) {
     if (error instanceof AuthError) {

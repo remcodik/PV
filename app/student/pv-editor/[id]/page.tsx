@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { doc, getDoc, addDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { authFetch } from '@/lib/api-client'
 import { useAuth } from '@/contexts/AuthContext'
@@ -248,11 +248,14 @@ export default function PVEditorPage() {
       const res = await authFetch('/api/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pvContent,
-          caseData,
-          transcript: session.transcript,
-        }),
+        // Server loads case + transcript from the session and stores the
+        // report itself; caseData/transcript are only sent for offline
+        // local_ sessions, which the server doesn't persist.
+        body: JSON.stringify(
+          isLocal
+            ? { sessionId: id, pvContent, caseData, transcript: session.transcript }
+            : { sessionId: id, pvContent }
+        ),
       })
       const evaluation = await res.json()
       if (!res.ok || !evaluation.scores) throw new Error(evaluation.error || 'Evaluatie mislukt')
@@ -277,22 +280,9 @@ export default function PVEditorPage() {
         localStorage.setItem(`pvreport_${reportId}`, JSON.stringify({ id: reportId, ...reportData }))
         const updated = { ...session, status: 'evaluated' as const }
         localStorage.setItem(`session_${id}`, JSON.stringify(updated))
-      } else {
-        try {
-          // Update existing report if one exists, otherwise create new
-          const existing = await getDocs(query(collection(db, 'pvreports'), where('sessionId', '==', id)))
-          if (!existing.empty) {
-            await updateDoc(doc(db, 'pvreports', existing.docs[0].id), reportData)
-          } else {
-            await addDoc(collection(db, 'pvreports'), reportData)
-          }
-          await updateDoc(doc(db, 'sessions', id), { status: 'evaluated' })
-        } catch {
-          // Firestore failed — save to localStorage as fallback
-          const reportId = `report_${id}`
-          localStorage.setItem(`pvreport_${reportId}`, JSON.stringify({ id: reportId, ...reportData }))
-        }
       }
+      // Non-local: /api/evaluate already stored the report and marked the
+      // session evaluated server-side.
 
       router.push(`/student/results/${id}`)
     } catch (err) {

@@ -67,12 +67,13 @@ service cloud.firestore {
       allow delete: if isTeacher();
     }
 
-    // pvreports/{reportId} — a student can read/create their own report;
-    // only teachers (via the graded evaluate flow) should ever update one,
-    // and only teachers can delete.
+    // pvreports/{reportId} — a student can read their own report. Reports
+    // are created only by /api/evaluate via the Admin SDK (which bypasses
+    // these rules), so a student can't write their own scores. Teachers
+    // may update (review) and delete.
     match /pvreports/{reportId} {
       allow read: if isTeacher() || (isSignedIn() && resource.data.studentId == request.auth.uid);
-      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow create: if false;
       allow update: if isTeacher();
       allow delete: if isTeacher();
     }
