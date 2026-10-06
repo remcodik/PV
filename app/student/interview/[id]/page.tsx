@@ -292,11 +292,13 @@ export default function InterviewPage() {
       const res = await authFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: message.trim(),
-          caseData,
-          transcript,
-        }),
+        // Stored sessions: the server loads case + transcript and appends
+        // this turn itself. Only offline local_ sessions send them along.
+        body: JSON.stringify(
+          isLocal
+            ? { sessionId: id, message: message.trim(), caseData, transcript }
+            : { sessionId: id, message: message.trim() }
+        ),
       })
       const data = await res.json()
       if (!res.ok || !data.reply) throw new Error(data.error || 'Chat mislukt')
@@ -306,28 +308,17 @@ export default function InterviewPage() {
         content: data.reply,
         timestamp: new Date().toISOString(),
       }
-      const updatedTranscript = [...newTranscript, witnessMsg]
+      // Stored sessions: use the transcript the server saved (source of
+      // truth). Local sessions: append and save to localStorage as before.
+      const updatedTranscript: TranscriptMessage[] = Array.isArray(data.transcript)
+        ? data.transcript
+        : [...newTranscript, witnessMsg]
       setTranscript(updatedTranscript)
 
-      // Save transcript — Firestore or localStorage
       if (isLocal && session) {
         const updated = { ...session, transcript: updatedTranscript }
         saveLocalSession(updated)
         setSession(updated)
-      } else {
-        try {
-          await updateDoc(doc(db, 'sessions', id), {
-            transcript: updatedTranscript,
-            status: 'interviewing',
-          })
-        } catch {
-          // Firestore sync failed — save to localStorage so transcript isn't lost
-          if (session) {
-            const updated = { ...session, transcript: updatedTranscript }
-            saveLocalSession(updated)
-            setSession(updated)
-          }
-        }
       }
 
       speak(data.reply)
@@ -404,10 +395,10 @@ export default function InterviewPage() {
       saveLocalSession(updated)
     } else {
       try {
+        // Transcript is already stored server-side by /api/chat.
         await updateDoc(doc(db, 'sessions', id), {
           status: 'writing_pv',
           completedAt: new Date().toISOString(),
-          transcript,
         })
       } catch {}
     }

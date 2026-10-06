@@ -63,7 +63,17 @@ service cloud.firestore {
       // which is why isTeacher() is allowed here even though studentId
       // then belongs to someone else.
       allow create: if isTeacher() || (isSignedIn() && request.resource.data.studentId == request.auth.uid);
-      allow update: if isSignedIn() && resource.data.studentId == request.auth.uid;
+      // A student may only touch workflow fields on their own session:
+      // ending the interview (status/completedAt) and autosaving the PV
+      // draft. The transcript is appended only by /api/chat (Admin SDK) and
+      // the evaluated status only by /api/evaluate, so neither the graded
+      // conversation nor ownership can be changed from the browser.
+      allow update: if isSignedIn()
+        && resource.data.studentId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'completedAt', 'pvContent'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+            || request.resource.data.status in ['interviewing', 'writing_pv']);
       allow delete: if isTeacher();
     }
 
