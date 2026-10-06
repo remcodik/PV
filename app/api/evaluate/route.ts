@@ -6,7 +6,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { Case, TranscriptMessage, ScoreBreakdown, FeedbackItem, SCORE_CATEGORY_LABELS } from '@/lib/types'
 import { scoreToGrade } from '@/lib/utils'
 import { requireAuth, AuthError, adminDb, checkAiUsageCap } from '@/lib/firebase-admin'
-import { BUILTIN_CASES } from '@/lib/cases'
+import { loadOwnedSession, SessionError } from '@/lib/server-session'
 
 const CRIME_ELEMENTS: Record<string, string> = {
   vernieling: 'Bestanddelen art. 350 Sr: opzet + beschadigen/vernielen/onbruikbaar maken + goed toebehorend aan ander.',
@@ -158,27 +158,9 @@ export async function POST(req: NextRequest) {
     let persistSessionId: string | null = null
 
     if (body.sessionId && !body.sessionId.startsWith('local_')) {
-      const db = adminDb()!
-      const sessSnap = await db.collection('sessions').doc(body.sessionId).get()
-      if (!sessSnap.exists) {
-        return NextResponse.json({ error: 'Sessie niet gevonden.' }, { status: 404 })
-      }
-      const sess = sessSnap.data()!
-      if (sess.studentId !== uid) {
-        return NextResponse.json({ error: 'Deze sessie is niet van jouw account.' }, { status: 403 })
-      }
-      const caseId = sess.caseId as string
-      if (caseId.startsWith('builtin_')) {
-        const idx = Number(caseId.slice('builtin_'.length))
-        const builtin = BUILTIN_CASES[idx]
-        if (!builtin) return NextResponse.json({ error: 'Case niet gevonden.' }, { status: 404 })
-        caseData = { ...builtin, id: caseId } as Case
-      } else {
-        const caseSnap = await db.collection('cases').doc(caseId).get()
-        if (!caseSnap.exists) return NextResponse.json({ error: 'Case niet gevonden.' }, { status: 404 })
-        caseData = { ...caseSnap.data(), id: caseSnap.id } as Case
-      }
-      transcript = (sess.transcript as TranscriptMessage[]) ?? []
+      const loaded = await loadOwnedSession(uid, body.sessionId)
+      caseData = loaded.caseData
+      transcript = loaded.session.transcript
       persistSessionId = body.sessionId
     } else {
       if (!body.caseData || !body.transcript) {
@@ -349,7 +331,7 @@ ${transcriptText}`
       reportId,
     })
   } catch (error) {
-    if (error instanceof AuthError) {
+    if (error instanceof AuthError || error instanceof SessionError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
     console.error('Evaluate API error:', error)

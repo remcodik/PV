@@ -3,7 +3,8 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { Case, TranscriptMessage } from '@/lib/types'
-import { requireAuth, AuthError, checkAiUsageCap } from '@/lib/firebase-admin'
+import { requireAuth, AuthError, adminDb, checkAiUsageCap } from '@/lib/firebase-admin'
+import { loadOwnedSession, SessionError } from '@/lib/server-session'
 
 const client = new Anthropic()
 
@@ -48,13 +49,41 @@ const SUSPECT_STYLE: Record<number, string> = {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAuth(req)
-    await checkAiUsageCap('chat')
-    const { message, caseData, transcript }: {
+    const { uid } = await requireAuth(req)
+    const body: {
+      sessionId?: string
       message: string
-      caseData: Case
-      transcript: TranscriptMessage[]
+      caseData?: Case
+      transcript?: TranscriptMessage[]
     } = await req.json()
+    const message = (body.message ?? '').trim()
+    if (!message) return NextResponse.json({ error: 'Leeg bericht.' }, { status: 400 })
+
+    // For stored sessions the case and transcript come from Firestore and
+    // the new turn is appended here with the Admin SDK — the browser can no
+    // longer write the transcript (see firestore.rules), so what gets
+    // graded is what was actually said. local_ sessions (offline fallback,
+    // never graded server-side) keep the old client-supplied behaviour.
+    let caseData: Case
+    let transcript: TranscriptMessage[]
+    let persistSessionId: string | null = null
+    if (body.sessionId && !body.sessionId.startsWith('local_')) {
+      const loaded = await loadOwnedSession(uid, body.sessionId)
+      const status = loaded.session.status
+      if (status && status !== 'assigned' && status !== 'interviewing') {
+        return NextResponse.json({ error: 'Dit interview is al afgesloten.' }, { status: 409 })
+      }
+      caseData = loaded.caseData
+      transcript = loaded.session.transcript
+      persistSessionId = body.sessionId
+    } else {
+      if (!body.caseData || !body.transcript) {
+        return NextResponse.json({ error: 'sessionId ontbreekt.' }, { status: 400 })
+      }
+      caseData = body.caseData
+      transcript = body.transcript
+    }
+    await checkAiUsageCap('chat')
 
     const isSuspect = caseData.intervieweeType === 'verdachte'
     const keyDiscoveriesSection = caseData.keyDiscoveries?.length
@@ -124,9 +153,31 @@ ${REALISM_RULES}`
     })
 
     const reply = response.content[0].type === 'text' ? response.content[0].text : ''
+    if (!reply) return NextResponse.json({ error: 'Geen antwoord ontvangen.' }, { status: 502 })
+
+    if (persistSessionId) {
+      const db = adminDb()!
+      const ref = db.collection('sessions').doc(persistSessionId)
+      const studentTs = new Date().toISOString()
+      const turn: TranscriptMessage[] = [
+        { role: 'student', content: message, timestamp: studentTs },
+        { role: 'witness', content: reply, timestamp: new Date().toISOString() },
+      ]
+      // Transaction: re-read the transcript so two quick messages can't
+      // overwrite each other's turn.
+      const saved = await db.runTransaction(async tx => {
+        const snap = await tx.get(ref)
+        const current = (snap.data()?.transcript as TranscriptMessage[]) ?? []
+        const next = [...current, ...turn]
+        tx.update(ref, { transcript: next, status: 'interviewing' })
+        return next
+      })
+      return NextResponse.json({ reply, transcript: saved })
+    }
+
     return NextResponse.json({ reply })
   } catch (error) {
-    if (error instanceof AuthError) {
+    if (error instanceof AuthError || error instanceof SessionError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
     console.error('Chat API error:', error)
