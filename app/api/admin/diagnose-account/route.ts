@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth, adminDb } from '@/lib/firebase-admin'
+import { adminAuth, adminDb, teacherExists } from '@/lib/firebase-admin'
 
 /**
  * Diagnostic tool, same shared secret as /api/admin/bootstrap and
@@ -41,6 +41,12 @@ export async function GET(req: NextRequest) {
 
   if (!process.env.ADMIN_BOOTSTRAP_SECRET || token !== process.env.ADMIN_BOOTSTRAP_SECRET) {
     return new NextResponse(htmlPage('Mislukt', '<h1>Mislukt</h1><p class="error">Ongeldig token.</p>'), { status: 401, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+  }
+  if (await teacherExists()) {
+    return new NextResponse(
+      htmlPage('Uitgeschakeld', '<h1>Uitgeschakeld</h1><p class="error">Er bestaat al een docentaccount. Dit herstel-endpoint werkt alleen zolang er nog geen docent is. Gebruik /teacher/users of "Wachtwoord vergeten" op /login.</p>'),
+      { status: 409, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    )
   }
   if (!email) {
     return new NextResponse(htmlPage('Mislukt', '<h1>Mislukt</h1><p class="error">E-mail ontbreekt.</p>'), { status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } })

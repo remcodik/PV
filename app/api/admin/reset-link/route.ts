@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth } from '@/lib/firebase-admin'
+import { adminAuth, teacherExists } from '@/lib/firebase-admin'
 
 /**
  * Generates a password-reset link for an EXISTING account directly,
@@ -46,6 +46,12 @@ export async function GET(req: NextRequest) {
     return new NextResponse(
       htmlPage('Mislukt', '<h1>Mislukt</h1><p class="error">Ongeldig of ontbrekend token.</p>'),
       { status: 401, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+    )
+  }
+  if (await teacherExists()) {
+    return new NextResponse(
+      htmlPage('Uitgeschakeld', '<h1>Uitgeschakeld</h1><p class="error">Er bestaat al een docentaccount. Dit herstel-endpoint werkt alleen zolang er nog geen docent is. Gebruik /teacher/users of "Wachtwoord vergeten" op /login.</p>'),
+      { status: 409, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
     )
   }
   if (!email) {
