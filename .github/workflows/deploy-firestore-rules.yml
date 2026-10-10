@@ -1,0 +1,59 @@
+# Publiceert firestore.rules naar Firebase bij elke merge op de hoofdbranch
+# waarin de rules (of deze workflow) wijzigen. Vercel neemt de rules niet
+# mee, dus zonder deze stap blijft Firebase op de oude regels draaien.
+#
+# Vereist repo-secret FIREBASE_SERVICE_ACCOUNT: de volledige JSON van een
+# serviceaccount-sleutel (Firebase-console > Projectinstellingen >
+# Serviceaccounts > Nieuwe privésleutel genereren). Het project-ID wordt
+# uit die sleutel gelezen.
+name: Deploy Firestore rules
+
+on:
+  push:
+    branches: [claude/police-training-app-YGzfO]
+    paths:
+      - firestore.rules
+      - firebase.json
+      - .github/workflows/deploy-firestore-rules.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firestore-rules
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Serviceaccount klaarzetten
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA_JSON" ]; then
+            echo "::error::Secret FIREBASE_SERVICE_ACCOUNT ontbreekt of is leeg."
+            exit 1
+          fi
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          if ! PROJECT_ID=$(jq -er .project_id "$RUNNER_TEMP/sa.json"); then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT is geen geldige serviceaccount-JSON (project_id ontbreekt)."
+            exit 1
+          fi
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+          echo "PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+          echo "Project: $PROJECT_ID"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Rules publiceren
+        run: npx --yes firebase-tools@13 deploy --only firestore:rules --project "$PROJECT_ID" --non-interactive
+
+      - name: Sleutel opruimen
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"
