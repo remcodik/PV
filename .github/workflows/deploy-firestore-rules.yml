@@ -52,7 +52,19 @@ jobs:
           node-version: 20
 
       - name: Rules publiceren
-        run: npx --yes firebase-tools@13 deploy --only firestore:rules --project "$PROJECT_ID" --non-interactive
+        run: |
+          set +e
+          npx --yes firebase-tools@13 deploy --only firestore:rules --project "$PROJECT_ID" --non-interactive > "$RUNNER_TEMP/deploy.log" 2>&1
+          code=$?
+          cat "$RUNNER_TEMP/deploy.log"
+          if [ $code -ne 0 ]; then
+            # Laatste regels als annotatie, zodat de oorzaak zichtbaar is
+            # zonder de volledige log te openen.
+            msg=$(grep -vE '^\s*$' "$RUNNER_TEMP/deploy.log" | grep -viE 'private_key|BEGIN PRIVATE' | tail -n 15 | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')
+            echo "::error title=Firebase deploy mislukt::$msg"
+            exit $code
+          fi
+          echo "::notice title=Firestore rules gepubliceerd::Project $PROJECT_ID"
 
       - name: Sleutel opruimen
         if: always()
